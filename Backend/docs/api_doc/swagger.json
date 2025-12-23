@@ -1,0 +1,1 @@
+{"openapi":"3.0.1","info":{"title":"TEG-grupo8 API","description":"TEG project for Spring Boot","version":"0.0.1-SNAPSHOT"},"servers":[{"url":"http://localhost:8080","description":"'@project.description@'"}],"paths":{},"components":{}}
