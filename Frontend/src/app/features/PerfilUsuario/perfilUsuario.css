@@ -1,0 +1,97 @@
+/* Contenedor principal */
+.perfil-container {
+
+  background-color: #ffffff;
+  border: 3px solid var(--rosa);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 350px;
+  padding: 30px 40px;
+  text-align: center;
+  margin: 60px auto;
+}
+
+
+/* Sección de foto de usuario */
+.foto-usuario {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Círculo de perfil (ícono o imagen) */
+.icono-foto {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 10px;
+  background-color: black;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 3rem;
+  overflow: hidden;
+}
+
+.icono-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border-color: black;
+  border-style: solid;
+}
+
+/* Botón “Cambiar foto” */
+.btn-cambiar-foto {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 18px;
+  background-color: transparent;
+  border: 2px solid #f99;
+  border-radius: 20px;
+  color: #f99;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cambiar-foto:hover {
+  background-color: #f99;
+  color: white;
+  box-shadow: 0 2px 8px rgba(249, 153, 153, 0.4);
+}
+
+/* Formulario de cambio de contraseña */
+.form-contrasena {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.form-contrasena label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: black;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-contrasena input {
+  width: 270px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #f8ccd1;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: -10px;
+  margin-bottom: 10px;
+}

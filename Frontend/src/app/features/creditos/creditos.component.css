@@ -1,0 +1,27 @@
+
+.volver-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 73px;
+  background: linear-gradient(135deg, #c2185b, #ad1457);
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(194, 24, 91, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.volver-btn:hover {
+  background: linear-gradient(135deg, #ad1457, #880e4f);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(194, 24, 91, 0.6);
+}
+
+.volver-btn:active {
+  transform: translateY(-1px);
+}

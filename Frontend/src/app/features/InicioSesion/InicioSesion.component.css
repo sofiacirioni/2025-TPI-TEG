@@ -1,0 +1,130 @@
+body {
+  font-family: Arial, sans-serif;
+  background-image: url('src/assets/TEG_Diseno_1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+#volver
+{
+
+    width: 40px;
+    height: 40px;
+  background-image: url('src/assets/volver.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+    cursor: pointer;
+    margin-top: 0px;
+    position: fixed;
+   top: 10px;
+    left: 10px;
+    z-index: 1000;
+
+}
+.login-container {
+
+  background-color: #ffffff ;
+  backdrop-filter: blur(6px);
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 300px;
+}
+
+.login-container h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+h2{
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 5px;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 900;
+  font-style: normal;
+  color: #ffffff;
+  background: #e45b6a;
+  border-radius: 10px;
+  padding: 10px;
+}
+label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 5px;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 900;
+  font-style: normal;
+  background: #ffffff;
+  border-radius: 40px;
+  border-color: #e45b6a;
+  border-style: solid;
+  border-width: medium;
+  padding: 10px;
+  width: 120px;
+  color:#e45b6a;
+
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 270px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #f8ccd1;
+
+
+
+}
+input:focus {
+  border-color: #e45b6a;
+  outline: none;
+}
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #f1596e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 900;
+  font-style: normal;
+}
+
+button:hover {
+  background-color: #ff94a4;
+}
+
+p {
+  margin-top: 15px;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  text-align: center;
+}
+
+a {
+  color: #1877f2;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,194 @@
+body {
+  font-family: "Montserrat", sans-serif;
+  background-color: #f1e2d8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h2 {
+  background-color: #e45b6a;
+  color: white;
+  font-weight: 900;
+  font-size: 28px;
+  padding: 10px 30px;
+  border-radius: 12px;
+  margin-bottom: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.subtexto {
+  font-size: 13px;
+  color: black;
+  margin-bottom: 20px;
+}
+.url
+{
+  font-size: 13px;
+  color: #e45b6a;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e45b6a;
+  background-color: white;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.caja-jugadores {
+  background-color: white;
+  border: 2px solid #e45b6a;
+  border-radius: 15px;
+  padding: 20px 25px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.titulo-jugadores {
+  background-color: #e45b6a;
+  color: white;
+  font-weight: bold;
+  border-radius: 25px;
+  padding: 5px 20px;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.jugador {
+  background-color: #f8ccd1;
+  border-radius: 20px;
+  padding: 8px 15px;
+  margin: 6px 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.kick {
+  background: none;
+  border: 2px solid #e45b6a;
+  border-radius: 15px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: #e45b6a;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.partida {
+  margin: 25px auto 0;
+  padding: 8px 20px;
+  background-color: #f2ece4;
+  color: black;
+  font-weight: 900;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 2px 3px 0px #e47c8b;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+
+#ayuda {
+  text-decoration: none;
+  margin-top: 15px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  z-index: 1000;
+  padding: 8px 20px;
+  background-color: #f1596e;
+  color: white;
+  font-weight: 900;
+  border-radius: 15px;
+  box-shadow: 2px 3px 0px #c0a5a5;
+}
+
+label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 5px;
+  background: #ffffff;
+  border-radius: 40px;
+  border: medium solid #e45b6a;
+  padding: 10px;
+  width: 120px;
+  color: #e45b6a;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+}
+
+#nombreJugador {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #f8ccd1;
+  width: 270px;
+}
+#crearJugador {
+  width: 100%;
+  padding: 10px;
+  background-color: #f1596e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+}
+
+.btn-success{
+  background-color: #f2ece4;
+  color: black;
+  font-weight: 900;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 2px 3px 0px #e47c8b;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-success:hover {
+  background-color: #ff8998;
+  box-shadow: 2px 3px 0px #f2ece4;
+}
+.btn-primary{
+
+  background-color: #f2ece4;
+  color: black;
+  font-weight: 900;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 2px 3px 0px #e47c8b;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary:hover{
+  background-color: #ff8998;
+  box-shadow: 2px 3px 0px #f2ece4;
+}
+
+.partida:hover {
+  background-color: #ff8998;
+  box-shadow: 2px 3px 0px #f2ece4;
+  color: white;
+}

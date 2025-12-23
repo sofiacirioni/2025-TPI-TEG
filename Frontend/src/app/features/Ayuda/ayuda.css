@@ -1,0 +1,233 @@
+:host {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-image: url('src/assets/fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.ayuda-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-image: url('src/assets/fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Panel lateral */
+.sidebar {
+  width: 220px;
+  background-color: #f9cfdc;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h1 {
+  background-color: #f48fb1;
+  color: #880e4f;
+  padding: 0.5rem 1rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+  border-radius: 20px;
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar button {
+  margin: 0.5rem 0;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: none;
+  background-color: white;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar button:hover {
+  background-color: #ffeaf3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar button.activo {
+  background-color: #f48fb1;
+  color: white;
+  box-shadow: 0 4px 8px rgba(244, 143, 177, 0.4);
+}
+
+/* Área principal */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.help-box {
+  background-color: rgba(255, 214, 227, 0.95);
+  border: 2px solid #f48fb1;
+  border-radius: 25px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1000px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(5px);
+}
+
+/* Título de secciones */
+.section-header {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #880e4f;
+  margin: 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f48fb1, #ec407a);
+  border-radius: 15px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(244, 143, 177, 0.3);
+}
+
+/* Cada recuadro individual */
+.help-section {
+  background-color: white;
+  padding: 1.5rem;
+  border: 2px solid #ec407a;
+  border-radius: 15px;
+  font-size: 0.95rem;
+  color: #333;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.help-section:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.help-section h3 {
+  font-size: 1.2rem;
+  color: #880e4f;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f48fb1;
+}
+
+.help-section p {
+  line-height: 1.6;
+  margin: 0;
+  text-align: justify;
+}
+
+/* Botón volver */
+.volver-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 73px;
+  background: linear-gradient(135deg, #c2185b, #ad1457);
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(194, 24, 91, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.volver-btn:hover {
+  background: linear-gradient(135deg, #ad1457, #880e4f);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(194, 24, 91, 0.6);
+}
+
+.volver-btn:active {
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ayuda-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-radius: 0 0 20px 20px;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 1rem 0.5rem;
+  }
+
+  .sidebar button {
+    min-width: 120px;
+    margin: 0 0.25rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .help-box {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .volver-btn {
+    bottom: 15px;
+    right: 15px;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar h1 {
+    font-size: 1.2rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .sidebar button {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .help-section {
+    padding: 1rem;
+  }
+
+  .help-section h3 {
+    font-size: 1.1rem;
+  }
+}

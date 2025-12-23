@@ -1,0 +1,71 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #fccabf;
+}
+
+app-map {
+  background-color: #acd6ff;
+  border: 2px solid #e45a69;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+app-player-panel {
+  background-color: #fccabf;
+  border-radius: 10px;
+  padding: 10px;
+}
+.btnAvanzar {
+  position: relative;
+  background: linear-gradient(145deg, #f59faf, #e45b6a);
+  color: white;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 4px 10px rgba(228, 91, 106, 0.3);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 10;
+}
+
+/* El pseudo elemento para el brillo */
+.btnAvanzar::before {
+  position: relative;
+  background: linear-gradient(145deg, #f59faf, #e45b6a);
+  color: white;
+  font-size: clamp(14px, 2vw, 20px); /* más pequeño */
+  font-weight: 700;
+  padding: 8px 16px; /* menos padding */
+  border-radius: 12px; /* menos redondeo */
+  border: none;
+  box-shadow: 0 3px 6px rgba(228, 91, 106, 0.3);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 10;
+}
+
+/* Cuando haces hover, el brillo pasa de izquierda a derecha */
+.btnAvanzar:hover::before {
+  left: 100%;
+}
+
+/* Hover en el botón */
+.btnAvanzar:hover {
+  background: linear-gradient(145deg, #e45b6a, #f59faf);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(228, 91, 106, 0.4);
+}
+
+/* Al hacer click */
+.btnAvanzar:active {
+  transform: translateY(-2px) scale(1.02);
+}

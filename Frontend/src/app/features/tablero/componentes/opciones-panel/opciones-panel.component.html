@@ -1,0 +1,50 @@
+
+<div class="container">
+  <div class="main-wrapper">
+    <div class="header-section bg-light border-bottom">
+      <div class="header-content d-flex align-items-center justify-content-start gap-3 p-2 flex-wrap">
+
+        <div class="botones d-flex gap-2">
+          <div class="ayuda btn btn-outline-secondary btn-sm rounded-circle p-2"
+               (click)=RedireccionarAyuda()
+               data-bs-toggle="tooltip"
+               title="Ayuda">
+            <img src="assets/elem/btnAyuda.png" alt="boton ayuda" height="24" width="24" class="d-block">
+          </div>
+
+          <div className="objetivo-comun d-flex align-items-center gap-2">
+            <img src="assets/elem/iconoObjetivo.png" alt="icono-objetivo-comun" width="24" height="24">
+          <p class="mb-0 fw-bold text-dark fs-6">Ocupa 30 países o</p>
+        </div>
+
+        <div class="flecha d-flex align-items-center">
+          <img src="assets/elem/iconoFlecha.png" alt="img-flecha" height="20" width="20">
+        </div>
+
+        <div class="objetivo-secreto d-flex align-items-center gap-2">
+          <img id="secretIcon"
+               src="assets/elem/iconoSecreto.png"
+               alt="icono-objetivo-secreto"
+               width="28"
+               height="28"
+               (click)="mostrarObjetivoSecreto()"
+               data-bs-toggle="tooltip"
+               title="Ver objetivo secreto"
+               class="rounded-circle">
+          @if (mostrarObjetivo) {
+            <p class="mb-0 text-muted fst-italic small">
+              {{ jugadorActual.objetivo.descripcion }}
+            </p>
+          }
+        </div>
+
+        <div class="flex-grow-1"></div>
+
+        <div class="header-extras d-flex align-items-center gap-2">
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</div>

@@ -1,0 +1,102 @@
+<div class="ayuda-container">
+  <div class="sidebar">
+    <h1>Ayuda TEG</h1>
+    <button
+      [class.activo]="seccionActiva === 'reglas-basicas'"
+      (click)="cambiarSeccion('reglas-basicas')">
+      Reglas Básicas
+    </button>
+    <button
+      [class.activo]="seccionActiva === 'fases'"
+      (click)="cambiarSeccion('fases')">
+      Fases del Juego
+    </button>
+    <button
+      [class.activo]="seccionActiva === 'canjes'"
+      (click)="cambiarSeccion('canjes')">
+      Canjes
+    </button>
+    <button
+      [class.activo]="seccionActiva === 'pactos'"
+      (click)="cambiarSeccion('pactos')">
+      Pactos
+    </button>
+    <button
+      [class.activo]="seccionActiva === 'misiones-secretas'"
+      (click)="cambiarSeccion('misiones-secretas')">
+      Misiones Secretas
+    </button>
+  </div>
+
+  <div class="main-content">
+    <div class="help-box">
+      <!-- Reglas Básicas -->
+      @if (seccionActiva === 'reglas-basicas') {
+        <div class="section-header">
+          <h2>{{ reglasBasicas.titulo }}</h2>
+        </div>
+        @for (item of reglasBasicas.contenido; track item.subtitulo) {
+          <div class="help-section">
+            <h3>{{ item.subtitulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        }
+      }
+
+      <!-- Fases -->
+      @if (seccionActiva === 'fases') {
+        <div class="section-header">
+          <h2>{{ fases.titulo }}</h2>
+        </div>
+        @for (item of fases.contenido; track item.subtitulo) {
+          <div class="help-section">
+            <h3>{{ item.subtitulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        }
+      }
+
+      <!-- Canjes -->
+      @if (seccionActiva === 'canjes') {
+        <div class="section-header">
+          <h2>{{ canjes.titulo }}</h2>
+        </div>
+        @for (item of canjes.contenido; track item.subtitulo) {
+          <div class="help-section">
+            <h3>{{ item.subtitulo }}</h3>
+            <p [innerHTML]="formatTexto(item.texto)"></p>
+          </div>
+        }
+      }
+
+      <!-- Pactos -->
+      @if (seccionActiva === 'pactos') {
+        <div class="section-header">
+          <h2>{{ pactos.titulo }}</h2>
+        </div>
+        @for (item of pactos.contenido; track item.subtitulo) {
+          <div class="help-section">
+            <h3>{{ item.subtitulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        }
+      }
+
+      <!-- Misiones Secretas -->
+      @if (seccionActiva === 'misiones-secretas') {
+        <div class="section-header">
+          <h2>{{ misionesSecretas.titulo }}</h2>
+        </div>
+        @for (item of misionesSecretas.contenido; track item.subtitulo) {
+          <div class="help-section">
+            <h3>{{ item.subtitulo }}</h3>
+            <p [innerHTML]="formatTexto(item.texto)"></p>
+
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <button class="volver-btn" (click)="volver()">Volver</button>
+</div>

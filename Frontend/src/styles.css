@@ -1,0 +1,157 @@
+/* You can add global styles to this file, and also import other style files */
+/* Estilos globales */
+/* Fondo general */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--montserrat);
+  background-color: #f5e9d7; /* Color de fondo detrás de la imagen */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed; /* Efecto mural */
+}
+
+
+/* Botón principal */
+.button {
+
+  padding: 16px 0;
+  background-color: #f1596e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+
+}
+
+.button:hover {
+  background-color: #ff94a4;
+}
+
+/* Botón para cerrar sesión (alt)*/
+.button-alt {
+  background-color: transparent;
+  color: #e45b6a;
+  border: 2px solid #e45b6a;
+  border-radius: 8px;
+  padding: 10px 18px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-family: var(--montserrat);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.button-alt:hover {
+  background-color: darkred;
+  color: white;
+  box-shadow: 0 4px 10px rgba(228, 91, 106, 0.3);
+}
+
+#volver {
+  width: 10vw;
+  max-width: 50px;
+  aspect-ratio: 1 / 1;
+  background-image: url('src/assets/volver.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  position: fixed;
+  top: 2vw;
+  left: 2vw;
+  z-index: 1000;
+  transition: transform 0.2s ease-in-out;
+}
+
+#volver:hover {
+  transform: scale(1.15);
+}
+
+/* Galería de imágenes */
+.galeria-imagenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.galeria-imagenes img {
+  width: 60px;
+  height: 60px;
+  border-radius: 5px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.galeria-imagenes img.seleccionada {
+  border-color: #e45b6a; /* var(--rosa) */
+}
+
+/* Modal de galería */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80%;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  margin-top: 20px; /* Añadido para bajarlo un poco */
+  margin-bottom: 15px;
+  font-family: "Montserrat", sans-serif;
+  color: #e45b6a;
+}
+
+/* Botón cerrar modal */
+.cerrar-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #e45b6a;
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.cerrar-modal:hover {
+  color: #f59faf; /* var(--rosa-claro) */
+}

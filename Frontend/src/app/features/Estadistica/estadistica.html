@@ -1,0 +1,46 @@
+<div class="body w-100 m-0">
+  <div class="d-flex justify-content-between align-items-center mb-3 w-100 m-0">
+    <button class="fs-3 px-3 rounded-circle border" aria-label="Volver">
+      <a  [routerLink]="['../principal']" id="volver">
+
+      </a>
+    </button>
+    <div class="user-icon d-flex justify-content-center align-items-center">
+      <i class="bi bi-person fs-4 text-white"></i>
+    </div>
+  </div>
+
+  <div class="w-50 m-auto">
+    <div class="text-center mb-4">
+      <h2 class="titulo-estadisticas jugar">Estadísticas</h2>
+    </div>
+
+    <table class="table table-bordered text-center custom-table">
+      <thead class="">
+      <tr>
+        <th>JUGADOR</th>
+        <th>ID PARTIDA</th>
+        <th>FECHA PARTIDA</th>
+        <th>PAISES CONQUISTADOS</th>
+        <th>PAISES PERDIDOS</th>
+        <th>GANADOR</th>
+        <th>PORCENTAJE CONQUISTA</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (e of estadisticas; track e.id) {
+          <tr >
+          <td>{{ e.colorJugador }}</td>
+          <td>{{ e.idPartida }}</td>
+          <td>{{ e.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ e.paisesConquistados }}</td>
+          <td>{{ e.paisesPerdidos }}</td>
+          <td>{{ e.ganador ? 'SI' : 'NO' }}</td>
+          <td>{{ e.porcentajeMundo }}%</td>
+          </tr>
+        }
+      </tbody>
+
+    </table>
+  </div>
+</div>

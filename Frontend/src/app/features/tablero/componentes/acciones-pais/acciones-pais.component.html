@@ -1,0 +1,135 @@
+@if(esSuyo){
+<div class="modal-header">
+  <h4 class="modal-title">Acciones del país</h4>
+  <button type="button" class="btn-close" aria-label="Close"
+    (click)="cerrar()"></button>
+</div>
+
+<div class="modal-body">
+  <p>El pais seleccionado es <strong>{{paisSeleccionado.pais.nombre}}</strong>
+  </p>
+  <p>Cantidad tropas: {{paisSeleccionado.cantidadTropas}}</p>
+
+  <!-- Contenido es dueño, pero no es su turno -->
+  @if(!estaJugando){
+  <p class="text-danger">No puedes realizar acciones porque no es tu turno.</p>
+  }
+  <!-- Contenido es dueñi y es su turno -->
+  @else {
+
+  <!-- Contenido ataque -->
+  @if (turnoActual.fase == 'ATACAR') {
+  <p class="text-secondary">Fase actual: {{turnoActual.fase}}</p>
+
+  <select class="form-select" [(ngModel)]="idPaisSeleccionado">
+    <option selected hidden>Seleccione un pais para atacar</option>
+    @for (pais of paisesEnemigos; track $index) {
+    <option [value]="pais.pais.idPais">{{pais.pais.nombre}}</option>
+    }
+  </select>
+
+  <button type="button " class="btn btn-primary mt-3 w-100"
+    (click)="atacar()">Atacar</button>
+
+  }
+
+  <!-- Contenido reagrupacion -->
+  @else if (turnoActual.fase == 'MOVER_TROPAS') {
+
+  <p class="text-secondary">Fase actual: {{turnoActual.fase}}</p>
+
+  <select class="form-select" aria-label="Default select example"
+    [(ngModel)]="idPaisSeleccionado">
+    <option selected hidden>Seleccione un pais para mover tropas</option>
+    @for (pais of paisesAliados; track $index) {
+    <option [value]="pais.pais.idPais">{{pais.pais.nombre}}</option>
+    }
+  </select>
+
+  <label for="exampleInputEmail1" class="form-label">
+    Cantidad de tropas a mover
+  </label>
+  <input type="number" class="form-control"
+    [max]="paisSeleccionado.cantidadTropas - 1"
+    [min]="0"
+    [(ngModel)]="inputTropas"
+    (input)="validarInputMover($event)">
+
+  <button type="button " class="btn btn-primary mt-3 w-100"
+    (click)="reagrupar()">Mover</button>
+
+  }
+
+  <!-- Contenido Defensa -->
+  @else{
+  <p class="text-secondary">Fase actual: {{turnoActual.fase}}</p>
+
+  <p class="text-secondary">Cantidad de tropas disponibles: {{jugador.ejercito
+    ?? 0}}</p><p></p>
+
+  <label for="exampleInputEmail1" class="form-label">Cantidad de tropas a
+    agregar</label>
+  <input type="number" class="form-control"
+    [max]="jugador.ejercito ?? 0"
+    [min]="0"
+    [(ngModel)]="inputTropas"
+    (input)="validarInput($event)">
+  <button type="button " class="btn btn-primary mt-3 w-100"
+    (click)="defender()">Defender</button>
+  }
+
+  }
+
+</div>
+}
+<!-- Contenido no es dueño del pais -->
+@else {
+<div class="modal-header">
+  <h4 class="modal-title">Información del país</h4>
+  <button type="button" class="btn-close" aria-label="Close"
+    (click)="cerrar()"></button>
+</div>
+
+<div class="modal-body">
+  <p>El pais seleccionado es <strong>{{paisSeleccionado.pais.nombre}}</strong>
+  </p>
+  <p>Cantidad tropas: {{paisSeleccionado.cantidadTropas}}</p>
+
+</div>
+}
+
+<ng-template #modalAtaque let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Resultado del Ataque</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body">
+    <p><strong>Desde:</strong> {{ paisOrigenNombre }}</p>
+    <p><strong>Hacia:</strong> {{ paisDestinoNombre }}</p>
+    <p>
+      <strong>Resultado:</strong>
+      <span [class.text-success]="ataqueResultado?.ataqueExitoso" [class.text-danger]="!ataqueResultado?.ataqueExitoso">
+        {{ ataqueResultado?.ataqueExitoso ? 'Ataque exitoso 💥' : 'Ataque fallido ❌' }}
+      </span>
+    </p>
+    <div class="mb-2">
+  <strong>Dados atacante:</strong>
+    <span *ngFor="let dado of ataqueResultado?.dadosAtaque" class="fs-1 me-2">
+      {{ getEmojiDado(dado) }}
+    </span>
+  </div>
+
+  <div class="mb-2">
+    <strong>Dados defensor:</strong>
+    <span *ngFor="let dado of ataqueResultado?.dadosDefensor" class="fs-1 me-2">
+      {{ getEmojiDado(dado) }}
+    </span>
+  </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-primary" (click)="modal.close()">Aceptar</button>
+  </div>
+</ng-template>

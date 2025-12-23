@@ -1,0 +1,101 @@
+
+  <meta charset="UTF-8" />
+  <title>Registrarse</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="./registrarse.css" />
+
+<body>
+<a  [routerLink]="['../principal']" id="volver">
+
+</a>
+<div>
+
+  <!-- Formulario de Registro -->
+<section class="bg-light rounded-5 p-4 flex flex-column" >
+  <form (ngSubmit)="onSubmit()" style="padding: 10px 20px;display: flex; flex-direction: column; text-align: center">
+    <h2 class="form-title">Registrarse</h2>
+
+    <label for="nombre">Nombre</label>
+    <input
+      type="text"
+      class="w-30"
+      id="nombre"
+      [(ngModel)]="usuario.nombre"
+      name="nombre"
+      required
+    />
+    <label for="apellido">Apellido</label>
+    <input
+      type="text"
+      class="w-10"
+      id="apellido"
+      [(ngModel)]="usuario.apellido"
+      name="nombre"
+      required
+    />
+    <label for="email">Correo</label>
+    <input
+      type="email"
+      class="w-30"
+      id="email"
+      [(ngModel)]="usuario.correo"
+      name="email"
+      required
+    />
+
+    <label for="contrasenia">Contraseña</label>
+    <input
+      type="password"
+      class="w-30"
+      id="contrasenia"
+      [(ngModel)]="usuario.contrasenia"
+      name="contrasenia"
+      required
+    />
+
+
+
+
+    <!-- Botón alternativo para mostrar galería -->
+    <button type="button" class="btn btn-primary mb-2" (click)="toggleGaleria()">Seleccionar Imagen</button>
+
+
+    <div class="dropdown-galeria" *ngIf="mostrarGaleria">
+      <div class="galeria-imagenes">
+        <img
+          *ngFor="let img of imagen"
+          [src]="img"
+          [class.seleccionada]="imagenSeleccionadaTemporal === img"
+          (click)="seleccionarImagen(img)"
+          alt="Imagen de perfil"
+        />
+      </div>
+    </div>
+    <div *ngIf="usuario.imagen" style="margin-top: 5px; text-align:center;">
+      <img
+        [src]="usuario.imagen"
+        alt="Imagen seleccionada"
+        width="80"
+        style="border-radius: 50%; border: 2px solid #e45b6a;"
+      />
+    </div>
+    <button type="submit" class="button" style="margin-top: 5px">Registrarse</button>
+
+    <p>
+      ¿Ya tienes una cuenta?
+      <a [routerLink]="['/iniciar-sesion']">Iniciar Sesión</a>
+    </p>
+  </form>
+</section>
+</div>
+
+</body>

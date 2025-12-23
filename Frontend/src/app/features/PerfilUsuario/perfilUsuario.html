@@ -1,0 +1,82 @@
+<!-- Botón de volver -->
+<a [routerLink]="['../principal']" id="volver" aria-label="Volver a la pantalla principal"></a>
+
+<!-- Contenedor principal del perfil -->
+<div class="perfil-container" [class.oculto]="mostrarGaleria">
+
+  <!-- Foto de usuario -->
+  <div class="foto-usuario">
+    <div class="icono-foto">
+      <ng-container *ngIf="usuario.imagen; else iconoPorDefecto">
+        <img [src]="usuario.imagen" alt="Foto de perfil" />
+      </ng-container>
+      <ng-template #iconoPorDefecto>
+        <i class="bi bi-person"></i>
+      </ng-template>
+    </div>
+    <button class="btn-cambiar-foto" (click)="mostrarGaleria = true">
+      Cambiar foto
+    </button>
+  </div>
+
+  <!-- Formulario de cambio de contraseña -->
+  <form class="form-contrasena" (ngSubmit)="cambiarContrasenia()">
+    <label>
+      Contraseña actual
+      <input
+        type="password"
+        placeholder="Contraseña actual"
+        [(ngModel)]="contraseniaActual"
+        name="actual"
+        required
+      />
+    </label>
+
+    <label>
+      Nueva contraseña
+      <input
+        type="password"
+        placeholder="Nueva contraseña"
+        [(ngModel)]="nuevaContrasenia"
+        name="nueva"
+        required
+      />
+    </label>
+
+    <!-- Mensajes de error -->
+    <p *ngIf="errorContraseniaIgual" class="error-text">{{ errorContraseniaIgual }}</p>
+    <p *ngIf="errorContraseniaCorta" class="error-text">{{ errorContraseniaCorta }}</p>
+
+
+    <button type="submit" class="button">
+      Cambiar contraseña
+    </button>
+
+    <button type="button" (click)="cerrarSesion()" class="button-alt">
+      Cerrar sesión
+    </button>
+  </form>
+</div>
+
+<!-- Modal de galería -->
+<div class="modal-overlay" *ngIf="mostrarGaleria">
+  <div class="modal-content">
+    <button
+      class="cerrar-modal"
+      (click)="mostrarGaleria = false"
+      aria-label="Cerrar galería"
+    >
+      ✕
+    </button>
+    <h3>Selecciona una imagen</h3>
+    <div class="galeria-imagenes">
+      <img
+        *ngFor="let img of imagen"
+        [src]="img"
+        alt="Imagen de perfil"
+        [class.seleccionada]="usuario.imagen === img"
+        (click)="seleccionarImagen(img); mostrarGaleria = false"
+      />
+    </div>
+  </div>
+</div>

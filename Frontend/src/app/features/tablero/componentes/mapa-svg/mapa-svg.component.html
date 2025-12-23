@@ -1,0 +1,18 @@
+<svg id="mapa" width="1200"
+     height="700"
+     viewBox="0 0 1100 700"
+     class="border border-2 border-dark rounded bg-primary-subtle shadow-lg">
+  @for (p of mapaPais; track $index) {
+    <path
+      [attr.d]="p.forma"
+      [attr.fill]="p.color"
+      [attr.stroke]="'white'"
+      [attr.stroke-width]="0.5"
+      [attr.opacity]="p.opacidad"
+      (click)="clickPais(p.id)"
+      (mouseenter)="p.opacidad = 1"
+      (mouseleave)="p.opacidad = 0.8"
+    >
+    </path>
+  }
+</svg>
