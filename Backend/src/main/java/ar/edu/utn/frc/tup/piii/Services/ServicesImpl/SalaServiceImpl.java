@@ -1,7 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
 import ar.edu.utn.frc.tup.piii.Entities.SalaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.SalaRepository;
 import ar.edu.utn.frc.tup.piii.Services.SalaService;
 import ar.edu.utn.frc.tup.piii.models.*;
@@ -22,7 +21,6 @@ public class SalaServiceImpl implements SalaService {
     public ModelMapper modelMapper;
 
     public Sala crearSala(Sala sala, Usuario creador, String nombre) {
-
 
         String urlUnica = UUID.randomUUID().toString();
         sala.setUrl(urlUnica);
@@ -68,7 +66,5 @@ public class SalaServiceImpl implements SalaService {
 
         return modelMapper.map(salaEntityOpt.get(), Sala.class);
     }
-
-
 
 }

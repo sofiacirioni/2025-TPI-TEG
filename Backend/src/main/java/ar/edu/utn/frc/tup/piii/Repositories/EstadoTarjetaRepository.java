@@ -1,8 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Repositories;
 
 import ar.edu.utn.frc.tup.piii.Entities.EstadoTarjetaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
-import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,28 +26,26 @@ public class Jugador {
     private boolean aceptoPausa;
     private boolean aceptoRenudar;
     private boolean finalizarPartida;
-    //Tropas en General
+    // Tropas en General
     private Integer ejercito;
 
     private EstadoJugador estadoJugador;
-    public Jugador(Long idJugador, String nombre, Usuario idUsuario, Color color, Sala sala, Integer ejercito){
+
+    public Jugador(Long idJugador, String nombre, Usuario idUsuario, Color color, Sala sala, Integer ejercito) {
         this.idJugador = idJugador;
         this.nombre = nombre;
         this.usuario = idUsuario;
-        this.tipoJugador= TipoJugador.HUMANO;
+        this.tipoJugador = TipoJugador.HUMANO;
         this.color = color;
-        this.sala=sala;
-        this.partida=null;
-        this.perdio=false;
-        this.aceptoPausa=false;
-        this.aceptoRenudar=false;
-        this.finalizarPartida=false;
-        this.estadoJugador=EstadoJugador.ACTIVO;
-        this.ejercito=0;
+        this.sala = sala;
+        this.partida = null;
+        this.perdio = false;
+        this.aceptoPausa = false;
+        this.aceptoRenudar = false;
+        this.finalizarPartida = false;
+        this.estadoJugador = EstadoJugador.ACTIVO;
+        this.ejercito = 0;
 
     }
 
-
-
 }
-

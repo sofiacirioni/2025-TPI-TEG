@@ -1,8 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
-import ar.edu.utn.frc.tup.piii.Dtos.JugadorDto;
 import ar.edu.utn.frc.tup.piii.Dtos.SalaDto;
-import ar.edu.utn.frc.tup.piii.Services.JugadorService;
 import ar.edu.utn.frc.tup.piii.Services.SalaService;
 import ar.edu.utn.frc.tup.piii.models.Sala;
 import ar.edu.utn.frc.tup.piii.models.Usuario;
@@ -18,7 +16,6 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
@@ -63,6 +60,7 @@ public class SalaController {
         SalaDto salaDto = modelMapper.map(sala, SalaDto.class);
         return ResponseEntity.ok(salaDto);
     }
+
     @GetMapping("/url")
     public ResponseEntity<SalaDto> obtenerSalaPorUrl(@RequestParam String url) {
         Sala sala = salaService.obtenerSala(url);

@@ -3,8 +3,6 @@ package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 import ar.edu.utn.frc.tup.piii.Dtos.JugadorDto;
 import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
 import ar.edu.utn.frc.tup.piii.Entities.PartidaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.SalaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.PartidaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.SalaRepository;
@@ -33,16 +31,6 @@ public class JugadorServiceImpl implements JugadorService {
     public PartidaRepository partidaRepository;
     @Autowired
     public ObjetivoService objetivoService;
-    @Autowired
-    private EstadisticaService estadisticaService;
-    @Autowired
-    private PartidaService partidaService;
-
-    @Autowired
-    private SalaRepository salaRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     public Jugador crearJugador(Jugador jugador, Usuario usuarioActual, Sala sala) {
         if (jugadorRepository.findByNombreAndSala_IdSala(jugador.getNombre(), sala.getIdSala()).isPresent()) {
@@ -103,11 +91,11 @@ public class JugadorServiceImpl implements JugadorService {
         JugadorEntity jugadorEntity = modelMapper.map(bot, JugadorEntity.class);
         jugadorEntity = jugadorRepository.save(jugadorEntity);
 
-
         bot.setSala(sala);
 
         return modelMapper.map(jugadorEntity, Jugador.class);
     }
+
     public Color obtenerColorDisponible(Sala sala, Long excluirIdJugador) {
         List<Color> todosLosColores = Arrays.asList(Color.values());
 
@@ -120,40 +108,39 @@ public class JugadorServiceImpl implements JugadorService {
                 .map(JugadorEntity::getColor)
                 .collect(Collectors.toSet());
 
-
         return todosLosColores.stream()
                 .filter(c -> !coloresUsados.contains(c))
                 .findFirst()
                 .orElse(null);
     }
 
-
-//    public Jugador eliminarJugador(Long idJugador, Long idUsuarioCreador) {
-//        JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
-//                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-//
-//        SalaEntity sala = jugador.getSala();
-//        if (!sala.getCreador().getIdUsuario().equals(idUsuarioCreador)) {
-//            throw new IllegalArgumentException("Solo el creador puede eliminar jugadores");
-//        }
-//
-//        jugador.setEstadoJugador(EstadoJugador.ELIMINADO);
-//        jugadorRepository.save(jugador);
-//
-//        PartidaEntity partidaEntity = jugador.getPartida();
-//
-//        if (partidaEntity != null) {
-//            Partida partida = modelMapper.map(partidaEntity, Partida.class);
-//            partidaService.verificarCondicionVictoria(partida);
-//            estadisticaService.registrarEvento(
-//                    "Jugador eliminado por el creador",
-//                    modelMapper.map(jugador, Jugador.class),
-//                    partida
-//            );
-//        }
-//
-//        return modelMapper.map(jugador, Jugador.class);
-//    }
+    // public Jugador eliminarJugador(Long idJugador, Long idUsuarioCreador) {
+    // JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
+    // .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
+    //
+    // SalaEntity sala = jugador.getSala();
+    // if (!sala.getCreador().getIdUsuario().equals(idUsuarioCreador)) {
+    // throw new IllegalArgumentException("Solo el creador puede eliminar
+    // jugadores");
+    // }
+    //
+    // jugador.setEstadoJugador(EstadoJugador.ELIMINADO);
+    // jugadorRepository.save(jugador);
+    //
+    // PartidaEntity partidaEntity = jugador.getPartida();
+    //
+    // if (partidaEntity != null) {
+    // Partida partida = modelMapper.map(partidaEntity, Partida.class);
+    // partidaService.verificarCondicionVictoria(partida);
+    // estadisticaService.registrarEvento(
+    // "Jugador eliminado por el creador",
+    // modelMapper.map(jugador, Jugador.class),
+    // partida
+    // );
+    // }
+    //
+    // return modelMapper.map(jugador, Jugador.class);
+    // }
 
     @Override
     @Transactional
@@ -176,6 +163,7 @@ public class JugadorServiceImpl implements JugadorService {
             partidaRepository.save(partida);
         }
     }
+
     @Override
     @Transactional
     public void votarReanudar(Long idJugador) {
@@ -195,7 +183,7 @@ public class JugadorServiceImpl implements JugadorService {
 
         if (todosAceptaron) {
             PartidaEntity partida = jugador.getPartida();
-            partida.setEstadoPartida(EstadoPartida.EN_JUEGO );
+            partida.setEstadoPartida(EstadoPartida.EN_JUEGO);
             partidaRepository.save(partida);
         }
     }
@@ -232,7 +220,6 @@ public class JugadorServiceImpl implements JugadorService {
         }
     }
 
-
     public List<JugadorDto> obtenerJugadoresPorSala(Long idSala) {
         List<JugadorEntity> jugadores = jugadorRepository.findBySala_IdSala(idSala);
 
@@ -243,8 +230,3 @@ public class JugadorServiceImpl implements JugadorService {
     }
 
 }
-
-
-
-
-

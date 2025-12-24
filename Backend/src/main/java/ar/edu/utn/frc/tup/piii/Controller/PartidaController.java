@@ -1,28 +1,21 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.PartidaDto;
-import ar.edu.utn.frc.tup.piii.Dtos.SalaDto;
-import ar.edu.utn.frc.tup.piii.Repositories.UsuarioRepository;
 import ar.edu.utn.frc.tup.piii.Services.PartidaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.*;
 import jakarta.validation.Valid;
-import lombok.Getter;
-import lombok.Setter;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/v1/partida")
@@ -30,15 +23,11 @@ public class PartidaController {
     @Autowired
     private PartidaService partidaService;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    // @Autowired
+    // private UsuarioRepository usuarioRepository;
 
     @Autowired
     private UsuarioService usuarioService;
-    // Controller
-    @Autowired
-    private ModelMapper modelMapper;
-
 
     @PostMapping("/crear/{idSala}")
     public ResponseEntity<?> crearPartida(@PathVariable Long idSala, @RequestParam Long idUsuario) {
@@ -56,7 +45,6 @@ public class PartidaController {
 
         return ResponseEntity.ok(partidaDto);
     }
-
 
     @GetMapping("/disponibles")
     public ResponseEntity<List<Partida>> listarPartidasDisponibles() {
@@ -79,7 +67,8 @@ public class PartidaController {
     }
 
     @PutMapping("/{idPartida}")
-    public ResponseEntity<Partida> guardarPartida(@PathVariable Long idPartida, @Valid @RequestBody PartidaDto partidaDTO,
+    public ResponseEntity<Partida> guardarPartida(@PathVariable Long idPartida,
+            @Valid @RequestBody PartidaDto partidaDTO,
             BindingResult result) {
 
         if (result.hasErrors()) {
@@ -116,7 +105,8 @@ public class PartidaController {
     public ResponseEntity<PartidaDto> accederAPartidaPorUrl(
             @RequestParam String url,
             @RequestParam Long idUsuario) {
-        PartidaDto dto = partidaService.obtenerPartidaActivaPorUrlYUsuario(url, idUsuario);;
+        PartidaDto dto = partidaService.obtenerPartidaActivaPorUrlYUsuario(url, idUsuario);
+        ;
 
         return ResponseEntity.ok(dto);
     }

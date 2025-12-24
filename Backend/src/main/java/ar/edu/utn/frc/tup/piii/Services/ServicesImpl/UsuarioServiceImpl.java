@@ -1,6 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
-import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
 import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.UsuarioRepository;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
@@ -25,8 +24,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         Optional<UsuarioEntity> usuarioEntity = usuarioRepository.findByCorreoAndContrasenia(correo, contrasenia);
 
         if (usuarioEntity.isEmpty()) {
-                throw new IllegalArgumentException("Correo o contraseña incorrectos.");
-            }
+            throw new IllegalArgumentException("Correo o contraseña incorrectos.");
+        }
         return modelMapper.map(usuarioEntity.get(), Usuario.class);
     }
 
@@ -59,7 +58,8 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña actual es incorrecta");
         }
         if (contraseniaActual.equals(nuevaContrasenia)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nueva contraseña no puede ser igual a la actual");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La nueva contraseña no puede ser igual a la actual");
         }
 
         usuarioEntity.setContrasenia(nuevaContrasenia);
@@ -84,8 +84,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public Usuario obtenerByIdUsuario(Long id)
-    {
+    public Usuario obtenerByIdUsuario(Long id) {
 
         return usuarioRepository.findByIdUsuario(id)
                 .map(usuario -> modelMapper.map(usuario, Usuario.class))
@@ -96,8 +95,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public Usuario actualizarImagen(String correo, String imagen) {
         UsuarioEntity u = usuarioRepository
                 .findByCorreo(correo)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Usuario no encontrado con correo: " + correo));
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con correo: " + correo));
 
         u.setImagen(imagen);
 
@@ -106,6 +104,3 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
 }
-
-
-

@@ -8,7 +8,6 @@ import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.PaisService;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
-import ar.edu.utn.frc.tup.piii.models.Estadistica;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,15 +50,14 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
     }
 
     @Override
-    public EstadoPaisDto createEstadoPais(EstadoPaisDto estadoPaisDto)
-    {
+    public EstadoPaisDto createEstadoPais(EstadoPaisDto estadoPaisDto) {
         EstadoPaisEntity estadoPaisEntity = modelMapper.map(estadoPaisDto, EstadoPaisEntity.class);
         EstadoPaisEntity savedEstadoPaisEntity = estadoPaisRepository.save(estadoPaisEntity);
         return modelMapper.map(savedEstadoPaisEntity, EstadoPaisDto.class);
     }
 
     @Override
-    public void repartirPaises(Long partidaId){
+    public void repartirPaises(Long partidaId) {
         PartidaEntity partidaEntity = partidaRepository.findById(partidaId)
                 .orElseThrow(() -> new RuntimeException("Partida no encontrada"));
 
@@ -67,7 +65,6 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
         partidaEntity.getJugadores().size();
         List<EstadoPaisEntity> estadoPaisEntities = partidaEntity.getEstadoPaises();
         List<JugadorEntity> jugadorEntities = partidaEntity.getJugadores();
-
 
         Collections.shuffle(estadoPaisEntities); // Mezcla aleatoria
 
@@ -85,23 +82,22 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
     }
 
     @Override
-    public EstadoPaisDto updateEstadoPais(EstadoPaisDto estadoPaisDto)
-    {
+    public EstadoPaisDto updateEstadoPais(EstadoPaisDto estadoPaisDto) {
         EstadoPaisEntity estadoPaisEntity = modelMapper.map(estadoPaisDto, EstadoPaisEntity.class);
         EstadoPaisEntity updatedEstadoPaisEntity = estadoPaisRepository.save(estadoPaisEntity);
         return modelMapper.map(updatedEstadoPaisEntity, EstadoPaisDto.class);
     }
 
-    public void cambiarPropietario(Long idEstadoPaisObtenido, Long idEstadoPaisAtacante, Long idNuevoPropietario ){
+    public void cambiarPropietario(Long idEstadoPaisObtenido, Long idEstadoPaisAtacante, Long idNuevoPropietario) {
         EstadoPaisEntity estadoPaisEntity = getEstadoPaisEntity(idEstadoPaisObtenido);
         EstadoPaisEntity estadoPaisEntityAt = getEstadoPaisEntity(idEstadoPaisAtacante);
 
         JugadorEntity jugadorEntity = jugadorRepository.findById(idNuevoPropietario)
-                        .orElseThrow(() -> new RuntimeException("Jugador no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Jugador no encontrado"));
 
         estadoPaisEntity.setJugador(jugadorEntity);
         estadoPaisEntity.setCantidadTropas(1);
-        estadoPaisEntityAt.setCantidadTropas(estadoPaisEntityAt.getCantidadTropas()-1);
+        estadoPaisEntityAt.setCantidadTropas(estadoPaisEntityAt.getCantidadTropas() - 1);
 
         estadoPaisRepository.save(estadoPaisEntity);
         estadoPaisRepository.save(estadoPaisEntityAt);
@@ -112,7 +108,8 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
         EstadoPaisEntity estadoPaisEntity = estadoPaisRepository.findById(idEstadoPais)
                 .orElseThrow(() -> new RuntimeException("EstadoPais no encontrado"));
 
-        List<LimiteEntity> limites = limiteRepository.findByPais1_IdPaisOrPais2_IdPais(estadoPaisEntity.getPais().getIdPais(), estadoPaisEntity.getPais().getIdPais());
+        List<LimiteEntity> limites = limiteRepository.findByPais1_IdPaisOrPais2_IdPais(
+                estadoPaisEntity.getPais().getIdPais(), estadoPaisEntity.getPais().getIdPais());
 
         Set<Long> idsPaisesLimite = limites.stream()
                 .map(limite -> {
@@ -124,7 +121,8 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
                 })
                 .collect(Collectors.toSet());
 
-        List<EstadoPaisEntity> estadosLimites = estadoPaisRepository.findAllByPais_IdPaisInAndPartida_IdPartida(idsPaisesLimite, estadoPaisEntity.getPartida().getIdPartida());
+        List<EstadoPaisEntity> estadosLimites = estadoPaisRepository.findAllByPais_IdPaisInAndPartida_IdPartida(
+                idsPaisesLimite, estadoPaisEntity.getPartida().getIdPartida());
 
         return estadosLimites.stream()
                 .map(estado -> modelMapper.map(estado, EstadoPaisDto.class))
@@ -136,7 +134,8 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
         EstadoPaisEntity estadoPaisEntity = estadoPaisRepository.findById(idEstadoPais)
                 .orElseThrow(() -> new RuntimeException("EstadoPais no encontrado"));
 
-        List<LimiteEntity> limites = limiteRepository.findByPais1_IdPaisOrPais2_IdPais(estadoPaisEntity.getPais().getIdPais(), estadoPaisEntity.getPais().getIdPais());
+        List<LimiteEntity> limites = limiteRepository.findByPais1_IdPaisOrPais2_IdPais(
+                estadoPaisEntity.getPais().getIdPais(), estadoPaisEntity.getPais().getIdPais());
 
         Set<Long> idsPaisesLimite = limites.stream()
                 .map(limite -> {
@@ -148,14 +147,14 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
                 })
                 .collect(Collectors.toSet());
 
-        List<EstadoPaisEntity> estadosLimites = estadoPaisRepository.findAllByPais_IdPaisInAndPartida_IdPartida(idsPaisesLimite, estadoPaisEntity.getPartida().getIdPartida());
+        List<EstadoPaisEntity> estadosLimites = estadoPaisRepository.findAllByPais_IdPaisInAndPartida_IdPartida(
+                idsPaisesLimite, estadoPaisEntity.getPartida().getIdPartida());
 
         return estadosLimites;
     }
 
-
     @Override
-    public boolean sonLimitrofes(Long idPais1, Long idPais2){
+    public boolean sonLimitrofes(Long idPais1, Long idPais2) {
         return limiteRepository.existeLimiteEntre(idPais1, idPais2);
     }
 
@@ -183,13 +182,12 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
 
     @Override
     public boolean agregarFichasEstadosPaises(AgregarFichas agregarFichas) {
-        //return List.of();
+        // return List.of();
         // Por cada EstadoPaisFicha de agregarFichas
-            // Validar que el jugador sea el propietario
-            // Buscar el EstadoPais con el idPais correspondiente
-            // Agregarle la fichas
-            // Guardar
-
+        // Validar que el jugador sea el propietario
+        // Buscar el EstadoPais con el idPais correspondiente
+        // Agregarle la fichas
+        // Guardar
 
         JugadorEntity jugador = jugadorRepository.findById(agregarFichas.getIdJugador())
                 .orElseThrow(() -> new RuntimeException("Jugador no encontrado"));
@@ -211,78 +209,81 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
             }
         }
 
-        jugador.setEjercito((int) (jugador.getEjercito() - (long )totalTropas));
+        jugador.setEjercito((int) (jugador.getEjercito() - (long) totalTropas));
         jugadorRepository.save(jugador);
 
         return true;
     }
 
-/*    // Puede ser llamado por turno, o puede ser llamado por front
-    @Override
-    public List<EstadoPaisDto> fichasInicialesEstadosPaises(AgregarFichas agregarFichas) {
-        //return List.of();
-        // Por cada EstadoPaisFicha de agregarFichas
-            // Validar que el jugador sea el propietario
-            // Buscar el EstadoPais con el idPais correspondiente
-            // Agregarle la fichas
-            // Guardar
-        List<EstadoPaisDto> actualizados = new ArrayList<>();
-
-        for (EstadoPaisFicha ficha : agregarFichas.getPaisesFichas()) {
-            Optional<EstadoPaisEntity> optionalEstado = estadoPaisRepository
-                    .findByPaisIdPaisAndJugadorIdJugador(ficha.getIdPais(), agregarFichas.getIdJugador());
-
-            if (optionalEstado.isPresent()) {
-                EstadoPaisEntity estado = optionalEstado.get();
-                estado.setCantidadTropas(estado.getCantidadTropas() + ficha.getCantidadFichas().intValue());
-                EstadoPaisEntity saved = estadoPaisRepository.save(estado);
-                actualizados.add(modelMapper.map(saved, EstadoPaisDto.class));
-            } else {
-                throw new IllegalArgumentException("El jugador no controla el país con ID: " + ficha.getIdPais());
-            }
-        }
-
-        return actualizados;
-    }*/
+    /*
+     * // Puede ser llamado por turno, o puede ser llamado por front
+     * 
+     * @Override
+     * public List<EstadoPaisDto> fichasInicialesEstadosPaises(AgregarFichas
+     * agregarFichas) {
+     * //return List.of();
+     * // Por cada EstadoPaisFicha de agregarFichas
+     * // Validar que el jugador sea el propietario
+     * // Buscar el EstadoPais con el idPais correspondiente
+     * // Agregarle la fichas
+     * // Guardar
+     * List<EstadoPaisDto> actualizados = new ArrayList<>();
+     * 
+     * for (EstadoPaisFicha ficha : agregarFichas.getPaisesFichas()) {
+     * Optional<EstadoPaisEntity> optionalEstado = estadoPaisRepository
+     * .findByPaisIdPaisAndJugadorIdJugador(ficha.getIdPais(),
+     * agregarFichas.getIdJugador());
+     * 
+     * if (optionalEstado.isPresent()) {
+     * EstadoPaisEntity estado = optionalEstado.get();
+     * estado.setCantidadTropas(estado.getCantidadTropas() +
+     * ficha.getCantidadFichas().intValue());
+     * EstadoPaisEntity saved = estadoPaisRepository.save(estado);
+     * actualizados.add(modelMapper.map(saved, EstadoPaisDto.class));
+     * } else {
+     * throw new IllegalArgumentException("El jugador no controla el país con ID: "
+     * + ficha.getIdPais());
+     * }
+     * }
+     * 
+     * return actualizados;
+     * }
+     */
 
     // Puede ser llamado por turno, o puede ser llamado por front
     @Override
     public boolean agrupacionFichas(MoverFichas moverFichas) {
-        //return List.of();
+        // return List.of();
         // Por cada EstadoPaisAgrupacion de moverFichas
-            // Validar que el jugador sea propietario de origen y destino
-            // que haya un camino, o sea limitrofes del jugador entre ellos
-            // quitar las tropas del origen
-            // agregarselas al destino
-            // guardar
+        // Validar que el jugador sea propietario de origen y destino
+        // que haya un camino, o sea limitrofes del jugador entre ellos
+        // quitar las tropas del origen
+        // agregarselas al destino
+        // guardar
 
         EstadoPaisEntity estadoOrigen = estadoPaisRepository
                 .findByPais_IdPaisAndJugador_IdJugador(moverFichas.getIdPaisOrigen(), moverFichas.getIdJugador())
                 .orElseThrow(() -> new RuntimeException("Origen no encontrado"));
-
 
         EstadoPaisEntity estadoDestino = estadoPaisRepository
                 .findByPais_IdPaisAndJugador_IdJugador(moverFichas.getIdPaisDestino(), moverFichas.getIdJugador())
                 .orElseThrow(() -> new RuntimeException("Destino no encontrado"));
 
         // Validar que el origen tenga la cantidad de fichas
-        if( (estadoOrigen.getCantidadTropas() -  moverFichas.getCantidadFichas()) <= 0 ){
+        if ((estadoOrigen.getCantidadTropas() - moverFichas.getCantidadFichas()) <= 0) {
             throw new RuntimeException("Las fichas no son suficientes");
         }
 
         // Validar que sean limitrofe
-        if(!sonLimitrofes(estadoOrigen.getPais().getIdPais(), estadoDestino.getPais().getIdPais())){
+        if (!sonLimitrofes(estadoOrigen.getPais().getIdPais(), estadoDestino.getPais().getIdPais())) {
             throw new RuntimeException("Los paises no son limitrofes");
         }
-
 
         estadoOrigen.setCantidadTropas(estadoOrigen.getCantidadTropas() - moverFichas.getCantidadFichas().intValue());
         estadoDestino.setCantidadTropas(estadoDestino.getCantidadTropas() + moverFichas.getCantidadFichas().intValue());
 
-
         estadoOrigen = estadoPaisRepository.save(estadoOrigen);
         estadoDestino = estadoPaisRepository.save(estadoDestino);
-
 
         List<EstadoPaisEntity> estadosEntities = new ArrayList<>();
         estadosEntities.add(estadoOrigen);

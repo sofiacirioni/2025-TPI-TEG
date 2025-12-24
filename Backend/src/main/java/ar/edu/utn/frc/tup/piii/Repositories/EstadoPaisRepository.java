@@ -2,7 +2,6 @@ package ar.edu.utn.frc.tup.piii.Repositories;
 
 import ar.edu.utn.frc.tup.piii.Entities.EstadoPaisEntity;
 import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
-import ar.edu.utn.frc.tup.piii.models.EstadoPais;
 import ar.edu.utn.frc.tup.piii.models.Jugador;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,29 +16,31 @@ import java.util.Set;
 public interface EstadoPaisRepository extends JpaRepository<EstadoPaisEntity, Long> {
     // Consulta para las estadisticas
     @Query("""
-        SELECT e FROM EstadoPaisEntity e
-        WHERE e.idEstadoPais IN (
-            SELECT MAX(ep.idEstadoPais)
-            FROM EstadoPaisEntity ep
-            GROUP BY ep.pais
-        )
-        AND e.jugador = :jugador
-    """)
+                SELECT e FROM EstadoPaisEntity e
+                WHERE e.idEstadoPais IN (
+                    SELECT MAX(ep.idEstadoPais)
+                    FROM EstadoPaisEntity ep
+                    GROUP BY ep.pais
+                )
+                AND e.jugador = :jugador
+            """)
     List<EstadoPaisEntity> findPaisesConquistados(Jugador jugador);
+
     @Query("""
-        SELECT e FROM EstadoPaisEntity e
-        WHERE e.idEstadoPais IN (
-            SELECT MAX(ep.idEstadoPais)
-            FROM EstadoPaisEntity ep
-            GROUP BY ep.pais
-        )
-        AND e.pais IN (
-            SELECT ep2.pais FROM EstadoPaisEntity ep2
-            WHERE ep2.jugador = :jugador
-        )
-        AND e.jugador <> :jugador
-    """)
+                SELECT e FROM EstadoPaisEntity e
+                WHERE e.idEstadoPais IN (
+                    SELECT MAX(ep.idEstadoPais)
+                    FROM EstadoPaisEntity ep
+                    GROUP BY ep.pais
+                )
+                AND e.pais IN (
+                    SELECT ep2.pais FROM EstadoPaisEntity ep2
+                    WHERE ep2.jugador = :jugador
+                )
+                AND e.jugador <> :jugador
+            """)
     List<EstadoPaisEntity> findPaisesPerdidos(Jugador jugador);
+
     Optional<EstadoPaisEntity> findByPaisIdPaisAndJugadorIdJugador(Long idPais, Long idJugador);
 
     List<EstadoPaisEntity> findByJugador_IdJugador(Long idJugador);

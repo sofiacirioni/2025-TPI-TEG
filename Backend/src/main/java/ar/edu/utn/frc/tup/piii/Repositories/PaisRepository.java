@@ -1,6 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Repositories;
 
-import ar.edu.utn.frc.tup.piii.Entities.ContinenteEntity;
 import ar.edu.utn.frc.tup.piii.Entities.PaisEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

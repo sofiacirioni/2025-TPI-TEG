@@ -1,6 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Dtos;
 
-import ar.edu.utn.frc.tup.piii.models.Jugador;
 import ar.edu.utn.frc.tup.piii.models.Pais;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

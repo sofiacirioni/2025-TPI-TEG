@@ -30,16 +30,16 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
     private EstadoTarjetaRepository estadoTarjetaRepository;
     @Autowired
     private EstadoPaisRepository estadoPaisRepository;
-    @Autowired
-    private PaisService paisService;
+    // @Autowired
+    // private PaisService paisService;
     @Autowired
     private TarjetaRepository tarjetaRepository;
     @Autowired
     private PartidaRepository partidaRepository;
     @Autowired
     private JugadorRepository jugadorRepository;
-    @Autowired
-    private TurnoRepository turnoRepository;
+    // @Autowired
+    // private TurnoRepository turnoRepository;
     @Autowired
     private ModelMapper modelMapper;
 
@@ -48,18 +48,21 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
     public TarjetaDto asignarTarjeta(EstadoTarjetaDto dto) {
         try {
             JugadorEntity jugador = jugadorRepository.findById((long) dto.getIdJugador())
-                    .orElseThrow(() -> new EntityNotFoundException("Jugador no encontrado con ID: " + dto.getIdJugador()));
+                    .orElseThrow(
+                            () -> new EntityNotFoundException("Jugador no encontrado con ID: " + dto.getIdJugador()));
 
-//            TurnoEntity turno = turnoRepository.findById((long) dto.getIdTurno())
-//                    .orElseThrow(() -> new EntityNotFoundException("Turno no encontrado con ID: " + dto.getIdTurno()));
+            // TurnoEntity turno = turnoRepository.findById((long) dto.getIdTurno())
+            // .orElseThrow(() -> new EntityNotFoundException("Turno no encontrado con ID: "
+            // + dto.getIdTurno()));
 
             EstadoTarjetaEntity estado = estadoTarjetaRepository.findById(dto.getIdEstadoTarjeta())
-                    .orElseThrow(() -> new EntityNotFoundException("Estado de tarjeta no encontrado con ID: " + dto.getIdEstadoTarjeta()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Estado de tarjeta no encontrado con ID: " + dto.getIdEstadoTarjeta()));
             if (estado.getJugador() != null) {
                 throw new IllegalStateException("La tarjeta ya fue asignada a un jugador.");
             }
             estado.setJugador(jugador);
-            //estado.setTurno(turno);
+            // estado.setTurno(turno);
             estadoTarjetaRepository.save(estado);
             jugador.setConsquisto(false);
             jugadorRepository.save(jugador);
@@ -78,7 +81,7 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
         }
     }
 
-    private void validarMazo(Long partidaId){
+    private void validarMazo(Long partidaId) {
         PartidaEntity partida = partidaRepository.findById(partidaId)
                 .orElseThrow(() -> new EntityNotFoundException("Partida no encontrada con ID: " + partidaId));
 
@@ -89,17 +92,16 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
                 break;
             }
         }
-        if(!tieneCartas){
+        if (!tieneCartas) {
             List<EstadoTarjetaEntity> mazo = estadoTarjetaRepository.findAllByPartida_IdPartida(partidaId);
 
             mazo.forEach(
-                estadoTarjeta -> {
-                    if(estadoTarjeta.isCanjeada()) {
-                        estadoTarjeta.setUsada(false);
-                        estadoTarjeta.setCanjeada(false);
-                    }
-                }
-            );
+                    estadoTarjeta -> {
+                        if (estadoTarjeta.isCanjeada()) {
+                            estadoTarjeta.setUsada(false);
+                            estadoTarjeta.setCanjeada(false);
+                        }
+                    });
 
             estadoTarjetaRepository.saveAll(mazo);
         }
@@ -147,7 +149,8 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
         PaisEntity pais = estadoTarjeta.getTarjeta().getPais();
         EstadoPaisEntity estadoPais = estadoPaisRepository
                 .findByPaisIdPaisAndJugadorIdJugador(pais.getIdPais(), idJugador)
-                .orElseThrow(() -> new RuntimeException("El jugador no es dueño del país representado por la tarjeta."));
+                .orElseThrow(
+                        () -> new RuntimeException("El jugador no es dueño del país representado por la tarjeta."));
         estadoPais.setCantidadTropas(estadoPais.getCantidadTropas() + 2);
         estadoTarjeta.setUsada(true);
         estadoTarjetaRepository.save(estadoTarjeta);
@@ -184,10 +187,14 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
         List<EstadoTarjetaEntity> todasDelJugador = estadoTarjetaRepository.findByJugadorId(idJugador);
         long cantidadCanjesPrevios = todasDelJugador.stream().filter(EstadoTarjetaEntity::isCanjeada).count();
         int ejercitos;
-        if (cantidadCanjesPrevios == 0) ejercitos = 4;
-        else if (cantidadCanjesPrevios == 1) ejercitos = 7;
-        else if (cantidadCanjesPrevios == 2) ejercitos = 10;
-        else ejercitos = 10 + (int) (cantidadCanjesPrevios - 2) * 5;
+        if (cantidadCanjesPrevios == 0)
+            ejercitos = 4;
+        else if (cantidadCanjesPrevios == 1)
+            ejercitos = 7;
+        else if (cantidadCanjesPrevios == 2)
+            ejercitos = 10;
+        else
+            ejercitos = 10 + (int) (cantidadCanjesPrevios - 2) * 5;
         System.out.println("Se otorgan " + ejercitos + " ejércitos al jugador");
         tarjetas.forEach(t -> {
             t.setCanjeada(true);
@@ -197,7 +204,7 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
         estadoTarjetaRepository.saveAll(tarjetas);
 
         JugadorEntity jugador = jugadorRepository.findById(idJugador)
-                .orElseThrow(()-> new EntityNotFoundException("El jugador no fue encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("El jugador no fue encontrado"));
 
         jugador.setEjercito(jugador.getEjercito() + ejercitos);
 
@@ -228,7 +235,3 @@ public class EstadoTarjetaServiceImpl implements EstadoTarjetaService {
         partidaRepository.save(partidaEntity);
     }
 }
-
-
-
-

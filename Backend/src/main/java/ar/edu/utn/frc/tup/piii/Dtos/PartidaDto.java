@@ -1,8 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Dtos;
 
-import ar.edu.utn.frc.tup.piii.models.EstadoPais;
 import ar.edu.utn.frc.tup.piii.models.EstadoPartida;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,7 +34,7 @@ public class PartidaDto {
 
         private List<TurnoDto> turnos;
 
-        private List<EstadoTarjetaDto > estadoTarjetas;
+        private List<EstadoTarjetaDto> estadoTarjetas;
 
         private int turnoActual;
 }

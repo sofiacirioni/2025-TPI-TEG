@@ -1,7 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises;
 
-
-import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.EstadoPaisFicha;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

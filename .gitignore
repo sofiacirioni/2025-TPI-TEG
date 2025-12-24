@@ -30,8 +30,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .mvn/
-mvnw
-mvnw.cmd
+!mvnw
+!mvnw.cmd
 
 # Compiled class files
 *.class

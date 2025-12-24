@@ -1,0 +1,13 @@
+{
+  "name": "teg-monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo for TEG Project (Angular + Spring Boot)",
+  "scripts": {
+    "start": "npx concurrently --kill-others -n \"BACKEND,FRONTEND\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd Backend && .\\mvnw.cmd spring-boot:run",
+    "start:frontend": "cd Frontend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

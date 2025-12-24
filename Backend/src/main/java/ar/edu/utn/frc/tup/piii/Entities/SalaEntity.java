@@ -1,7 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Entities;
 
 import ar.edu.utn.frc.tup.piii.models.EstadoSala;
-import ar.edu.utn.frc.tup.piii.models.Sala;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -38,6 +37,5 @@ public class SalaEntity {
     private EstadoSala estado;
 
     private String url;
-
 
 }

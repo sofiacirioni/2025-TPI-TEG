@@ -2,14 +2,12 @@ package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
-import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.EstadoPaisFicha;
 import ar.edu.utn.frc.tup.piii.Dtos.UsarTarjetaEnPaisDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
-import ar.edu.utn.frc.tup.piii.Repositories.PartidaRepository;
 import ar.edu.utn.frc.tup.piii.Services.BotService;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
@@ -47,8 +45,7 @@ public class BotServiceImpl implements BotService {
     @Transactional
     public boolean turnoBot(Long idJugador) {
         JugadorEntity botEntity = jugadorRepository.findByIdJugador(idJugador).orElseThrow(
-                () -> new IllegalArgumentException("Jugador no encontrado con ID: " + idJugador)
-        );
+                () -> new IllegalArgumentException("Jugador no encontrado con ID: " + idJugador));
 
         if (botEntity.getEjercito() > 0) {
             faseDefensa(botEntity);
@@ -106,24 +103,26 @@ public class BotServiceImpl implements BotService {
 
         List<EstadoPaisEntity> paises = estadoPaisRepository.findByJugador_IdJugador(botEntity.getIdJugador());
 
-        //Recorre todos los paises del bot
+        // Recorre todos los paises del bot
         for (EstadoPaisEntity pais : paises) {
             if (pais.getCantidadTropas() > 1) {
-                List<EstadoPaisEntity> paisesLimites = estadoPaisService.getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
+                List<EstadoPaisEntity> paisesLimites = estadoPaisService
+                        .getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
 
-                //Filtra quellos paises limitrofes que si puede atacar
+                // Filtra quellos paises limitrofes que si puede atacar
                 List<EstadoPaisEntity> listaPaisesAtacables = new ArrayList<>(paisesLimites);
-                listaPaisesAtacables.removeIf(paisLimite ->
-                        Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())
-                                && pais.getCantidadTropas() <= paisLimite.getCantidadTropas()
-                );
+                listaPaisesAtacables.removeIf(
+                        paisLimite -> Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())
+                                && pais.getCantidadTropas() <= paisLimite.getCantidadTropas());
 
-                //Los recorre e intenta realizar el ataque
+                // Los recorre e intenta realizar el ataque
                 for (EstadoPaisEntity paisLimite : listaPaisesAtacables) {
-                    Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(), paisLimite.getPais().getIdPais());
+                    Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
+                            paisLimite.getPais().getIdPais());
 
                     ataqueExitoso = turnoService.ataque(ataque).isAtaqueExitoso() || ataqueExitoso;
-                    if (pais.getCantidadTropas() == 1) break;
+                    if (pais.getCantidadTropas() == 1)
+                        break;
                 }
 
             }
@@ -154,9 +153,10 @@ public class BotServiceImpl implements BotService {
 
         List<EstadoTarjetaEntity> tarjetas = estadoTarjetaRepository.findByJugador_IdJugador(botEntity.getIdJugador());
 
-        List<EstadoTarjetaEntity> tarjetasSinUsar = tarjetas.stream().filter(t -> !t.isUsada() && paises.contains(t.getTarjeta().getPais())).toList();
+        List<EstadoTarjetaEntity> tarjetasSinUsar = tarjetas.stream()
+                .filter(t -> !t.isUsada() && paises.contains(t.getTarjeta().getPais())).toList();
 
-        for (EstadoTarjetaEntity t : tarjetasSinUsar){
+        for (EstadoTarjetaEntity t : tarjetasSinUsar) {
             usarCarta(botEntity, t);
         }
 
@@ -179,38 +179,41 @@ public class BotServiceImpl implements BotService {
     @Override
     @Transactional
     public boolean canjearCarta(JugadorEntity botEntity) {
-        /*List<EstadoTarjetaEntity> tarjetasIguales = botEntity.getTarjetas().stream().filter()*/
+        /*
+         * List<EstadoTarjetaEntity> tarjetasIguales =
+         * botEntity.getTarjetas().stream().filter()
+         */
 
         return false;
     }
 
     /*
-    *   private calcularCombinacionesCanje(cartas: EstadoTarjetaDto[]): void {
-    this.puedeCanjear = false;
-    this.combinacionesPosibles = [];
-
-    if (!cartas || cartas.length < 3) return;
-
-    const disponibles = cartas.filter(c => !c.canjeada);
-
-    // Generar todas las combinaciones posibles de 3 cartas
-    for (let i = 0; i < disponibles.length - 2; i++) {
-      for (let j = i + 1; j < disponibles.length - 1; j++) {
-        for (let k = j + 1; k < disponibles.length; k++) {
-          const combo = [disponibles[i], disponibles[j], disponibles[k]];
-          const simbolos = combo.map(c => c.tarjeta?.simbolo).filter(Boolean);
-
-          if (simbolos.length === 3) {
-            const set = new Set(simbolos);
-            if (set.size === 1 || set.size === 3) {
-              this.combinacionesPosibles.push(combo);
-            }
-          }
-        }
-      }
-    }
-
-    this.puedeCanjear = this.combinacionesPosibles.length > 0;
-  }
-*/
+     * private calcularCombinacionesCanje(cartas: EstadoTarjetaDto[]): void {
+     * this.puedeCanjear = false;
+     * this.combinacionesPosibles = [];
+     * 
+     * if (!cartas || cartas.length < 3) return;
+     * 
+     * const disponibles = cartas.filter(c => !c.canjeada);
+     * 
+     * // Generar todas las combinaciones posibles de 3 cartas
+     * for (let i = 0; i < disponibles.length - 2; i++) {
+     * for (let j = i + 1; j < disponibles.length - 1; j++) {
+     * for (let k = j + 1; k < disponibles.length; k++) {
+     * const combo = [disponibles[i], disponibles[j], disponibles[k]];
+     * const simbolos = combo.map(c => c.tarjeta?.simbolo).filter(Boolean);
+     * 
+     * if (simbolos.length === 3) {
+     * const set = new Set(simbolos);
+     * if (set.size === 1 || set.size === 3) {
+     * this.combinacionesPosibles.push(combo);
+     * }
+     * }
+     * }
+     * }
+     * }
+     * 
+     * this.puedeCanjear = this.combinacionesPosibles.length > 0;
+     * }
+     */
 }

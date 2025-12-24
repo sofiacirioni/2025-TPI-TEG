@@ -1,6 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Dtos;
+
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
-import ar.edu.utn.frc.tup.piii.models.Usuario;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,4 +23,3 @@ public class SalaDto {
 
     private UsuarioDto creador;
 }
-

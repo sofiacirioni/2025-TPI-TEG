@@ -5,18 +5,12 @@ import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
-import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
-import ar.edu.utn.frc.tup.piii.Entities.PartidaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.TurnoEntity;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
 import ar.edu.utn.frc.tup.piii.models.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/turno")
@@ -65,7 +59,8 @@ public class TurnoController {
     }
 
     @PostMapping("/validar-ataque")
-    public ResponseEntity<?> ValidarAtaque(@RequestBody Pais pais1, @RequestBody Pais pais2, @RequestBody Jugador jugador) {
+    public ResponseEntity<?> ValidarAtaque(@RequestBody Pais pais1, @RequestBody Pais pais2,
+            @RequestBody Jugador jugador) {
         try {
             turnoService.validarAtaque(pais1, pais2, jugador);
             return ResponseEntity.ok().build();
@@ -75,7 +70,8 @@ public class TurnoController {
     }
 
     @PostMapping("/validar-movimiento")
-    public ResponseEntity<?> ValidarMovimiento(@RequestBody Pais pais1, @RequestBody Pais pais2, @RequestBody Jugador jugador) {
+    public ResponseEntity<?> ValidarMovimiento(@RequestBody Pais pais1, @RequestBody Pais pais2,
+            @RequestBody Jugador jugador) {
         try {
             turnoService.validarMovimiento(pais1, pais2, jugador);
             return ResponseEntity.ok().build();
@@ -109,9 +105,9 @@ public class TurnoController {
         return ResponseEntity.ok(turnoService.verificarGanador(idJugador));
     }
 
-    @PutMapping ("/tarjeta/obtener")
+    @PutMapping("/tarjeta/obtener")
     public ResponseEntity<TarjetaDto> obtenerTarjeta(@RequestParam Long idJugador, @RequestParam Long idPartida) {
-        return ResponseEntity.ok( turnoService.entregarTarjetaSiCorresponde(idJugador, idPartida));
+        return ResponseEntity.ok(turnoService.entregarTarjetaSiCorresponde(idJugador, idPartida));
     }
 
     @PutMapping("/canje/realizar")

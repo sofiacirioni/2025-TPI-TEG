@@ -14,10 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.Map;
-import java.util.Objects;
 import org.springframework.web.bind.annotation.CrossOrigin;
+
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 
 @RestController
@@ -61,8 +60,7 @@ public class UsuarioController {
                 request.getCorreo(),
                 request.getContraseniaActual(),
                 request.getNuevaContrasenia(),
-                request.getImagen()
-        );
+                request.getImagen());
 
         if (usuarioActualizado == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -73,7 +71,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/imagen")
-    public ResponseEntity<UsuarioDto> actualizarImagen(@RequestBody Map<String,String> body) {
+    public ResponseEntity<UsuarioDto> actualizarImagen(@RequestBody Map<String, String> body) {
         String correo = body.get("correo");
         String imagen = body.get("imagen");
 
