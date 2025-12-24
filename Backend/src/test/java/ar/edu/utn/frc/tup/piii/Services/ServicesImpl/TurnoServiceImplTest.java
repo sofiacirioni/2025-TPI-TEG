@@ -84,7 +84,7 @@ class TurnoServiceImplTest {
         turnoEntity = new TurnoEntity();
         turnoEntity.setIdTurno(1L);
         turnoEntity.setJugador(jugadorEntity);
-        turnoEntity.setFase(FaseTurno.DEFENDER);
+        turnoEntity.setFase(FaseTurno.COLOCACION);
         turnoEntity.setNroTurno(1);
 
         jugador = new Jugador();
@@ -92,7 +92,7 @@ class TurnoServiceImplTest {
 
         turno = new Turno();
         turno.setIdTurno(1L);
-        turno.setFase(FaseTurno.DEFENDER);
+        turno.setFase(FaseTurno.COLOCACION);
         turno.setNroTurno(1);
         turno.setJugador(jugador);
 
@@ -161,6 +161,7 @@ class TurnoServiceImplTest {
 
         assertTrue(ex.getMessage().contains("Partida no encontrada"));
     }
+
     @Test
     void conquistoContinente_deberiaRetornarTrue_siJugadorConquistoTodoElContinente() {
         Long idContinente = 1L;
@@ -199,12 +200,11 @@ class TurnoServiceImplTest {
         when(jugadorRepository.findById(idJugador)).thenReturn(Optional.of(jugador));
         when(partidaRepository.findById(idPartida)).thenReturn(Optional.of(partida));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                turnosServiceImpl.entregarTarjetaSiCorresponde(idJugador, idPartida));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> turnosServiceImpl.entregarTarjetaSiCorresponde(idJugador, idPartida));
 
         assertEquals("El jugador no conquisto en esta ronda.", ex.getMessage());
     }
-
 
     @Test
     void calcularCantidadFichasPorOcupacion_deberiaLanzarExcepcion_siContinenteNoExiste() {
@@ -219,8 +219,8 @@ class TurnoServiceImplTest {
 
         when(continenteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
-                turnosServiceImpl.calcularCantidadFichasPorOcupacion(idJugador));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> turnosServiceImpl.calcularCantidadFichasPorOcupacion(idJugador));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         assertEquals("Continente no encontrado.", ex.getReason());
@@ -246,8 +246,7 @@ class TurnoServiceImplTest {
                 new ContinenteEntity(2L, "Europa"),
                 new ContinenteEntity(3L, "America del Norte"),
                 new ContinenteEntity(4L, "America del Sur"),
-                new ContinenteEntity(5L, "Africa")
-        );
+                new ContinenteEntity(5L, "Africa"));
 
         for (ContinenteEntity cont : continentes) {
             when(continenteRepository.findById(cont.getIdContinente()))
@@ -272,10 +271,8 @@ class TurnoServiceImplTest {
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
         when(partidaRepository.findById(10L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () ->
-                turnosServiceImpl.entregarTarjetaSiCorresponde(1L, 10L));
+        assertThrows(IllegalArgumentException.class, () -> turnosServiceImpl.entregarTarjetaSiCorresponde(1L, 10L));
     }
-
 
     @Test
     void entregarTarjetaSiCorresponde_deberiaRetornarTarjeta_siJugadorConquisto() {
@@ -379,7 +376,6 @@ class TurnoServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> turnosServiceImpl.moverFichas(moverFichas));
     }
 
-
     @Test
     void gestionarTimeoutTurno_deberiaPasarSiTurnoExpiradoYEnHostilidades() {
         Long idTurno = 1L;
@@ -462,7 +458,7 @@ class TurnoServiceImplTest {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.DEFENDER);
+        turno.setFase(FaseTurno.COLOCACION);
 
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
@@ -596,7 +592,6 @@ class TurnoServiceImplTest {
         when(modelMapper.map(origen, PaisEntity.class)).thenReturn(mapToPaisEntity(origen));
         when(modelMapper.map(destino, PaisEntity.class)).thenReturn(mapToPaisEntity(destino));
 
-
         boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
 
         assertFalse(resultado);
@@ -618,12 +613,11 @@ class TurnoServiceImplTest {
 
         assertNotNull(resultado);
         assertEquals(idTurno, resultado.getIdTurno());
-        assertEquals(FaseTurno.DEFENDER, resultado.getFase());
+        assertEquals(FaseTurno.COLOCACION, resultado.getFase());
         assertEquals(1, resultado.getNroTurno());
         assertEquals(1L, resultado.getJugador().getIdJugador());
         verify(turnoRepository).findById(idTurno);
     }
-
 
     @Test
     void testVerificarGanador_CuandoNoCumpleObjetivo() {
@@ -646,7 +640,6 @@ class TurnoServiceImplTest {
         verify(partidaRepository, never()).save(any());
     }
 
-
     @Test
     void testObtenerTurno_CuandoNoExiste() {
         when(turnoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -659,7 +652,7 @@ class TurnoServiceImplTest {
     void testObtenerTurno_existente() {
         TurnoEntity e = new TurnoEntity();
         e.setIdTurno(1L);
-        e.setFase(FaseTurno.DEFENDER);
+        e.setFase(FaseTurno.COLOCACION);
         JugadorEntity je = new JugadorEntity();
         je.setIdJugador(2L);
         e.setJugador(je);
@@ -703,8 +696,6 @@ class TurnoServiceImplTest {
         assertTrue(turnosServiceImpl.verificarGanador(jId).isGano());
         verify(partidaRepository).save(p);
     }
-
-
 
     @Test
     void testAtaqueJugadorNoEncontrado() {
@@ -793,7 +784,8 @@ class TurnoServiceImplTest {
 
         JugadorEntity jugador = new JugadorEntity();
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
-        when(estadoTarjetaRepository.findAllById(dto.getIdTarjetas())).thenReturn(List.of(new EstadoTarjetaEntity(), new EstadoTarjetaEntity()));
+        when(estadoTarjetaRepository.findAllById(dto.getIdTarjetas()))
+                .thenReturn(List.of(new EstadoTarjetaEntity(), new EstadoTarjetaEntity()));
 
         when(estadoTarjetaService.canjearTarjetas(dto.getIdTarjetas(), 1L)).thenReturn(3);
 
@@ -804,7 +796,7 @@ class TurnoServiceImplTest {
 
     @Test
     void testCambiarFaseTurno_DefenderAAtacar() {
-        turnoEntity.setFase(FaseTurno.DEFENDER);
+        turnoEntity.setFase(FaseTurno.COLOCACION);
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
         when(turnoRepository.save(any(TurnoEntity.class))).thenReturn(turnoEntity);
@@ -862,7 +854,6 @@ class TurnoServiceImplTest {
                 () -> turnosServiceImpl.cambiarFaseTurno(1L));
         assertEquals("Jugador no encontrado", exception.getMessage());
     }
-
 
     @Test
     void testCrearTurno_PartidaNoEncontrada() {
@@ -995,7 +986,6 @@ class TurnoServiceImplTest {
         assertEquals("Turno actual no encontrado", exception.getMessage());
     }
 
-
     @Test
     void testUsarCarta_ConTarjetaValida_DeberiaValidar() {
         EstadoTarjetaEntity estadoTarjeta = new EstadoTarjetaEntity();
@@ -1006,12 +996,10 @@ class TurnoServiceImplTest {
         boolean resultado = turnosServiceImpl.usarCarta(jugadorEntity, estadoTarjeta);
 
         assertFalse(resultado);
-        verify(turnosServiceImpl).validarUsarTarjetaEnPais(argThat(dto ->
-                dto.getIdJugador().equals(jugadorEntity.getIdJugador()) &&
-                        dto.getIdTarjeta().equals(estadoTarjeta.getIdEstadoTarjeta())
-        ));
+        verify(turnosServiceImpl)
+                .validarUsarTarjetaEnPais(argThat(dto -> dto.getIdJugador().equals(jugadorEntity.getIdJugador()) &&
+                        dto.getIdTarjeta().equals(estadoTarjeta.getIdEstadoTarjeta())));
     }
-
 
     @Test
     void testValidarCanjeTarjetas_JugadorNoEncontrado() {
@@ -1025,8 +1013,6 @@ class TurnoServiceImplTest {
                 () -> turnosServiceImpl.validarCanjeTarjetas(dto));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
-
-
 
     @Test
     void testCrearTurno_ConDatosValidos() {
@@ -1043,7 +1029,6 @@ class TurnoServiceImplTest {
         verify(turnoRepository).save(any(TurnoEntity.class));
     }
 
-
     @Test
     void testVerificarGanador_JugadorNoEncontrado() {
         when(jugadorRepository.findById(999L)).thenReturn(Optional.empty());
@@ -1056,7 +1041,7 @@ class TurnoServiceImplTest {
     @Test
     void cambiarFaseTurno_deDefenderAAtaque_deberiaActualizarFase() {
         partidaEntity.setHostilidad(false);
-        turnoEntity.setFase(FaseTurno.DEFENDER);
+        turnoEntity.setFase(FaseTurno.COLOCACION);
 
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
@@ -1066,6 +1051,7 @@ class TurnoServiceImplTest {
         assertFalse(result);
         assertEquals(FaseTurno.ATACAR, turnoEntity.getFase());
     }
+
     @Test
     void cambiarFaseTurno_deAtacarAMoverTropas_deberiaActualizarFase() {
         turnoEntity.setFase(FaseTurno.ATACAR);
@@ -1078,6 +1064,7 @@ class TurnoServiceImplTest {
         assertFalse(result);
         assertEquals(FaseTurno.MOVER_TROPAS, turnoEntity.getFase());
     }
+
     @Test
     void validarAtaque_condicionesCorrectas_deberiaRetornarTrue() {
         Pais origen = new Pais();
@@ -1125,6 +1112,7 @@ class TurnoServiceImplTest {
 
         assertTrue(resultado);
     }
+
     @Test
     void validarAtaque_jugadoresIguales_deberiaRetornarFalse() {
         Pais origen = new Pais();
@@ -1166,6 +1154,7 @@ class TurnoServiceImplTest {
 
         assertFalse(resultado);
     }
+
     @Test
     void canjearCarta_deberiaRetornarFalseSiempre() {
         JugadorEntity jugador = new JugadorEntity();
@@ -1200,32 +1189,31 @@ class TurnoServiceImplTest {
         assertFalse(resultado);
     }
 
-
     @Test
     void validarAtaque_estadoOrigenInexistente_deberiaRetornarFalse() {
-    Pais origen = new Pais();
-    origen.setIdPais(1L);
+        Pais origen = new Pais();
+        origen.setIdPais(1L);
 
-    Pais destino = new Pais();
-    destino.setIdPais(2L);
+        Pais destino = new Pais();
+        destino.setIdPais(2L);
 
-    Jugador jugador = new Jugador();
-    jugador.setIdJugador(99L);
+        Jugador jugador = new Jugador();
+        jugador.setIdJugador(99L);
 
-    boolean resultado = turnoService.validarAtaque(origen, destino, jugador);
+        boolean resultado = turnoService.validarAtaque(origen, destino, jugador);
 
-    assertFalse(resultado);
-}
+        assertFalse(resultado);
+    }
 
-private EstadoPais mapToEstadoPais(EstadoPaisEntity entity) {
-    EstadoPais estado = new EstadoPais();
-    estado.setIdEstadoPais(entity.getIdEstadoPais());
-    Jugador jugador = new Jugador();
-    jugador.setIdJugador(entity.getJugador().getIdJugador());
-    estado.setJugador(jugador);
-    estado.setCantidadTropas(entity.getCantidadTropas() == 0 ? (int) 0L : entity.getCantidadTropas());
-    return estado;
-}
+    private EstadoPais mapToEstadoPais(EstadoPaisEntity entity) {
+        EstadoPais estado = new EstadoPais();
+        estado.setIdEstadoPais(entity.getIdEstadoPais());
+        Jugador jugador = new Jugador();
+        jugador.setIdJugador(entity.getJugador().getIdJugador());
+        estado.setJugador(jugador);
+        estado.setCantidadTropas(entity.getCantidadTropas() == 0 ? (int) 0L : entity.getCantidadTropas());
+        return estado;
+    }
 
     private PaisEntity mapToPaisEntity(Pais pais) {
         PaisEntity pe = new PaisEntity();
@@ -1235,4 +1223,3 @@ private EstadoPais mapToEstadoPais(EstadoPaisEntity entity) {
     }
 
 }
-

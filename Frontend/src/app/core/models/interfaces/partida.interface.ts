@@ -14,7 +14,7 @@ export enum TipoObjetivo {
 export enum FaseTurno {
   ATACAR = 'ATACAR',
   MOVER_TROPAS = 'MOVER_TROPAS',
-  DEFENDER = 'DEFENDER',
+  COLOCACION = 'COLOCACION',
 }
 
 
@@ -42,7 +42,7 @@ export interface Continente {
   nombre: string;
 }
 
-export interface Pais{
+export interface Pais {
   idPais: number;
   nombre: string;
   continente: Continente;
@@ -119,7 +119,7 @@ export interface MoverFichas {
   cantidadFichas: number;
 }
 
-export interface VerificacionObjetivo{
+export interface VerificacionObjetivo {
   gano: boolean;
   objetivoCumplido: string;
 }
@@ -130,6 +130,6 @@ export interface UsarTarjetaEnPaisDto {
 }
 
 export interface CanjeTarjetasDto {
-  idTarjetas: number[]; 
+  idTarjetas: number[];
   idJugador: number;
 }

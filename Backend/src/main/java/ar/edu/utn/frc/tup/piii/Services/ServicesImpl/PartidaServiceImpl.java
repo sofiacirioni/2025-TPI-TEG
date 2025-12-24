@@ -124,6 +124,10 @@ public class PartidaServiceImpl implements PartidaService {
                 boolean yaEsJugador = partida.getConfiguracion().getJugadores().stream()
                                 .anyMatch(j -> j.getUsuario().getIdUsuario().equals(idUsuario));
 
+                if (partida.getEstadoPartida() == EstadoPartida.EN_JUEGO) {
+                        throw new RuntimeException("No se puede unir a una partida en curso.");
+                }
+
                 if (yaEsJugador) {
                         throw new RuntimeException("El usuario ya está en la partida");
                 }

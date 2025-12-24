@@ -105,26 +105,58 @@ public class BotServiceImpl implements BotService {
 
         // Recorre todos los paises del bot
         for (EstadoPaisEntity pais : paises) {
-            if (pais.getCantidadTropas() > 1) {
+            // Mientras tenga tropas para atacar (> 1)
+            while (pais.getCantidadTropas() > 1) {
                 List<EstadoPaisEntity> paisesLimites = estadoPaisService
                         .getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
 
                 // Filtra quellos paises limitrofes que si puede atacar
                 List<EstadoPaisEntity> listaPaisesAtacables = new ArrayList<>(paisesLimites);
                 listaPaisesAtacables.removeIf(
-                        paisLimite -> Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())
-                                && pais.getCantidadTropas() <= paisLimite.getCantidadTropas());
+                        paisLimite -> Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador()));
 
-                // Los recorre e intenta realizar el ataque
-                for (EstadoPaisEntity paisLimite : listaPaisesAtacables) {
-                    Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
-                            paisLimite.getPais().getIdPais());
-
-                    ataqueExitoso = turnoService.ataque(ataque).isAtaqueExitoso() || ataqueExitoso;
-                    if (pais.getCantidadTropas() == 1)
-                        break;
+                if (listaPaisesAtacables.isEmpty()) {
+                    break; // No hay a quien atacar desde este pais
                 }
 
+                // Elige un objetivo (el primero o aleatorio es mejor, pero mantenemos simple
+                // por ahora)
+                // Mejora: Atacar al que tenga menos tropas para maximizar chance
+                EstadoPaisEntity objetivo = listaPaisesAtacables.stream()
+                        .min((p1, p2) -> Integer.compare(p1.getCantidadTropas(), p2.getCantidadTropas()))
+                        .orElse(listaPaisesAtacables.get(0));
+
+                Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
+                        objetivo.getPais().getIdPais());
+
+                var resultado = turnoService.ataque(ataque);
+                ataqueExitoso = resultado.isAtaqueExitoso() || ataqueExitoso;
+
+                // Si el pais origen se queda sin tropas para seguir atacando
+                if (pais.getCantidadTropas() <= 1)
+                    break;
+
+                // Si conquisto el objetivo, ya no es atacable (es propio), bucle continua y
+                // elegira otro o parara
+                // Pero si conquisto, el objetivo ahora es del bot.
+                // Refrescamos estado del pais origen? JPA deberia manejarlo, pero `pais` es una
+                // entidad cargada.
+                // Al atacar, TurnoService modifica la entidad en DB. `pais` en memoria podria
+                // estar desactualizado?
+                // TurnoService modifica las entidades gestionadas. Si estamos en la misma
+                // transaccion, deberia verse.
+                // Pero `pais` fue leido al inicio.
+
+                // Refrescamos o confiamos en que TurnoService actualiza las referencias?
+                // En JPA, si TurnoService carga y guarda, nuestra instancia `pais` podria
+                // quedar "stale" si no es la misma instancia gestionada.
+                // Dado que estamos en @Transactional, el entity manager es el mismo.
+                // Sin embargo, TurnoService hace `estadoPaisRepository.findBy...` lo que puede
+                // traer otra instancia si no esta en cache L1?
+                // Mejor recargar el pais origen dsp del ataque para asegurar troops count
+                // correctos.
+
+                pais = estadoPaisRepository.findById(pais.getIdEstadoPais()).orElseThrow();
             }
         }
 

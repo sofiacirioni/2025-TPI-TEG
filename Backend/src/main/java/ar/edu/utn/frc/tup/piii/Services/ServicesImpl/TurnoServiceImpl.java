@@ -56,7 +56,6 @@ public class TurnoServiceImpl implements TurnoService {
         return mapToTurno(turnoOpt.get());
     }
 
-
     @Override
     @Transactional
     public boolean cambiarFaseTurno(Long idPartida) {
@@ -78,23 +77,21 @@ public class TurnoServiceImpl implements TurnoService {
 
         Long siguienteBot = 0L;
         switch (faseActual) {
-            case DEFENDER -> turnoE.setFase(FaseTurno.ATACAR);
+            case COLOCACION -> turnoE.setFase(FaseTurno.ATACAR);
             case ATACAR -> turnoE.setFase(FaseTurno.MOVER_TROPAS);
             case MOVER_TROPAS -> {
                 verificarGanador(turnoE.getJugador().getIdJugador());
-                turnoE.setFase(FaseTurno.DEFENDER);
+                turnoE.setFase(FaseTurno.COLOCACION);
                 turnoE.getJugador().setConsquisto(false);
                 cambioTurno = true;
-                if(partidaEntity.getHostilidad()){
-                    calcularCantidadFichasPorOcupacion(jugadorActual.getIdJugador());
-                }
+
                 if (turnoE.getJugador() == null) {
-                        throw new RuntimeException("El turno actual no tiene jugador asignado.");
-                    }
+                    throw new RuntimeException("El turno actual no tiene jugador asignado.");
+                }
 
                 siguienteBot = pasarTurno(idPartida);
 
-                }
+            }
 
             default -> throw new RuntimeException("Fase desconocida: " + faseActual);
         }
@@ -102,8 +99,7 @@ public class TurnoServiceImpl implements TurnoService {
         turnoRepository.save(turnoE);
         partidaRepository.save(partidaEntity);
 
-        if(siguienteBot != 0L)
-        {
+        if (siguienteBot != 0L) {
             turnoBot(siguienteBot);
         }
         return cambioTurno;
@@ -120,10 +116,15 @@ public class TurnoServiceImpl implements TurnoService {
 
         TurnoEntity turnoE = new TurnoEntity();
         turnoE.setJugador(jugador);
-        turnoE.setFase(FaseTurno.DEFENDER);
+        turnoE.setFase(FaseTurno.COLOCACION);
         turnoE.setNroTurno(nroTurno);
         turnoE.setInicio(LocalDateTime.now());
         turnoE.setPartida(partida);
+
+        // Calcular fichas al inicio del turno
+        if (partida.getHostilidad()) {
+            calcularCantidadFichasPorOcupacion(jugador.getIdJugador());
+        }
 
         return turnoRepository.save(turnoE);
     }
@@ -145,7 +146,8 @@ public class TurnoServiceImpl implements TurnoService {
             nroTurno++;
         }
         for (JugadorEntity jugador : partida.getJugadores()) {
-            System.out.println("Jugador en partida: id=" + jugador.getIdJugador() + ", nombre='" + jugador.getNombre() + "'");
+            System.out.println(
+                    "Jugador en partida: id=" + jugador.getIdJugador() + ", nombre='" + jugador.getNombre() + "'");
         }
         turnoRepository.saveAll(turnosEntity);
         partida.setTurnoActual(1);
@@ -156,7 +158,8 @@ public class TurnoServiceImpl implements TurnoService {
                 .map(this::mapToTurno)
                 .collect(Collectors.toList());
         for (Turno turno : turnos) {
-            System.out.println("Turno: jugador id=" + turno.getJugador().getIdJugador() + ", nombre='" + turno.getJugador().getNombre() + "'");
+            System.out.println("Turno: jugador id=" + turno.getJugador().getIdJugador() + ", nombre='"
+                    + turno.getJugador().getNombre() + "'");
         }
         for (JugadorEntity jugador : partida.getJugadores()) {
             jugador.setEjercito(5);
@@ -218,28 +221,24 @@ public class TurnoServiceImpl implements TurnoService {
             ejecutarSegundaVuelta(turnosPrimeraVuelta);
         }
 
-        if(jugadorSiguiente.getTipoJugador().equals(TipoJugador.BOT)) {
+        if (jugadorSiguiente.getTipoJugador().equals(TipoJugador.BOT)) {
             return jugadorSiguiente.getIdJugador();
         }
 
         return 0L;
     }
 
-
-
     @Transactional
     @Override
-    public VerificacionObjetivoDto verificarGanador(Long idJugador){
+    public VerificacionObjetivoDto verificarGanador(Long idJugador) {
         JugadorEntity jugador = jugadorRepository.findById(idJugador).orElseThrow(
-                () -> new EntityNotFoundException("Jugador no encontrado.")
-        );
+                () -> new EntityNotFoundException("Jugador no encontrado."));
         PartidaEntity partida = partidaRepository.findById(jugador.getPartida().getIdPartida()).orElseThrow(
-                () -> new EntityNotFoundException("Partida no encontrado.")
-        );
+                () -> new EntityNotFoundException("Partida no encontrado."));
 
         VerificacionObjetivoDto response = objetivoService.verificarObjetivos(idJugador);
 
-        if(response.isGano()){
+        if (response.isGano()) {
             partida.setGanador(jugador);
             partida.setEstadoPartida(EstadoPartida.TERMINADA);
             partidaRepository.save(partida);
@@ -251,7 +250,8 @@ public class TurnoServiceImpl implements TurnoService {
     @Transactional
     @Override
     public boolean validarAtaque(Pais origen, Pais destino, Jugador jugador) {
-        Optional<EstadoPaisEntity> estadoOrigen = estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
+        Optional<EstadoPaisEntity> estadoOrigen = estadoPaisRepository
+                .findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
         Optional<EstadoPaisEntity> estadoDestino = estadoPaisRepository.findById(destino.getIdPais());
         EstadoPais eOrigen = modelMapper.map(estadoOrigen, EstadoPais.class);
         EstadoPais eDestino = modelMapper.map(estadoDestino, EstadoPais.class);
@@ -278,11 +278,14 @@ public class TurnoServiceImpl implements TurnoService {
         }
         return true;
     }
+
     @Transactional
     @Override
     public boolean validarMovimiento(Pais origen, Pais destino, Jugador jugador) {
-        Optional<EstadoPaisEntity> estadoOrigen = estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
-        Optional<EstadoPaisEntity> estadosDestino = estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(destino.getIdPais(), jugador.getIdJugador());
+        Optional<EstadoPaisEntity> estadoOrigen = estadoPaisRepository
+                .findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
+        Optional<EstadoPaisEntity> estadosDestino = estadoPaisRepository
+                .findByPaisIdPaisAndJugadorIdJugador(destino.getIdPais(), jugador.getIdJugador());
         EstadoPais eOrigen = modelMapper.map(estadoOrigen, EstadoPais.class);
         EstadoPais eDestino = modelMapper.map(estadosDestino, EstadoPais.class);
         if (eOrigen == null || eDestino == null) {
@@ -308,8 +311,8 @@ public class TurnoServiceImpl implements TurnoService {
         FaseTurno faseActual = turno.getFase();
 
         switch (faseActual) {
-            case DEFENDER:
-                return accion.equals("Defender");
+            case COLOCACION:
+                return accion.equals("Colocacion");
             case ATACAR:
                 return accion.equals("Atacar");
             case MOVER_TROPAS:
@@ -318,6 +321,7 @@ public class TurnoServiceImpl implements TurnoService {
                 return false;
         }
     }
+
     @Transactional
     @Override
     public void gestionarTimeoutTurno(Long idTurno) {
@@ -328,16 +332,16 @@ public class TurnoServiceImpl implements TurnoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Partida no encontrado."));
 
         if (Duration.between(turno.getInicio(), LocalDateTime.now()).toMinutes() >= 5) {
-//            jugador.setEstadoJugador(EstadoJugador.INACTIVO);
+            // jugador.setEstadoJugador(EstadoJugador.INACTIVO);
 
             if (partidaEntity.getFaseActual() == FaseJuego.COLOCACION) {
 
-
             } else if (partidaEntity.getFaseActual() == FaseJuego.HOSTILIDADES) {
-                //pasarTurno(partidaEntity.getIdPartida());
+                // pasarTurno(partidaEntity.getIdPartida());
             }
         }
     }
+
     @Transactional
     @Override
     public Boolean moverFichas(MoverFichas moverFichas) {
@@ -347,7 +351,8 @@ public class TurnoServiceImpl implements TurnoService {
         PartidaEntity partida = partidaRepository.findById(jugador.getPartida().getIdPartida())
                 .orElseThrow(() -> new EntityNotFoundException("Partida no encontrada."));
 
-        TurnoEntity turnoActual = turnoRepository.findByNroTurnoAndPartida_IdPartida(partida.getTurnoActual(),partida.getIdPartida())
+        TurnoEntity turnoActual = turnoRepository
+                .findByNroTurnoAndPartida_IdPartida(partida.getTurnoActual(), partida.getIdPartida())
                 .orElseThrow(() -> new IllegalStateException("No hay turno actual para la partida."));
 
         if (!jugador.getIdJugador().equals(turnoActual.getJugador().getIdJugador())) {
@@ -360,8 +365,6 @@ public class TurnoServiceImpl implements TurnoService {
 
         var rta = estadoPaisService.agrupacionFichas(moverFichas);
 
-
-
         return rta;
     }
 
@@ -373,14 +376,15 @@ public class TurnoServiceImpl implements TurnoService {
         PartidaEntity partida = partidaRepository.findById(idPartida)
                 .orElseThrow(() -> new IllegalArgumentException("Partida no encontrado"));
 
-//        Integer turnoActual = partida.getTurnoActual();
-//        if(jugador.getTurno().getNroTurno() != turnoActual){
-//            throw new IllegalStateException("El turno ya cambió. Perdiste el derecho a recibir tarjeta.");
-//        }
+        // Integer turnoActual = partida.getTurnoActual();
+        // if(jugador.getTurno().getNroTurno() != turnoActual){
+        // throw new IllegalStateException("El turno ya cambió. Perdiste el derecho a
+        // recibir tarjeta.");
+        // }
 
-        if(jugador.isConsquisto()){
-            List<EstadoTarjetaEntity> estadoTarjetaEntities = estadoTarjetaRepository.findByPartida_IdPartidaAndJugadorIsNull(partida.getIdPartida());
-
+        if (jugador.isConsquisto()) {
+            List<EstadoTarjetaEntity> estadoTarjetaEntities = estadoTarjetaRepository
+                    .findByPartida_IdPartidaAndJugadorIsNull(partida.getIdPartida());
 
             List<EstadoTarjetaEntity> estadoTarjetaEntitiesCopy = new ArrayList<>(estadoTarjetaEntities);
 
@@ -389,12 +393,11 @@ public class TurnoServiceImpl implements TurnoService {
             Collections.shuffle(estadoTarjetaEntitiesCopy);
 
             return estadoTarjetaService.asignarTarjeta(
-                   new EstadoTarjetaDto().builder()
-                           .idEstadoTarjeta(estadoTarjetaEntitiesCopy.get(0).getIdEstadoTarjeta())
-                           .idJugador(jugador.getIdJugador())
-                           .build());
-        }
-        else{
+                    new EstadoTarjetaDto().builder()
+                            .idEstadoTarjeta(estadoTarjetaEntitiesCopy.get(0).getIdEstadoTarjeta())
+                            .idJugador(jugador.getIdJugador())
+                            .build());
+        } else {
             throw new IllegalArgumentException("El jugador no conquisto en esta ronda.");
         }
     }
@@ -406,7 +409,6 @@ public class TurnoServiceImpl implements TurnoService {
 
         List<EstadoPaisEntity> estadoPaises = estadoPaisRepository.findByJugador_IdJugador(idJugador);
         int cantidadFichas = 0;
-
 
         cantidadFichas = Math.floorDiv(estadoPaises.size(), 2);
 
@@ -427,11 +429,16 @@ public class TurnoServiceImpl implements TurnoService {
             }
         }
 
-/*        List<Long> idTarjetas = estadoTarjetaRepository.findByJugadorId(idJugador).stream().map(EstadoTarjetaEntity::getIdEstadoTarjeta).toList();
-        Integer fichasCanje = estadoTarjetaService.canjearTarjetas(idTarjetas, idJugador);
-        if (fichasCanje > 0) {
-            cantidadFichas += fichasCanje;
-        }*/
+        /*
+         * List<Long> idTarjetas =
+         * estadoTarjetaRepository.findByJugadorId(idJugador).stream().map(
+         * EstadoTarjetaEntity::getIdEstadoTarjeta).toList();
+         * Integer fichasCanje = estadoTarjetaService.canjearTarjetas(idTarjetas,
+         * idJugador);
+         * if (fichasCanje > 0) {
+         * cantidadFichas += fichasCanje;
+         * }
+         */
 
         jugadorEntity.setEjercito(jugadorEntity.getEjercito() + cantidadFichas);
         jugadorRepository.save(jugadorEntity);
@@ -448,8 +455,6 @@ public class TurnoServiceImpl implements TurnoService {
         }
         return false;
     }
-
-
 
     public void ejecutarSegundaVuelta(List<Turno> turnos) {
         for (Turno turno : turnos) {
@@ -472,53 +477,56 @@ public class TurnoServiceImpl implements TurnoService {
         partidaRepository.save(partidaEntity);
     }
 
-
-
     @Transactional
     @Override
     public void validarUsarTarjetaEnPais(UsarTarjetaEnPaisDto usarTarjetaEnPaisDto) {
         JugadorEntity jugadorEntity = jugadorRepository.findById(usarTarjetaEnPaisDto.getIdJugador())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado."));
-        Optional<EstadoTarjetaEntity> EstadoTarjetaEntity = Optional.ofNullable(estadoTarjetaRepository.findById(usarTarjetaEnPaisDto.getIdTarjeta())
+        Optional<EstadoTarjetaEntity> EstadoTarjetaEntity = Optional.ofNullable(estadoTarjetaRepository
+                .findById(usarTarjetaEnPaisDto.getIdTarjeta())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estado Tarjeta no encontrado.")));
 
-        estadoTarjetaService.usarTarjetaEnPais(usarTarjetaEnPaisDto.getIdTarjeta(), usarTarjetaEnPaisDto.getIdJugador());
+        estadoTarjetaService.usarTarjetaEnPais(usarTarjetaEnPaisDto.getIdTarjeta(),
+                usarTarjetaEnPaisDto.getIdJugador());
     }
 
     @Transactional
     @Override
     public Integer validarCanjeTarjetas(CanjeTarjetasDto canjeTarjetasDto) {
         JugadorEntity jugadorEntity = jugadorRepository.findById(canjeTarjetasDto.getIdJugador())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado."));
-        List<EstadoTarjetaEntity> listEstadoTarjetaEntity = estadoTarjetaRepository.findAllById(canjeTarjetasDto.getIdTarjetas());
-        for (EstadoTarjetaEntity estadoTarjetaEntity : listEstadoTarjetaEntity){
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado."));
+        List<EstadoTarjetaEntity> listEstadoTarjetaEntity = estadoTarjetaRepository
+                .findAllById(canjeTarjetasDto.getIdTarjetas());
+        for (EstadoTarjetaEntity estadoTarjetaEntity : listEstadoTarjetaEntity) {
             if (estadoTarjetaEntity == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Estado Tarjeta no encontrado.");
             }
         }
-        Integer ejercito = estadoTarjetaService.canjearTarjetas(canjeTarjetasDto.getIdTarjetas(), canjeTarjetasDto.getIdJugador());
-        if (ejercito < 4){
+        Integer ejercito = estadoTarjetaService.canjearTarjetas(canjeTarjetasDto.getIdTarjetas(),
+                canjeTarjetasDto.getIdJugador());
+        if (ejercito < 4) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudieron canjear los ejercitos.");
         }
         return ejercito;
     }
 
-//    private boolean desempatar(List<TurnoEntity> turnosE){
-//        boolean hayEmpate = false;
-//        List<Turno> turnos = turnosE.stream().map(turno -> modelMapper.map(turno, Turno.class)).toList();
-//        for (int i = 0; i < turnos.size(); i++) {
-//            for (int j = i + 1; j < turnos.size(); j++) {
-//                Turno t1 = turnos.get(i);
-//                Turno t2 = turnos.get(j);
-//                if (t1.getNroTurno() == t2.getNroTurno()) {
-//                    t1.setNroTurno((int) (Math.random() * 6) + 1);
-//                    t2.setNroTurno((int) (Math.random() * 6) + 1);
-//                    hayEmpate = true;
-//                }
-//            }
-//        }
-//        return true;
-//    }
+    // private boolean desempatar(List<TurnoEntity> turnosE){
+    // boolean hayEmpate = false;
+    // List<Turno> turnos = turnosE.stream().map(turno -> modelMapper.map(turno,
+    // Turno.class)).toList();
+    // for (int i = 0; i < turnos.size(); i++) {
+    // for (int j = i + 1; j < turnos.size(); j++) {
+    // Turno t1 = turnos.get(i);
+    // Turno t2 = turnos.get(j);
+    // if (t1.getNroTurno() == t2.getNroTurno()) {
+    // t1.setNroTurno((int) (Math.random() * 6) + 1);
+    // t2.setNroTurno((int) (Math.random() * 6) + 1);
+    // hayEmpate = true;
+    // }
+    // }
+    // }
+    // return true;
+    // }
 
     private Turno mapToTurno(TurnoEntity turnoEntity) {
         Turno turno = new Turno();
@@ -570,33 +578,32 @@ public class TurnoServiceImpl implements TurnoService {
         return turno;
     }
 
-//    private TurnoEntity mapToTurno(Turno turno) {
-//
-//        TurnoEntity turnoE = new TurnoEntity();
-//        turnoE.setIdTurno(turno.getIdTurno());
-//        turnoE.setNroTurno(turno.getNroTurno());
-//        turnoE.setFase(turno.getFase());
-//
-//        JugadorEntity jugador = new JugadorEntity();
-//        jugador.setIdJugador(turno.getJugador().getIdJugador());
-//        turnoE.setJugador(jugador);
-//        turnoE.getPartida();
-//
-//        return turnoE;
-//    }
+    // private TurnoEntity mapToTurno(Turno turno) {
+    //
+    // TurnoEntity turnoE = new TurnoEntity();
+    // turnoE.setIdTurno(turno.getIdTurno());
+    // turnoE.setNroTurno(turno.getNroTurno());
+    // turnoE.setFase(turno.getFase());
+    //
+    // JugadorEntity jugador = new JugadorEntity();
+    // jugador.setIdJugador(turno.getJugador().getIdJugador());
+    // turnoE.setJugador(jugador);
+    // turnoE.getPartida();
+    //
+    // return turnoE;
+    // }
 
     @Transactional
     @Override
     public AtaqueResponseDto ataque(Ataque ataque) {
         JugadorEntity jugador = jugadorRepository.findById(ataque.getIdJugador()).orElseThrow(
-                () -> new EntityNotFoundException("Jugador no encontrado")
-        );
+                () -> new EntityNotFoundException("Jugador no encontrado"));
 
         PartidaEntity partida = partidaRepository.findById(jugador.getPartida().getIdPartida()).orElseThrow(
-                () -> new EntityNotFoundException("Partida no encontrada")
-        );
+                () -> new EntityNotFoundException("Partida no encontrada"));
 
-        TurnoEntity turnoActual = turnoRepository.findByNroTurnoAndPartida_IdPartida( partida.getTurnoActual(),partida.getIdPartida())
+        TurnoEntity turnoActual = turnoRepository
+                .findByNroTurnoAndPartida_IdPartida(partida.getTurnoActual(), partida.getIdPartida())
                 .orElseThrow(() -> new IllegalStateException("No hay turno actual para la partida"));
 
         if (!jugador.getIdJugador().equals(turnoActual.getJugador().getIdJugador())) {
@@ -608,16 +615,16 @@ public class TurnoServiceImpl implements TurnoService {
         }
 
         EstadoPaisEntity estadoPaisAtacante = estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(
-                ataque.getIdPaisOrigen(), ataque.getIdJugador()
-        ).orElseThrow(() -> new RuntimeException("El país no existe o no pertenece al atacante"));
+                ataque.getIdPaisOrigen(), ataque.getIdJugador())
+                .orElseThrow(() -> new RuntimeException("El país no existe o no pertenece al atacante"));
 
         if (estadoPaisAtacante.getCantidadTropas() < 2) {
             throw new IllegalArgumentException("No tiene las suficientes tropas para atacar");
         }
 
         EstadoPaisEntity estadoPaisDefensor = estadoPaisRepository.findByPais_IdPaisAndPartida_IdPartida(
-                ataque.getIdPaisDestino(), jugador.getPartida().getIdPartida()
-        ).orElseThrow(() -> new RuntimeException("El país atacado no existe"));
+                ataque.getIdPaisDestino(), jugador.getPartida().getIdPartida())
+                .orElseThrow(() -> new RuntimeException("El país atacado no existe"));
 
         if (estadoPaisDefensor.getJugador().getIdJugador().equals(ataque.getIdJugador())) {
             throw new IllegalArgumentException("No se puede atacar su propio país");
@@ -642,45 +649,44 @@ public class TurnoServiceImpl implements TurnoService {
         response.getDadosDefensor().sort(Collections.reverseOrder());
 
         int comparaciones = Math.min(cantidadAtacante, cantidadDefensor);
-        boolean huboGanador = false;
+        int perdidasAtacante = 0;
+        int perdidasDefensor = 0;
 
         for (int i = 0; i < comparaciones; i++) {
             int a = response.getDadosAtaque().get(i);
             int d = response.getDadosDefensor().get(i);
 
-            if (a != d) {
-                boolean atacanteGana = a > d;
-                EstadoPaisEntity perdedor = atacanteGana ? estadoPaisDefensor : estadoPaisAtacante;
-
-                if (atacanteGana && estadoPaisDefensor.getCantidadTropas() == 1) {
-                    // Cambiar propietario
-                    estadoPaisService.cambiarPropietario(
-                            estadoPaisDefensor.getIdEstadoPais(),
-                            estadoPaisAtacante.getIdEstadoPais(),
-                            ataque.getIdJugador()
-                    );
-
-                    jugador.setConsquisto(true);
-                    jugadorRepository.save(jugador);
-
-                } else {
-                    perdedor.setCantidadTropas(perdedor.getCantidadTropas() - 1);
-                    estadoPaisRepository.save(perdedor);
-                }
-
-                response.setAtaqueExitoso(atacanteGana);
-                huboGanador = true;
-                break;
+            if (a > d) {
+                perdidasDefensor++;
+            } else {
+                // Empate o gana defensor -> pierde atacante
+                perdidasAtacante++;
             }
         }
 
-        if (!huboGanador) {
-            response.setAtaqueExitoso(false);
+        // Aplicar perdidas
+        estadoPaisAtacante.setCantidadTropas(estadoPaisAtacante.getCantidadTropas() - perdidasAtacante);
+        estadoPaisDefensor.setCantidadTropas(estadoPaisDefensor.getCantidadTropas() - perdidasDefensor);
+
+        boolean conquista = false;
+        if (estadoPaisDefensor.getCantidadTropas() <= 0) {
+            // Conquista
+            estadoPaisService.cambiarPropietario(
+                    estadoPaisDefensor.getIdEstadoPais(),
+                    estadoPaisAtacante.getIdEstadoPais(),
+                    ataque.getIdJugador());
+
+            jugador.setConsquisto(true);
+            jugadorRepository.save(jugador);
+            conquista = true;
+        } else {
+            estadoPaisRepository.save(estadoPaisDefensor);
+            estadoPaisRepository.save(estadoPaisAtacante);
         }
 
+        response.setAtaqueExitoso(conquista || perdidasDefensor > 0);
         return response;
     }
-
 
     private Integer calcularCantidadDados(Integer cantidadTropas, boolean esAtacante) {
         if (esAtacante) {
@@ -694,14 +700,13 @@ public class TurnoServiceImpl implements TurnoService {
     @Override
     public boolean agregarFichas(AgregarFichas agregarFichas) {
         JugadorEntity jugador = jugadorRepository.findById(agregarFichas.getIdJugador()).orElseThrow(
-                () -> new EntityNotFoundException("Jugador no encontrado.")
-        );
+                () -> new EntityNotFoundException("Jugador no encontrado."));
 
         PartidaEntity partida = partidaRepository.findById(jugador.getPartida().getIdPartida()).orElseThrow(
-                () -> new EntityNotFoundException("Partida no encontrada.")
-        );
+                () -> new EntityNotFoundException("Partida no encontrada."));
 
-        TurnoEntity turnoActual = turnoRepository.findByNroTurnoAndPartida_IdPartida( partida.getTurnoActual(),partida.getIdPartida())
+        TurnoEntity turnoActual = turnoRepository
+                .findByNroTurnoAndPartida_IdPartida(partida.getTurnoActual(), partida.getIdPartida())
                 .orElseThrow(() -> new IllegalStateException("No hay turno actual para la partida"));
 
         System.out.println("Turno jugador: " + jugador.getTurno().getNroTurno());
@@ -711,7 +716,7 @@ public class TurnoServiceImpl implements TurnoService {
             throw new IllegalArgumentException("Turno no correspondiente.");
         }
 
-        if (!turnoActual.getFase().equals(FaseTurno.DEFENDER)) {
+        if (!turnoActual.getFase().equals(FaseTurno.COLOCACION)) {
             throw new IllegalArgumentException("Fase no correspondiente.");
         }
 
@@ -723,8 +728,7 @@ public class TurnoServiceImpl implements TurnoService {
     @Transactional
     public boolean turnoBot(Long idJugador) {
         JugadorEntity botEntity = jugadorRepository.findByIdJugador(idJugador).orElseThrow(
-                () -> new IllegalArgumentException("Jugador no encontrado con ID: " + idJugador)
-        );
+                () -> new IllegalArgumentException("Jugador no encontrado con ID: " + idJugador));
 
         if (botEntity.getEjercito() > 0) {
             faseDefensa(botEntity);
@@ -738,8 +742,7 @@ public class TurnoServiceImpl implements TurnoService {
                 }
                 faseReagrupar(botEntity);
             }
-        }
-        else{
+        } else {
             cambiarFaseTurno(botEntity.getPartida().getIdPartida());
             cambiarFaseTurno(botEntity.getPartida().getIdPartida());
         }
@@ -789,23 +792,26 @@ public class TurnoServiceImpl implements TurnoService {
 
         List<EstadoPaisEntity> paises = estadoPaisRepository.findByJugador_IdJugador(botEntity.getIdJugador());
 
-        //Recorre todos los paises del bot
+        // Recorre todos los paises del bot
         for (EstadoPaisEntity pais : paises) {
             if (pais.getCantidadTropas() > 1) {
-                List<EstadoPaisEntity> paisesLimites = estadoPaisService.getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
+                List<EstadoPaisEntity> paisesLimites = estadoPaisService
+                        .getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
 
-                //Filtra quellos paises limitrofes que si puede atacar
+                // Filtra quellos paises limitrofes que si puede atacar
                 List<EstadoPaisEntity> listaPaisesAtacables = new ArrayList<>(paisesLimites);
-                listaPaisesAtacables.removeIf(paisLimite ->
-                        Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())
-                                || pais.getCantidadTropas() <= paisLimite.getCantidadTropas()
-                );
+                listaPaisesAtacables.removeIf(
+                        paisLimite -> Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())
+                                || pais.getCantidadTropas() <= paisLimite.getCantidadTropas());
 
-                //Los recorre e intenta realizar el ataque
+                // Los recorre e intenta realizar el ataque
                 for (EstadoPaisEntity paisLimite : listaPaisesAtacables) {
-                    if (pais.getCantidadTropas() == 1 || Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador())) break;
+                    if (pais.getCantidadTropas() == 1
+                            || Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador()))
+                        break;
 
-                    Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(), paisLimite.getPais().getIdPais());
+                    Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
+                            paisLimite.getPais().getIdPais());
 
                     ataqueExitoso = ataque(ataque).isAtaqueExitoso() || ataqueExitoso;
                 }
@@ -836,9 +842,10 @@ public class TurnoServiceImpl implements TurnoService {
 
         List<EstadoTarjetaEntity> tarjetas = estadoTarjetaRepository.findByJugador_IdJugador(botEntity.getIdJugador());
 
-        List<EstadoTarjetaEntity> tarjetasSinUsar = tarjetas.stream().filter(t -> !t.isUsada() && paises.contains(t.getTarjeta().getPais())).toList();
+        List<EstadoTarjetaEntity> tarjetasSinUsar = tarjetas.stream()
+                .filter(t -> !t.isUsada() && paises.contains(t.getTarjeta().getPais())).toList();
 
-        for (EstadoTarjetaEntity t : tarjetasSinUsar){
+        for (EstadoTarjetaEntity t : tarjetasSinUsar) {
             usarCarta(botEntity, t);
         }
 
@@ -859,7 +866,10 @@ public class TurnoServiceImpl implements TurnoService {
 
     @Transactional
     public boolean canjearCarta(JugadorEntity botEntity) {
-        /*List<EstadoTarjetaEntity> tarjetasIguales = botEntity.getTarjetas().stream().filter()*/
+        /*
+         * List<EstadoTarjetaEntity> tarjetasIguales =
+         * botEntity.getTarjetas().stream().filter()
+         */
 
         return false;
     }

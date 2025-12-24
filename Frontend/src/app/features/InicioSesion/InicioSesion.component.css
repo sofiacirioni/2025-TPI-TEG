@@ -1,128 +1,80 @@
-body {
-  font-family: Arial, sans-serif;
-  background-image: url('src/assets/TEG_Diseno_1.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-}
-#volver
-{
-
-    width: 40px;
-    height: 40px;
-  background-image: url('src/assets/volver.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    border: none;
-    cursor: pointer;
-    margin-top: 0px;
-    position: fixed;
-   top: 10px;
-    left: 10px;
-    z-index: 1000;
-
-}
-.login-container {
-
-  background-color: #ffffff ;
-  backdrop-filter: blur(6px);
-  padding: 30px 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  width: 300px;
+:host {
+  display: block;
 }
 
-.login-container h2 {
-  margin-bottom: 20px;
+section {
+  background-color: var(--bg-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-vintage);
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.1);
+  max-width: 450px;
+  width: 90%;
+  margin: 50px auto;
+  padding: 40px;
+  position: relative;
   text-align: center;
 }
-h2{
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 5px;
-  font-family: "Montserrat", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 900;
-  font-style: normal;
-  color: #ffffff;
-  background: #e45b6a;
-  border-radius: 10px;
-  padding: 10px;
+
+h2 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent-gold);
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  font-weight: 700;
 }
+
 label {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 5px;
-  font-family: "Montserrat", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 900;
-  font-style: normal;
-  background: #ffffff;
-  border-radius: 40px;
-  border-color: #e45b6a;
-  border-style: solid;
-  border-width: medium;
-  padding: 10px;
-  width: 120px;
-  color:#e45b6a;
-
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-weight: bold;
+  display: block;
+  text-align: left;
+  margin-bottom: 8px;
 }
 
-input[type="text"],
-input[type="password"] {
-  width: 270px;
-  padding: 15px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background: #f8ccd1;
-
-
-
-}
-input:focus {
-  border-color: #e45b6a;
-  outline: none;
-}
-button {
+input {
   width: 100%;
-  padding: 10px;
-  background-color: #f1596e;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  background-color: #FFF;
+  font-family: var(--font-body);
+  transition: border-color 0.2s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 5px rgba(36, 113, 163, 0.2);
+}
+
+.button {
+  /* Reuse global button style via global css, but if scoped, redefine */
+  width: 100%;
+  padding: 14px;
+  background: var(--accent-red);
   color: white;
-  border: none;
-  border-radius: 5px;
+  border: 2px solid var(--text-primary);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  font-weight: bold;
+  box-shadow: 2px 2px 0 var(--text-primary);
   cursor: pointer;
-  font-family: "Montserrat", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 900;
-  font-style: normal;
+  transition: all 0.2s;
 }
 
-button:hover {
-  background-color: #ff94a4;
-}
-
-p {
-  margin-top: 15px;
-  font-family: "Montserrat", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-  text-align: center;
+.button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--text-primary);
+  background-color: #C0392B;
 }
 
 a {
-  color: #1877f2;
+  color: var(--accent-blue);
   text-decoration: none;
+  font-weight: bold;
 }
 
 a:hover {

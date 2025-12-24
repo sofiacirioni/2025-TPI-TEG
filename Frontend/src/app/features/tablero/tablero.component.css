@@ -1,71 +1,96 @@
 :host {
   display: block;
   min-height: 100vh;
-  background-color: #fccabf;
+  /* background-color: var(--bg-paper); Already set globally but ensuring transparent/inherit */
+  padding: 10px;
 }
 
 app-map {
-  background-color: #acd6ff;
-  border: 2px solid #e45a69;
-  border-radius: 10px;
-  padding: 10px;
+  background-color: transparent;
+  border: 4px double var(--border-color);
+  border-radius: var(--border-radius-vintage);
+  padding: 15px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+  /* background-image: url('assets/paper-texture-overlay.png'); */
+  /* If available, else just color */
 }
 
 app-player-panel {
-  background-color: #fccabf;
-  border-radius: 10px;
+  background-color: var(--bg-paper-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-vintage);
+  padding: 15px;
+  box-shadow: var(--shadow-paper);
+}
+
+/* Override Bootstrap Card for cards in hand */
+.card {
+  background-color: var(--bg-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-vintage);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
   padding: 10px;
 }
+
+.card-title {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  font-weight: bold;
+  border-bottom: 1px solid var(--accent-gold);
+  margin-bottom: 8px;
+}
+
+.card-text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Turn Info Box */
+#turn-info {
+  font-family: 'Courier New', Courier, monospace;
+  /* Typewriter style */
+  background-color: #FFF8E1;
+  /* Sticky note color */
+  border: 1px solid #D7CCC8;
+  color: #3E2723;
+  box-shadow: 3px 3px 2px rgba(0, 0, 0, 0.2);
+  transform: rotate(-1deg);
+  /* Slight organic tilt */
+}
+
+/* Botón Avanzar (Next Phase) - Wax Seal Style */
 .btnAvanzar {
   position: relative;
-  background: linear-gradient(145deg, #f59faf, #e45b6a);
+  background: var(--accent-red);
   color: white;
-  font-size: clamp(24px, 4vw, 36px);
+  font-family: var(--font-heading);
+  font-size: clamp(18px, 3vw, 24px);
   font-weight: 700;
-  padding: 10px 20px;
-  border-radius: 20px;
-  border: none;
-  box-shadow: 0 4px 10px rgba(228, 91, 106, 0.3);
+  padding: 15px 30px;
+  border-radius: 50%;
+  /* Make it round like a seal? Or just rounded rect */
+  border-radius: 40px;
+  border: 2px solid #731212;
+  box-shadow: 0 4px 0 #581010;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 2px;
-  transition: all 0.3s ease;
-  overflow: hidden;
+  transition: all 0.2s ease;
   z-index: 10;
+  margin-top: 20px;
 }
 
-/* El pseudo elemento para el brillo */
-.btnAvanzar::before {
-  position: relative;
-  background: linear-gradient(145deg, #f59faf, #e45b6a);
-  color: white;
-  font-size: clamp(14px, 2vw, 20px); /* más pequeño */
-  font-weight: 700;
-  padding: 8px 16px; /* menos padding */
-  border-radius: 12px; /* menos redondeo */
-  border: none;
-  box-shadow: 0 3px 6px rgba(228, 91, 106, 0.3);
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  z-index: 10;
-}
-
-/* Cuando haces hover, el brillo pasa de izquierda a derecha */
-.btnAvanzar:hover::before {
-  left: 100%;
-}
-
-/* Hover en el botón */
 .btnAvanzar:hover {
-  background: linear-gradient(145deg, #e45b6a, #f59faf);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(228, 91, 106, 0.4);
+  background-color: #C0392B;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #581010;
 }
 
-/* Al hacer click */
 .btnAvanzar:active {
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(4px);
+  box-shadow: none;
 }

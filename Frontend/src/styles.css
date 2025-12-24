@@ -1,157 +1,217 @@
-/* You can add global styles to this file, and also import other style files */
-/* Estilos globales */
-/* Fondo general */
+/* Global Styles - Vintage War Room Theme */
+
+:root {
+  /* Vintage Palette */
+  --bg-paper: #FDFBF7; /* Old parchment */
+  --bg-paper-dark: #F5E9D7; /* Darker aged paper */
+  --text-primary: #3E2723; /* Deep Sepia */
+  --text-secondary: #5D4037; /* Lighter Sepia */
+  --accent-gold: #D4AF37; /* Muted Gold / Bronze */
+  --accent-red: #A93226; /* Wax Seal Red */
+  --accent-blue: #2471A3; /* Ink Blue */
+  --border-color: #8D6E63; /* Worn Leather Brown */
+  
+  /* Topography */
+  --font-heading: 'Playfair Display', serif; /* Classic Newspaper/Map font */
+  --font-body: 'Montserrat', sans-serif; /* Clean legibility */
+  
+  /* Effects */
+  --shadow-paper: 2px 2px 5px rgba(62, 39, 35, 0.15);
+  --border-radius-vintage: 4px; /* Less rounded, more like cut paper */
+}
+
+/* Import Font if not already in index.html, otherwise assume Montserrat is there. 
+   Ideally add <link> for Playfair in index.html, but strict system font stack fallback works too. */
+@media screen {
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;900&display=swap');
+}
+
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: var(--montserrat);
-  background-color: #f5e9d7; /* Color de fondo detrás de la imagen */
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed; /* Efecto mural */
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background-color: var(--bg-paper);
+  background-image: 
+    linear-gradient(var(--bg-paper-dark) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-paper-dark) 1px, transparent 1px);
+  background-size: 40px 40px; /* Grid map effect */
+  background-attachment: fixed;
 }
 
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
 /* Botón principal */
 .button {
-
-  padding: 16px 0;
-  background-color: #f1596e;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  padding: 14px 24px;
+  background-color: var(--accent-red);
+  color: #FFF;
+  border: 2px solid var(--text-primary); /* Border adds to "card/token" feel */
+  border-radius: var(--border-radius-vintage);
   cursor: pointer;
-  font-family: "Montserrat", sans-serif;
-  font-weight: 900;
+  font-family: var(--font-heading);
+  font-weight: 700;
   font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   text-align: center;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
-
+  box-shadow: 2px 2px 0px var(--text-primary); /* Solid shadow */
 }
 
 .button:hover {
-  background-color: #ff94a4;
+  background-color: #C0392B;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--text-primary);
 }
 
-/* Botón para cerrar sesión (alt)*/
+.button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--text-primary);
+}
+
+/* Botón alt / Outline */
 .button-alt {
   background-color: transparent;
-  color: #e45b6a;
-  border: 2px solid #e45b6a;
-  border-radius: 8px;
+  color: var(--text-secondary);
+  border: 2px solid var(--text-secondary);
+  border-radius: var(--border-radius-vintage);
   padding: 10px 18px;
-  margin-bottom: 10px;
   cursor: pointer;
-  font-family: var(--montserrat);
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.3s ease;
-  box-shadow: none;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
 }
 
 .button-alt:hover {
-  background-color: darkred;
-  color: white;
-  box-shadow: 0 4px 10px rgba(228, 91, 106, 0.3);
+  background-color: var(--text-secondary);
+  color: var(--bg-paper);
+  border-color: var(--text-secondary);
 }
 
+/* Volver Button (Back) */
 #volver {
-  width: 10vw;
-  max-width: 50px;
-  aspect-ratio: 1 / 1;
-  background-image: url('src/assets/volver.png');
-  background-size: contain;
+  width: 50px;
+  height: 50px;
+  background-color: var(--bg-paper);
+  border: 2px solid var(--text-primary);
+  border-radius: 50%;
+  background-image: url('assets/volver.png'); /* Assuming asset exists */
+  background-size: 60%;
   background-repeat: no-repeat;
   background-position: center;
-  border: none;
   cursor: pointer;
   position: fixed;
-  top: 2vw;
-  left: 2vw;
+  top: 20px;
+  left: 20px;
   z-index: 1000;
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+  box-shadow: var(--shadow-paper);
 }
 
 #volver:hover {
-  transform: scale(1.15);
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* Galería de imágenes */
+/* Galería */
 .galeria-imagenes {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 .galeria-imagenes img {
   width: 60px;
   height: 60px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-vintage);
   object-fit: cover;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color 0.2s;
+  border: 2px solid var(--border-color);
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  filter: sepia(0.4); /* Vintage photo effect */
+}
+
+.galeria-imagenes img:hover {
+  transform: scale(1.05);
+  filter: sepia(0);
 }
 
 .galeria-imagenes img.seleccionada {
-  border-color: #e45b6a; /* var(--rosa) */
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 2px var(--bg-paper), 0 0 0 4px var(--accent-red);
+  filter: sepia(0);
 }
 
-/* Modal de galería */
+/* Modal Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(62, 39, 35, 0.7); /* Dark brown tint */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  backdrop-filter: blur(2px);
 }
 
+/* Modal Content - Paper look */
 .modal-content {
   position: relative;
   width: 90%;
-  max-width: 400px;
-  max-height: 80%;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 10px;
+  max-width: 450px;
+  padding: 30px;
+  background-color: var(--bg-paper);
+  border: 1px solid var(--text-primary);
+  border-radius: 2px;
+  box-shadow: 
+    10px 10px 0 rgba(0,0,0,0.1), /* Hard shadow */
+    inset 0 0 60px rgba(139, 69, 19, 0.1); /* Inner aged edge glow */
   overflow-y: auto;
   text-align: center;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .modal-content h3 {
-  margin-top: 20px; /* Añadido para bajarlo un poco */
-  margin-bottom: 15px;
-  font-family: "Montserrat", sans-serif;
-  color: #e45b6a;
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent-gold);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 /* Botón cerrar modal */
 .cerrar-modal {
   position: absolute;
-  top: 15px;
-  right: 20px;
+  top: 10px;
+  right: 15px;
   background: transparent;
   border: none;
-  font-size: 24px;
-  color: #e45b6a;
+  font-size: 28px;
+  color: var(--text-secondary);
   cursor: pointer;
-  font-weight: bold;
+  line-height: 1;
   transition: color 0.2s;
 }
 
 .cerrar-modal:hover {
-  color: #f59faf; /* var(--rosa-claro) */
+  color: var(--accent-red);
 }
