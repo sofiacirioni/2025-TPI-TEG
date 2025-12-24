@@ -3,7 +3,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {CommonModule, NgForOf, NgIf} from '@angular/common';
 import {Usuario} from '../../core/models/interfaces/usuario.interface';
-import {UsuarioService} from '../../core/services/perfilUsuarioService';
+import {UsuarioService} from '../../core/services/perfilUsuario.service';
 import {AuthService} from '../../core/services/auth.service';
 
 

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
 import { JugadorPanelComponent } from './componentes/jugadores-panel/jugador-panel.component';
 import { OpcionesPanelComponent } from './componentes/opciones-panel/opciones-panel.component';
-import { TableroServicio } from '../../core/services/tablero-servicio';
+import { TableroServicio } from '../../core/services/tablero.service';
 import { MapaSvgComponent } from './componentes/mapa-svg/mapa-svg.component';
 import { CanjeTarjetasDto, EstadoPaisDto, EstadoPartida, EstadoTarjetaDto, FaseTurno, JugadorDto, PartidaDto, TurnoDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../../core/models/interfaces/partida.interface';
 import { AccionesPaisComponent } from './componentes/acciones-pais/acciones-pais.component';

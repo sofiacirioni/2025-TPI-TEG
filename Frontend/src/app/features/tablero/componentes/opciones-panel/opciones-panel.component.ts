@@ -2,7 +2,7 @@ import {Component, Input, OnChanges, OnDestroy, OnInit} from '@angular/core';
 import {NgOptimizedImage} from '@angular/common';
 import {JugadorDto, PartidaDto} from '../../../../core/models/interfaces/partida.interface';
 import {Subscription} from 'rxjs';
-import {TableroServicio} from '../../../../core/services/tablero-servicio';
+import {TableroServicio} from '../../../../core/services/tablero.service';
 import {Router} from '@angular/router';
 import {AuthService} from '../../../../core/services/auth.service';
 

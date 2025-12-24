@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AtaqueDto, AtaqueResponseDto, EstadoPaisDto, JugadorDto, PartidaDto, TurnoDto, MoverFichas } from 'src/app/core/models/interfaces/partida.interface';
 import { AuthService, UsuarioDto } from 'src/app/core/services/auth.service';
-import { TableroServicio } from 'src/app/core/services/tablero-servicio';
+import { TableroServicio } from 'src/app/core/services/tablero.service';
 import { FaseTurno } from 'src/app/core/models/interfaces/partida.interface';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ViewChild } from '@angular/core';

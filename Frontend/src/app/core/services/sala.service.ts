@@ -3,6 +3,7 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable, of, pipe, throwError} from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import {Sala, SalaGet} from '../models/interfaces/sala.interface';
+import { environment } from '../../../environments/environment';
 
 
 
@@ -11,8 +12,8 @@ import {Sala, SalaGet} from '../models/interfaces/sala.interface';
   providedIn: 'root'
 })
 export class SalaService {
-  private apiUrlSala = 'http://localhost:8080/api/v1/sala';
-  private apiUrlPartida = 'http://localhost:8080/api/v1/partida';
+  private apiUrlSala = `${environment.apiUrl}/sala`;
+  private apiUrlPartida = `${environment.apiUrl}/partida`;
 
 
   constructor(private http: HttpClient) {

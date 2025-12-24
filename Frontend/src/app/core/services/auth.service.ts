@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import {Observable, of, tap, throwError} from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import {Usuario} from '../models/interfaces/usuario.interface';
+import { environment } from '../../../environments/environment';
 
 export interface Credencial {
   correo: string;
@@ -20,7 +21,7 @@ export interface UsuarioDto {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/v1/usuario';
+  private apiUrl = `${environment.apiUrl}/usuario`;
 
   constructor(private http: HttpClient) {}
 

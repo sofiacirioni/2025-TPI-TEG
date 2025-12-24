@@ -4,33 +4,34 @@ import {catchError, map} from 'rxjs/operators';
 import {throwError} from 'rxjs';
 import {SalaService} from './sala.service';
 import {UsuarioDto} from './auth.service';
+import { environment } from '../../../environments/environment';
 
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConfigPartidaService {
-  private apiUrlConfig = 'http://localhost:8080/api/v1/jugador/sala';
+  private apiUrlConfig = `${environment.apiUrl}/jugador/sala`;
 
   constructor(private http: HttpClient) {
 
   }
   crearJugador(idSala: number, nombre: string ) {
     return this.http.post(
-      `http://localhost:8080/api/v1/jugador/sala/${idSala}/jugador`,
+      `${environment.apiUrl}/jugador/sala/${idSala}/jugador`,
       {"nombre":nombre},
       { withCredentials: true }
     );
   }
   crearBot(idSala: number, idUsuario: number) {
     return this.http.get<any>(
-      `http://localhost:8080/api/v1/jugador/crearBot/${idSala}?idUsuario=${idUsuario}`,
+      `${environment.apiUrl}/jugador/crearBot/${idSala}?idUsuario=${idUsuario}`,
       { withCredentials: true }
     );
   }
   crearPartida(idSala: number, idUsuario: number) {
     return this.http.post<any>(
-      `http://localhost:8080/api/v1/partida/crear/${idSala}?idUsuario=${idUsuario}`,
+      `${environment.apiUrl}/partida/crear/${idSala}?idUsuario=${idUsuario}`,
       { withCredentials: true }
     );
   }
@@ -48,7 +49,7 @@ export class ConfigPartidaService {
   }
 
   getJugadores(idSala: number) {
-    return this.http.get<any[]>(`http://localhost:8080/api/v1/jugador/sala/${idSala}/jugadores`, { withCredentials: true }).pipe(
+    return this.http.get<any[]>(`${environment.apiUrl}/jugador/sala/${idSala}/jugadores`, { withCredentials: true }).pipe(
       map(jugadores => jugadores.map(j => ({ nombreJugador: j.nombre })))
     );
   }
