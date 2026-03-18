@@ -33,13 +33,16 @@ export class MapaSvgComponent implements OnChanges, OnInit, OnChanges {
   }
 
   cargarMapa() {
-    this.http.get('mapaa.svg', {responseType: 'text'}).subscribe((svgText) => {
+    this.http.get('mapa-teg-vector-optimizado.svg', {responseType: 'text'}).subscribe((svgText) => {
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
       const paths = svgDoc.querySelectorAll('path');
       this.mapaPais = [];
       this.paises.forEach(estadoPais => {
-        const path = Array.from(paths).find(p => Number (p.id) === estadoPais.pais.idPais);
+        const path = Array.from(paths).find(p => {
+          const id = Number(p.id);
+          return !isNaN(id) && id === estadoPais.pais.idPais;
+        });
         this.mapaPais.push({
           id: estadoPais.pais.idPais,
           nombre: estadoPais.pais.nombre,
