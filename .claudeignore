@@ -1,0 +1,43 @@
+# Build artifacts
+Backend/target/
+Frontend/dist/
+Frontend/.angular/
+
+# Dependencies
+Frontend/node_modules/
+
+# Database files
+Backend/data/
+**/*.mv.db
+**/*.trace.db
+
+# Logs
+**/*.log
+**/logs/
+
+# Test coverage reports
+Frontend/coverage/
+Backend/target/surefire-reports/
+
+# IDE files
+.idea/
+**/.vscode/
+
+# JavaDoc (generado, no editar)
+Backend/docs/java_doc/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled Java
+**/*.class
+**/*.jar
+**/*.war
+
+# Angular cache
+**/.angular/cache/
+
+# Temporary files
+**/*.tmp
+**/*.temp

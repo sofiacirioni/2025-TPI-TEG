@@ -1,34 +1,23 @@
-<!DOCTYPE html>
+<section class="login-wrapper">
+  <div class="login-card">
+    <h2>Iniciar Sesión</h2>
 
-<html lang="es" xmlns="http://www.w3.org/1999/html">
-<head>
-  <meta charset="UTF-8">
-  <title>Inicio de Sesión</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Montserrat:ital,wght@0,900;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
-</head>
-<body>
-<section class="bg-light rounded-5 p-4 flex flex-column">
-  <h2>Iniciar Sesión</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="nombreUsuario">Usuario</label>
+        <input id="nombreUsuario" type="text" formControlName="nombreUsuario" autocomplete="username">
+      </div>
 
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" style="padding: 20px 40px;display: flex; flex-direction: column; text-align: center;align-content: center">
-    <label for="correo">Correo</label>
-    <input type="text" id="correo" formControlName="correo">
+      <div class="form-group">
+        <label for="contrasenia">Contraseña</label>
+        <input id="contrasenia" type="password" formControlName="contrasenia" autocomplete="current-password">
+      </div>
 
-    <label for="contrasenia">Contraseña</label>
-    <input type="password" id="contrasenia" formControlName="contrasenia">
+      <button type="submit" class="button" [disabled]="loginForm.invalid">Entrar</button>
 
-    <button type="submit">Entrar</button>
-    <p>¿No tienes cuenta? <a [routerLink]="['../registrarse']">Regístrate</a></p>
-  </form>
-  </section>
-
-
-<a  [routerLink]="['../principal']" id="volver">
-
-</a>
-
-</body>
-</html>
+      <p class="register-link">
+        ¿No tienes cuenta? <a [routerLink]="['../registrarse']">Regístrate</a>
+      </p>
+    </form>
+  </div>
+</section>

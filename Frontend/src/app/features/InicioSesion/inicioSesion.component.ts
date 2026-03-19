@@ -1,7 +1,7 @@
-import {Component, Input} from '@angular/core';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {AuthService, UsuarioDto} from '../../core/services/auth.service';
-import {Router, RouterLink} from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -10,36 +10,26 @@ import {Router, RouterLink} from '@angular/router';
   templateUrl: './inicioSesion.component.html',
   styleUrls: ['./InicioSesion.component.css']
 })
-export class LoginComponent {loginForm: FormGroup;
+export class LoginComponent {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.loginForm = this.fb.group({
-      correo: ['', [Validators.required, Validators.email]],
-      contrasenia: ['', Validators.required]
-    });
-  }
+  loginForm: FormGroup = this.fb.group({
+    nombreUsuario: ['', Validators.required],
+    contrasenia:   ['', Validators.required]
+  });
 
   onSubmit(): void {
     if (this.loginForm.valid) {
-      const {correo, contrasenia} = this.loginForm.value;
-
-      this.authService.login(correo, contrasenia).subscribe({
+      const { nombreUsuario, contrasenia } = this.loginForm.value;
+      this.authService.login(nombreUsuario, contrasenia).subscribe({
         next: usuario => {
-          if (usuario) {
-            localStorage.setItem('usuario', JSON.stringify(usuario));
-            console.log('✅ Usuario logueado:', usuario);
-            this.router.navigate(['/principal']);
-          }
+          localStorage.setItem('usuario', JSON.stringify(usuario));
+          this.router.navigate(['/principal']);
         },
-        error: err => {
-          alert('Correo o contraseña incorrectos');
-        }
+        error: () => alert('Usuario o contraseña incorrectos')
       });
     }
   }
-
 }

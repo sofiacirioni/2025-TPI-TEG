@@ -1,91 +1,89 @@
-<main>
-  <div class="p-3 d-flex flex-column ">
-    <div class="mb-3">
-      <app-opciones-panel [partida]="partida" ></app-opciones-panel>
+<main class="tablero-layout">
+  <div class="tablero-inner">
+
+    <div class="tablero-header">
+      <app-opciones-panel [partida]="partida"></app-opciones-panel>
     </div>
-    <div class="card shadow-lg mb-4">
-      <div class="card-body p-3">
-    <pre id="turn-info" class="fs-5 p-3 rounded border mb-0"
-         style="font-family: monospace; white-space: pre-wrap;" [ngStyle]="{'background-color': obtenerColorJugadorActual()}"> {{ turnoInfo }}</pre>
-      </div>
+
+    <div class="turno-info">
+      <pre id="turn-info" [ngStyle]="{'background-color': obtenerColorJugadorActual()}">{{ turnoInfo }}</pre>
     </div>
-    @if(jugadorConsquisto) {
-      <div>
-        <button (click)="obtenerTarjeta()" class="btn btn-primary mb-3">Obtener tarjeta</button>
+
+    @if (jugadorConsquisto) {
+      <div class="accion-carta">
+        <button (click)="obtenerTarjeta()" class="btn-teg">Obtener tarjeta</button>
       </div>
     }
-    <div class="row mb-3">
-      <div class="col-8">
-        <app-mapa-svg [paises]="partida.estadoPaises" [jugadores]="partida.jugadores"
-          (paisClickeado)="paisClickeado($event)" ></app-mapa-svg>
-      </div>
-      <div class="col-2">
-        @if(puedeCanjear){
-              <button class="btn btn-primary" (click)="abrirModalCanje(canjeModal)" >Canjear</button>
-        }
-        @for(estadoTarjeta of cartasJugador; track estadoTarjeta.idEstadoTarjeta) {
-          <div class="card mb-2">
-            <div class="card-body">
-              <h5 class="card-title">{{ estadoTarjeta.tarjeta.pais.nombre }}</h5>
-              <p class="card-text">{{ estadoTarjeta.tarjeta.simbolo }}</p>
-              @if(estadoTarjeta.canjeada) {
-                <p class="card-text text-danger">Canjeada</p>
-              } @else {
-                <p class="card-text text-success">No canjeada</p>
-              }
-              @if(estadoTarjeta.usada) {
-                <p class="card-text text-danger">Usada</p>
-              } @else {
-                <p class="card-text text-success">No usada</p>
-                @if(estadoTarjeta.jugadorTienePais) {
-                  <p class="card-text text-success">Jugador tiene el país</p>
-                  @if (esMiTurno) {
-                  <button class="btn btn-primary" (click)="usarTarjeta(estadoTarjeta)" >Usar</button>
-                  }
-                } @else {
-                  <p class="card-text text-danger">Jugador no tiene el país</p>
-                }
-              }
 
-            </div>
-            
+    <div class="tablero-grid">
+      <div class="tablero-mapa">
+        <app-mapa-svg
+          [paises]="partida.estadoPaises"
+          [jugadores]="partida.jugadores"
+          (paisClickeado)="paisClickeado($event)">
+        </app-mapa-svg>
+      </div>
+
+      <div class="tablero-cartas">
+        @if (puedeCanjear) {
+          <button class="btn-teg" (click)="abrirModalCanje()">Canjear cartas</button>
+        }
+        @for (estadoTarjeta of cartasJugador; track estadoTarjeta.idEstadoTarjeta) {
+          <div class="carta-item">
+            <h5>{{ estadoTarjeta.tarjeta.pais.nombre }}</h5>
+            <p>{{ estadoTarjeta.tarjeta.simbolo }}</p>
+            @if (estadoTarjeta.canjeada) {
+              <span class="estado-negativo">Canjeada</span>
+            } @else {
+              <span class="estado-positivo">Disponible</span>
+            }
+            @if (!estadoTarjeta.usada && estadoTarjeta.jugadorTienePais && esMiTurno) {
+              <button class="btn-teg btn-sm" (click)="usarTarjeta(estadoTarjeta)">Usar</button>
+            }
           </div>
         }
       </div>
-      <div class="col-2">
+
+      <div class="tablero-jugadores">
         <app-jugador-panel [jugadores]="partida.jugadores"></app-jugador-panel>
       </div>
     </div>
-    <div>
-        <button class="btnAvanzar" *ngIf="esMiTurno" (click)="avanzarFaseTurno()">Avanzar siguiente fase</button>
-    </div>
+
+    @if (esMiTurno) {
+      <div class="tablero-avanzar">
+        <button class="btnAvanzar" (click)="avanzarFaseTurno()">Avanzar fase</button>
+      </div>
+    }
+
   </div>
 </main>
 
-<ng-template #canjeModal let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">Seleccionar combinación de canje</h4>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('cerrado')"></button>
-  </div>
-  <div class="modal-body">
-    <div *ngFor="let combinacion of combinacionesPosibles; let i = index" class="card mb-2">
-      <div class="card-body"
-           (click)="seleccionarCombinacion(i)"
-           [class.bg-primary-subtle]="combinacionSeleccionada === i"
-           style="cursor: pointer;">
-        <p class="mb-1"><strong>Opción {{ i + 1 }}</strong></p>
-        <ul class="mb-0">
-          <li *ngFor="let carta of combinacion">
-            {{ carta.tarjeta?.simbolo }} - {{ carta.tarjeta?.pais.nombre }}
-          </li>
-        </ul>
+<!-- Modal de canje (state-based, sin ng-bootstrap) -->
+@if (showCanjeModal) {
+  <div class="modal-overlay" (click)="cerrarModalCanje()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h4>Seleccionar combinación de canje</h4>
+        <button class="btn-close-custom" (click)="cerrarModalCanje()">✕</button>
+      </div>
+      <div class="modal-body">
+        @for (combinacion of combinacionesPosibles; track $index; let i = $index) {
+          <div class="combo-item" [class.selected]="combinacionSeleccionada === i" (click)="seleccionarCombinacion(i)">
+            <p><strong>Opción {{ i + 1 }}</strong></p>
+            <ul>
+              @for (carta of combinacion; track carta.idEstadoTarjeta) {
+                <li>{{ carta.tarjeta?.simbolo }} — {{ carta.tarjeta?.pais.nombre }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-teg btn-secondary" (click)="cerrarModalCanje()">Cancelar</button>
+        <button class="btn-teg" [disabled]="combinacionSeleccionada === null" (click)="confirmarCanje()">
+          Confirmar canje
+        </button>
       </div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss('cancelado')">Cancelar</button>
-    <button type="button" class="btn btn-success"
-            [disabled]="combinacionSeleccionada === null"
-            (click)="confirmarCanje(modal)">Confirmar Canje</button>
-  </div>
-</ng-template>
+}

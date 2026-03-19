@@ -5,7 +5,7 @@
   "scripts": {
     "start": "npx concurrently --kill-others -n \"BACKEND,FRONTEND\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "cd Backend && .\\mvnw.cmd spring-boot:run",
-    "start:frontend": "cd Frontend && npm start"
+    "start:frontend": "cd Frontend && npm start",
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

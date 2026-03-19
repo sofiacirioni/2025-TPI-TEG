@@ -5,7 +5,7 @@ import {PerfilUsuario} from '../features/PerfilUsuario/perfilUsuario';
 import {SalaComponent} from '../features/Sala/sala.component';
 import {LoginComponent} from '../features/InicioSesion/inicioSesion.component';
 import {ConfigPartidaComponent} from '../features/ConfigPartida/configPartida';
-import {TableroComponent} from '../features/tablero/tablero.componet';
+import {TableroComponent} from '../features/tablero/tablero.component';
 import {EstadisticaComponent } from '../features/Estadistica/estadistica';
 import {CreditosComponent} from '../features/creditos/creditos.component';
 import {AyudaComponent} from '../features/Ayuda/ayuda';
