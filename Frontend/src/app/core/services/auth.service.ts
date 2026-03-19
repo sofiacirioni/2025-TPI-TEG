@@ -6,7 +6,7 @@ import {Usuario} from '../models/interfaces/usuario.interface';
 import { environment } from '../../../environments/environment';
 
 export interface Credencial {
-  nombreUsuario: string;
+  correo: string;
   contrasenia: string;
 }
 
@@ -26,7 +26,7 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   login(nombreUsuario: string, contrasenia: string): Observable<Usuario> {
-    const credencial: Credencial = { nombreUsuario, contrasenia };
+    const credencial: Credencial = { correo: nombreUsuario, contrasenia };
     return this.http.post<Usuario>(`${this.apiUrl}/login`, credencial, { withCredentials: true }).pipe(
       //tap(usuario => {
       //   localStorage.setItem('usuario', JSON.stringify(usuario));

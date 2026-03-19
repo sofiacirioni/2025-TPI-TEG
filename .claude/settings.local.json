@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PLAYWRIGHT_PATH=\"/c/Users/sofia/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright\")",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

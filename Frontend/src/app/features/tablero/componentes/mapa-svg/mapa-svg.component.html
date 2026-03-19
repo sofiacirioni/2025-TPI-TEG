@@ -1,19 +1,60 @@
 <svg id="mapa"
-     width="1200"
-     height="675"
+     width="100%"
+     height="100%"
      viewBox="0 0 1920 1080"
      class="mapa-svg">
+
+  <!-- Fondo oceano -->
+  <rect width="1920" height="1080" fill="#6aabce" />
+
+  <!-- Borde del mapa -->
+  @if (mapBorderPath) {
+    <path [attr.d]="mapBorderPath" fill="none" stroke="#2c1a0a" stroke-width="2" />
+  }
+
+  <!-- Países coloreados por jugador -->
   @for (p of mapaPais; track p.id) {
     <path
       [attr.d]="p.forma"
       [attr.fill]="p.color"
-      [attr.stroke]="'#1a1208'"
-      [attr.stroke-width]="0.8"
+      [attr.stroke]="'#2c1a0a'"
+      [attr.stroke-width]="1.5"
       [attr.opacity]="p.opacidad"
       (click)="clickPais(p.id)"
       (mouseenter)="p.opacidad = 1"
-      (mouseleave)="p.opacidad = 0.8"
+      (mouseleave)="p.opacidad = 0.85"
       style="cursor: pointer; transition: opacity 0.15s ease;"
     />
+  }
+
+  <!-- Etiquetas de países (layer3 del SVG original) -->
+  @for (d of labelPaths; track d) {
+    <path [attr.d]="d" fill="#1a1208" stroke="none" pointer-events="none" />
+  }
+
+  <!-- Cantidad de tropas sobre cada país -->
+  @for (p of mapaPais; track p.id) {
+    @if (p.cx > 0 && p.cy > 0) {
+      <circle
+        [attr.cx]="p.cx"
+        [attr.cy]="p.cy"
+        r="16"
+        fill="white"
+        fill-opacity="0.75"
+        stroke="#2c1a0a"
+        stroke-width="1"
+        pointer-events="none"
+      />
+      <text
+        [attr.x]="p.cx"
+        [attr.y]="p.cy + 6"
+        text-anchor="middle"
+        font-family="Montserrat, sans-serif"
+        font-size="18"
+        font-weight="700"
+        fill="#1a1208"
+        pointer-events="none"
+      >{{ p.tropas }}</text>
+    }
   }
 </svg>

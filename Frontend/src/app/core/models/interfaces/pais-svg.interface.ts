@@ -6,4 +6,6 @@ export interface paisSVG {
   borde: number,
   opacidad: number,
   forma: string;
+  cx: number;
+  cy: number;
 }
