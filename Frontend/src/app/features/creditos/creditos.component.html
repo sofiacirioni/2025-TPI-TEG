@@ -1,372 +1,272 @@
+<!-- Expedientes Clasificados — diseño war-room, paleta TEG -->
+<div class="scene-game creditos-page">
+  <div class="lamp-overlay"></div>
 
-<div class="container mt-4"style="background-color: #fccabf">
-    <!-- Header Section -->
-  <div class="mb-4 p-4 rounded-3 border border-3 text-center position-relative overflow-hidden"
-       style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%); border-color: #e91e63 !important;">
-    <h1 class="display-4 fw-bold text-dark mb-0 position-relative" style="color: #ad1457 !important;">
-       Expedientes Clasificados
-    </h1>
-    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-25">
-      <div class="bg-light rounded-circle position-absolute" style="width: 60px; height: 60px; top: 10%; left: 15%;"></div>
-      <div class="bg-white rounded-circle position-absolute" style="width: 40px; height: 40px; top: 70%; right: 20%;"></div>
-    </div>
-  </div>
+  <!-- Header -->
+  <header class="creditos-header text-center">
+    <img src="/assets/vectors/top-secret-stamp.svg" class="creditos-stamp" alt="" aria-hidden="true">
+    <h1 class="teg-display creditos-titulo">Expedientes Clasificados</h1>
+    <p class="teg-lead creditos-subtitulo">Equipo de desarrollo &mdash; TPI 2025</p>
+  </header>
 
-  <!-- 1. Lara Heredia - Naranja/Durazno -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-4 col-md-5">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #fff3e0 0%, #ffe0b2 100%); border-color: #ff9800 !important;">
-          <img ngSrc="../../../assets/miembros/LaraHeredia.png"
+  <div class="container-fluid px-4 px-lg-5 pb-5">
+
+    <!-- 1. Lara Heredia — color naranja -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-4 col-md-5">
+        <div class="expediente-foto expediente-foto--naranja surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+          <img ngSrc="/assets/images/members/LaraHeredia.png"
                alt="Lara Heredia"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #ff9800 !important;"
+               class="expediente-img"
                height="1024" width="1024">
-        </div>
-        <div class="position-absolute top-0 end-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #ff9800; color: white;">
-            Lara Heredia: 412181
-          </span>
+          <span class="expediente-legajo expediente-legajo--naranja teg-label">Lara Heredia · 412181</span>
         </div>
       </div>
-    </div>
-    <div class="col-lg-8 col-md-7">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-color: #ff9800 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #e65100;">Laretta Fuoco Lento</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #f57c00;">La Parrillera de Europa del Este</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #e65100;">Delito:</h6>
-            <p class="mb-2" style="color: #f57c00;">Incendios estratégicos en fronteras ajenas</p>
+      <div class="col-lg-8 col-md-7">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Laretta Fuoco Lento</h2>
+          <p class="expediente-subtitulo">La Parrillera de Europa del Este</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Incendios estratégicos en fronteras ajenas</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #e65100;">Especialidad:</h6>
-            <p class="mb-2" style="color: #f57c00;">Ocupa tu país y cocina tu ejército</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Ocupa tu país y cocina tu ejército</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #e65100;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #e65100;">"No me provoques… o te derrito el mapa."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"No me provoques… o te derrito el mapa."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ff9800; color: white;">Asedio Incandescente</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ffb74d; color: white;">Humareda Desorientadora</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ffe0b2; color: #e65100;">Banquete Punitivo</span>
+            <span class="expediente-habilidad">Asedio Incandescente</span>
+            <span class="expediente-habilidad">Humareda Desorientadora</span>
+            <span class="expediente-habilidad">Banquete Punitivo</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 2. Cande Blanco - Rosa/Fucsia -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-8 col-md-7 order-md-1 order-2">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%); border-color: #e91e63 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #ad1457;">Candelarione Il Silenzio Bianco</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #c2185b;">La Dama del Invierno</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #ad1457;">Delito:</h6>
-            <p class="mb-2" style="color: #c2185b;">Traición diplomática intercontinental</p>
+    <!-- 2. Cande Blanco — color rojo -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-8 col-md-7 order-md-1 order-2">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Candelarione Il Silenzio Bianco</h2>
+          <p class="expediente-subtitulo">La Dama del Invierno</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Traición diplomática intercontinental</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #ad1457;">Especialidad:</h6>
-            <p class="mb-2" style="color: #c2185b;">Hacer pactos… y romperlos con una sonrisa</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Hacer pactos… y romperlos con una sonrisa</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #ad1457;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #ad1457;">"Yo no conquisto países. Ellos se entregan."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"Yo no conquisto países. Ellos se entregan."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #e91e63; color: white;">Manipulación Gélida</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #f06292; color: white;">Aura de Confianza Forzada</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #f8bbd9; color: #ad1457;">Fragmentación de Alianzas</span>
+            <span class="expediente-habilidad">Manipulación Gélida</span>
+            <span class="expediente-habilidad">Aura de Confianza Forzada</span>
+            <span class="expediente-habilidad">Fragmentación de Alianzas</span>
           </div>
         </div>
       </div>
-    </div>
-    <div class="col-lg-4 col-md-5 order-md-2 order-1">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #fce4ec 0%, #f8bbd9 100%); border-color: #e91e63 !important;">
-          <img ngSrc="../../../assets/miembros/CandeBlanco.jpeg"
+      <div class="col-lg-4 col-md-5 order-md-2 order-1">
+        <div class="expediente-foto expediente-foto--rojo surface-paper--card surface-paper--tilt-left shadow-mesa-md">
+          <img ngSrc="/assets/images/members/CandeBlanco.jpeg"
                alt="Cande Blanco"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #e91e63 !important;"
+               class="expediente-img"
                height="1536" width="1024">
-        </div>
-        <div class="position-absolute top-0 start-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #e91e63; color: white;">
-            María Candelaria Blanco: 412381
-          </span>
+          <span class="expediente-legajo expediente-legajo--rojo teg-label">M. Candelaria Blanco · 412381</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 3. Sofia Cirioni - Púrpura/Lavanda -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-4 col-md-5">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #f3e5f5 0%, #e1bee7 100%); border-color: #9c27b0 !important;">
-          <img ngSrc="../../../assets/miembros/SofiCirioni.png"
+    <!-- 3. Sofia Cirioni — color purpura -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-4 col-md-5">
+        <div class="expediente-foto expediente-foto--purpura surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+          <img ngSrc="/assets/images/members/SofiCirioni.png"
                alt="Sofia Cirioni"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #9c27b0 !important;"
+               class="expediente-img"
                height="1024" width="1024">
-        </div>
-        <div class="position-absolute top-0 end-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #9c27b0; color: white;">
-            Sofía Cirioni: 415591
-          </span>
+          <span class="expediente-legajo expediente-legajo--purpura teg-label">Sofía Cirioni · 415591</span>
         </div>
       </div>
-    </div>
-    <div class="col-lg-8 col-md-7">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-color: #9c27b0 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #6a1b9a;">Sofiáccio Il Pugnale Rosa</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #8e24aa;">La Estocada Elegante</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #6a1b9a;">Delito:</h6>
-            <p class="mb-2" style="color: #8e24aa;">Eliminación súbita con estilo</p>
+      <div class="col-lg-8 col-md-7">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Sofiáccio Il Pugnale Rosa</h2>
+          <p class="expediente-subtitulo">La Estocada Elegante</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Eliminación súbita con estilo</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #6a1b9a;">Especialidad:</h6>
-            <p class="mb-2" style="color: #8e24aa;">Ataque silencioso y mortal desde Asia</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Ataque silencioso y mortal desde Asia</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #6a1b9a;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #6a1b9a;">"El continente es tuyo… hasta que dejo de sonreír."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"El continente es tuyo… hasta que dejo de sonreír."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #9c27b0; color: white;">Paso Silencioso</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ba68c8; color: white;">Toque Mortal</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #e1bee7; color: #6a1b9a;">Sonrisa Gélida</span>
+            <span class="expediente-habilidad">Paso Silencioso</span>
+            <span class="expediente-habilidad">Toque Mortal</span>
+            <span class="expediente-habilidad">Sonrisa Gélida</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 4. Meli - Verde Menta/Turquesa -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-8 col-md-7 order-md-1 order-2">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); border-color: #009688 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #00695c;">Abrilona Tempesta Dolce</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #00796b;">La Lluvia que Mata Despacio</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #00695c;">Delito:</h6>
-            <p class="mb-2" style="color: #00796b;">Sabotaje climático en movimientos de tropas</p>
+    <!-- 4. Meli Abril — color verde -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-8 col-md-7 order-md-1 order-2">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Abrilona Tempesta Dolce</h2>
+          <p class="expediente-subtitulo">La Lluvia que Mata Despacio</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Sabotaje climático en movimientos de tropas</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #00695c;">Especialidad:</h6>
-            <p class="mb-2" style="color: #00796b;">Te confunde hasta que te rendís</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Te confunde hasta que te rendís</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #00695c;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #00695c;">"El caos es mi idioma natal."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"El caos es mi idioma natal."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #009688; color: white;">Neblina del Olvido</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #4db6ac; color: white;">Gotas de Duda</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #b2dfdb; color: #00695c;">Canto del Viento Engañoso</span>
+            <span class="expediente-habilidad">Neblina del Olvido</span>
+            <span class="expediente-habilidad">Gotas de Duda</span>
+            <span class="expediente-habilidad">Canto del Viento Engañoso</span>
           </div>
         </div>
       </div>
-    </div>
-    <div class="col-lg-4 col-md-5 order-md-2 order-1">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #e0f2f1 0%, #b2dfdb 100%); border-color: #009688 !important;">
-          <img ngSrc="../../../assets/miembros/MeliAbril.png"
-               alt="Meli"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #009688 !important;"
+      <div class="col-lg-4 col-md-5 order-md-2 order-1">
+        <div class="expediente-foto expediente-foto--verde surface-paper--card surface-paper--tilt-left shadow-mesa-md">
+          <img ngSrc="/assets/images/members/MeliAbril.png"
+               alt="Meli Abril"
+               class="expediente-img"
                height="1024" width="1024">
-        </div>
-        <div class="position-absolute top-0 start-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #009688; color: white;">
-            Melina Lucía Abril: 412122
-          </span>
+          <span class="expediente-legajo expediente-legajo--verde teg-label">Melina L. Abril · 412122</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 5. Maxi - Azul Marino/Índigo -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-4 col-md-5">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #e8eaf6 0%, #c5cae9 100%); border-color: #3f51b5 !important;">
-          <img ngSrc="../../../assets/miembros/Maxi.png"
-               alt="Maxi"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #3f51b5 !important;"
+    <!-- 5. Maxi Carignano — color azul -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-4 col-md-5">
+        <div class="expediente-foto expediente-foto--azul surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+          <img ngSrc="/assets/images/members/Maxi.png"
+               alt="Maxi Carignano"
+               class="expediente-img"
                height="1024" width="1024">
-        </div>
-        <div class="position-absolute top-0 end-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #3f51b5; color: white;">
-            Maximiliano Carignano: 405269
-          </span>
+          <span class="expediente-legajo expediente-legajo--azul teg-label">Maximiliano Carignano · 405269</span>
         </div>
       </div>
-    </div>
-    <div class="col-lg-8 col-md-7">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%); border-color: #3f51b5 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #283593;">Maximino Corazón de Hierro</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #3949ab;">El Martillo de Kamchatka</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #283593;">Delito:</h6>
-            <p class="mb-2" style="color: #3949ab;">Invasiones masivas con mano de obra emocional</p>
+      <div class="col-lg-8 col-md-7">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Maximino Corazón de Hierro</h2>
+          <p class="expediente-subtitulo">El Martillo de Kamchatka</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Invasiones masivas con mano de obra emocional</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #283593;">Especialidad:</h6>
-            <p class="mb-2" style="color: #3949ab;">Rompe defensas y corazones</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Rompe defensas y corazones</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #283593;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #283593;">"No me subestimes: traigo dados... y traumas."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"No me subestimes: traigo dados... y traumas."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #3f51b5; color: white;">Impacto Emocional</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #7986cb; color: white;">Marea de Memorias</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #c5cae9; color: #283593;">Dados de la Desesperación</span>
+            <span class="expediente-habilidad">Impacto Emocional</span>
+            <span class="expediente-habilidad">Marea de Memorias</span>
+            <span class="expediente-habilidad">Dados de la Desesperación</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 6. Cande Arguello - Coral/Salmón -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-8 col-md-7 order-md-1 order-2">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #fce4ec 0%, #ffcdd2 100%); border-color: #f44336 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #c62828;">Arguellina Cara Scura</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #d32f2f;">La Mirada que Elimina</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #c62828;">Delito:</h6>
-            <p class="mb-2" style="color: #d32f2f;">Intimidación psicológica sin mover tropas</p>
+    <!-- 6. Cande Arguello — color sello -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-8 col-md-7 order-md-1 order-2">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Arguellina Cara Scura</h2>
+          <p class="expediente-subtitulo">La Mirada que Elimina</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Intimidación psicológica sin mover tropas</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #c62828;">Especialidad:</h6>
-            <p class="mb-2" style="color: #d32f2f;">Te hace rendir sin atacar</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Te hace rendir sin atacar</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #c62828;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #c62828;">"Si me miraste, ya es tarde."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"Si me miraste, ya es tarde."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #f44336; color: white;">Mirada Letal</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ef5350; color: white;">Presencia Intimidante</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ffcdd2; color: #c62828;">Silencio Mortal</span>
+            <span class="expediente-habilidad">Mirada Letal</span>
+            <span class="expediente-habilidad">Presencia Intimidante</span>
+            <span class="expediente-habilidad">Silencio Mortal</span>
           </div>
         </div>
       </div>
-    </div>
-    <div class="col-lg-4 col-md-5 order-md-2 order-1">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #fce4ec 0%, #ffcdd2 100%); border-color: #f44336 !important;">
-          <img ngSrc="../../../assets/miembros/CandeArguello.png"
+      <div class="col-lg-4 col-md-5 order-md-2 order-1">
+        <div class="expediente-foto expediente-foto--sello surface-paper--card surface-paper--tilt-left shadow-mesa-md">
+          <img ngSrc="/assets/images/members/CandeArguello.png"
                alt="Cande Arguello"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #f44336 !important;"
+               class="expediente-img"
                height="1024" width="1024">
-        </div>
-        <div class="position-absolute top-0 start-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #f44336; color: white;">
-            Candela Argüello Juarez: 412072
-          </span>
+          <span class="expediente-legajo expediente-legajo--sello teg-label">Candela Argüello Juarez · 412072</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 7. Agos Chapeta - Amarillo Dorado/Ámbar -->
-  <div class="row mb-4 g-3">
-    <div class="col-lg-4 col-md-5">
-      <div class="position-relative">
-        <div class="bg-gradient rounded-3 p-2 border border-3 shadow-sm"
-             style="background: linear-gradient(45deg, #fffde7 0%, #fff9c4 100%); border-color: #ffc107 !important;">
-          <img ngSrc="../../../assets/miembros/AgosCh.png"
-               alt="Agos"
-               class="img-fluid rounded-3 border border-2 shadow"
-               style="width: 100%; height: auto; object-fit: cover; border-color: #ffc107 !important;"
+    <!-- 7. Agos Chapeta — color dorado -->
+    <div class="row mb-5 g-4 align-items-stretch">
+      <div class="col-lg-4 col-md-5">
+        <div class="expediente-foto expediente-foto--dorado surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+          <img ngSrc="/assets/images/members/AgosCh.png"
+               alt="Agos Chapeta"
+               class="expediente-img"
                height="718" width="718">
-        </div>
-        <div class="position-absolute top-0 end-0 translate-middle">
-          <span class="badge rounded-pill fs-6 px-3 py-2" style="background-color: #ffc107; color: #333;">
-            Zoe Agostina Chapeta: 412252
-          </span>
+          <span class="expediente-legajo expediente-legajo--dorado teg-label">Zoe A. Chapeta · 412252</span>
         </div>
       </div>
-    </div>
-    <div class="col-lg-8 col-md-7">
-      <div class="h-100 p-4 rounded-3 border border-3 border-dashed position-relative shadow-sm"
-           style="background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%); border-color: #ffc107 !important; min-height: 250px;">
-        <div class="d-flex flex-column justify-content-center h-100">
-          <h2 class="fw-bold mb-2" style="color: #f57f17;">Chapetina Mano Tiesa</h2>
-          <h4 class="fw-bold mb-3 text-decoration-underline" style="color: #f9a825;">La Ejecutora del Conurbano Global</h4>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #f57f17;">Delito:</h6>
-            <p class="mb-2" style="color: #f9a825;">Golpes directos sin previo aviso</p>
+      <div class="col-lg-8 col-md-7">
+        <div class="expediente-info surface-paper--card shadow-mesa-md">
+          <h2 class="teg-h2 expediente-alias">Chapetina Mano Tiesa</h2>
+          <p class="expediente-subtitulo">La Ejecutora del Conurbano Global</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Delito:</span>
+            <p class="expediente-valor">Golpes directos sin previo aviso</p>
           </div>
-
-          <div class="mb-3">
-            <h6 class="fw-bold" style="color: #f57f17;">Especialidad:</h6>
-            <p class="mb-2" style="color: #f9a825;">Ataques frontales que parecen personales</p>
+          <div class="mb-2">
+            <span class="expediente-campo">Especialidad:</span>
+            <p class="expediente-valor">Ataques frontales que parecen personales</p>
           </div>
-
           <div class="mb-3">
-            <h6 class="fw-bold" style="color: #f57f17;">Frase mítica:</h6>
-            <p class="fst-italic fw-bold" style="color: #f57f17;">"Te dije que no era un juego."</p>
+            <span class="expediente-campo">Frase mítica:</span>
+            <p class="expediente-frase">"Te dije que no era un juego."</p>
           </div>
-
           <div class="d-flex gap-2 flex-wrap">
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ffc107; color: #333;">Golpe Sorpresa Urbano</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #ffca28; color: #333;">Confrontación Ineludible</span>
-            <span class="badge rounded-pill px-3 py-2" style="background-color: #fff9c4; color: #f57f17;">Fuerza de la Convicción</span>
+            <span class="expediente-habilidad">Golpe Sorpresa Urbano</span>
+            <span class="expediente-habilidad">Confrontación Ineludible</span>
+            <span class="expediente-habilidad">Fuerza de la Convicción</span>
           </div>
         </div>
       </div>
     </div>
+
+  </div><!-- /container-fluid -->
+
+  <div class="text-center pb-5">
+    <button class="btn-teg-dark" (click)="volver()">&#8592; Volver</button>
   </div>
-  <button class="volver-btn" (click)="volver()">Volver</button>
-</div>
+
+</div><!-- /creditos-page -->

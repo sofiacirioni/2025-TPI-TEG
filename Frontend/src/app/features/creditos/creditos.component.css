@@ -1,54 +1,137 @@
-:host {
-  display: block;
+/* Expedientes Clasificados — estilos de componente */
+
+.creditos-page {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-.creditos-container {
-  background-color: var(--bg-paper-dark);
-  border: 4px double var(--accent-gold);
-  outline: 2px solid var(--border-color);
-  outline-offset: -10px;
-  padding: 60px;
-  text-align: center;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-  max-width: 700px;
-  width: 90%;
+/* ── Header ─────────────────────────────────── */
+.creditos-header {
+  padding: 3rem 12% 2rem;
+}
+
+.creditos-stamp {
+  width: 110px;
+  opacity: 0.80;
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.creditos-titulo {
+  color: var(--color-claro);
+  margin-bottom: 0.5rem;
+}
+
+.creditos-subtitulo {
+  color: rgba(239, 232, 206, 0.6);
+  margin-bottom: 0;
+}
+
+/* ── Foto del expediente ─────────────────────── */
+.expediente-foto {
+  position: relative;
+  padding: 0.75rem;
+  height: 100%;
+}
+
+.expediente-foto img.expediente-img {
+  width: 100%;
+  height: auto;
+  display: block;
   border-radius: 2px;
 }
 
-h1 {
-  font-family: var(--font-heading);
-  color: var(--text-primary);
-  margin-bottom: 40px;
+/* Acento lateral por color de jugador */
+.expediente-foto--naranja { border-left: 4px solid #BF6800; }
+.expediente-foto--rojo    { border-left: 4px solid #A01515; }
+.expediente-foto--purpura { border-left: 4px solid #6B2490; }
+.expediente-foto--verde   { border-left: 4px solid #1E7A50; }
+.expediente-foto--azul    { border-left: 4px solid #1A4080; }
+.expediente-foto--sello   { border-left: 4px solid #A01515; }
+.expediente-foto--dorado  { border-left: 4px solid #6B4C00; }
+
+/* Badge de legajo */
+.expediente-legajo {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: #EFE8CE;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 4px;
-  font-size: 2.5rem;
-  border-bottom: 1px solid var(--accent-red);
-  display: inline-block;
-  padding-bottom: 10px;
+  font-family: 'Special Elite', serif;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
+.expediente-legajo--naranja { background-color: #BF6800; }
+.expediente-legajo--rojo    { background-color: #A01515; }
+.expediente-legajo--purpura { background-color: #6B2490; }
+.expediente-legajo--verde   { background-color: #1E7A50; }
+.expediente-legajo--azul    { background-color: #1A4080; }
+.expediente-legajo--sello   { background-color: #884028; }
+.expediente-legajo--dorado  { background-color: #6B4C00; }
+
+/* ── Tarjeta de información ──────────────────── */
+.expediente-info {
+  height: 100%;
+  padding: 2rem;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-li {
-  font-family: var(--font-body);
-  font-size: 1.3rem;
-  margin-bottom: 20px;
-  color: var(--text-secondary);
-  font-weight: 600;
+.expediente-alias {
+  color: #432A1E;
+  margin-bottom: 0.2rem;
 }
 
-.role {
+.expediente-subtitulo {
+  font-family: 'Roboto Slab', serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #884028;
+  text-decoration: underline;
+  margin-bottom: 1rem;
+}
+
+.expediente-campo {
   display: block;
+  font-family: 'Roboto Slab', serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #432A1E;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.expediente-valor {
+  font-family: 'Roboto Slab', serif;
   font-size: 0.9rem;
-  font-weight: normal;
+  color: #884028;
+  margin-bottom: 0.6rem;
+}
+
+.expediente-frase {
+  font-family: 'Roboto Slab', serif;
   font-style: italic;
-  color: var(--accent-red);
-  margin-top: 5px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #432A1E;
+  margin-bottom: 0;
+}
+
+/* ── Habilidades ─────────────────────────────── */
+.expediente-habilidad {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid rgba(67, 42, 30, 0.45);
+  border-radius: 999px;
+  font-family: 'Special Elite', serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #432A1E;
+  background: transparent;
 }
