@@ -1,0 +1,22 @@
+// ── BOOTSTRAP VARIABLE OVERRIDES
+// Debe importarse ANTES de bootstrap/scss/variables para que funcione el !default
+$enable-shadows    : false;
+$enable-gradients  : false;
+$enable-transitions: true;
+
+$primary  : #884028;
+$secondary: #375E41;
+$danger   : #A01515;
+
+$font-family-base       : 'Roboto Slab', serif;
+$font-family-sans-serif : 'Roboto Slab', serif;
+$font-size-base         : 1rem;
+$line-height-base       : 1.7;
+
+$body-bg   : #1C0E05;
+$body-color: #EFE8CE;
+
+$border-radius   : 2px;
+$border-radius-sm: 2px;
+$border-radius-lg: 4px;
+$border-radius-xl: 8px;

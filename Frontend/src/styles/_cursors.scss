@@ -1,0 +1,30 @@
+// ── CURSORES CUSTOM
+
+*, *::before, *::after {
+  cursor: url('/assets/vectors/cursors/hand-default.svg') 36 12, auto;
+}
+
+a,
+button,
+[role="button"],
+[role="tab"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+.interactive,
+.clickable {
+  cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, pointer;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+[contenteditable] {
+  cursor: text;
+}
+
+input[type="range"] {
+  cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, ew-resize;
+}

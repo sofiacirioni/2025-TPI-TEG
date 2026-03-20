@@ -1,0 +1,61 @@
+// ── SUPERFICIES
+// Fondos con imágenes WebP — no usar gradientes para simular madera.
+// game-escene-table.webp e initial-escene-war-room.webp están en src/assets/images/
+
+.scene-game {
+  background-image: url('/assets/images/game-escene-table.webp');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  min-height: 100vh;
+}
+
+.scene-intro {
+  background-image: url('/assets/images/initial-escene-war-room.webp');
+  background-size: cover;
+  background-position: center 30%;
+  position: relative;
+  min-height: 100vh;
+}
+
+// Overlay de luz de lámpara
+.lamp-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 65% 55% at 50% 44%,
+    rgba(255, 200, 78, 0.15) 0%,
+    rgba(220, 148, 38, 0.06) 38%,
+    transparent 65%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+// Textura de papel
+@mixin surface-paper {
+  background-color: #EFE8CE;
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+}
+
+.surface-paper { @include surface-paper; }
+
+.surface-paper--card {
+  @include surface-paper;
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
+              inset 0 0 30px rgba(50, 28, 8, 0.12);
+}
+
+.surface-paper--tilt-left   { transform: rotate(-1.2deg); }
+.surface-paper--tilt-right  { transform: rotate(1.8deg);  }
+.surface-paper--tilt-slight { transform: rotate(-0.6deg); }
+
+// Sombras cálidas
+.shadow-mesa-sm { box-shadow: 0 2px 8px  rgba(0, 0, 0, 0.50); }
+.shadow-mesa-md { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.60); }
+.shadow-mesa-lg { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.70); }

@@ -14,7 +14,7 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 body{
-  background-image: url('src/assets/TEG_Diseno_1.jpg');
+  background-image: url('/assets/images/initial-escene-war-room.webp');
   background-size: cover;
   background-position: center;
   position: relative;
