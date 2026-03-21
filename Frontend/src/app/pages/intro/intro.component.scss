@@ -5,11 +5,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transition: opacity 600ms ease;
+}
 
-  &.fade-out {
-    opacity: 0;
+.black-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+
+  &.black-overlay--active {
+    opacity: 1;
   }
 }
 
@@ -17,7 +24,7 @@
   width: min(700px, 90vw);
   font-family: var(--font-heading);
   font-size: 14px;
-  color: rgba(239, 232, 206, 0.85);
+  color: var(--color-claro);
   letter-spacing: 0.08em;
   line-height: 1.9;
 }

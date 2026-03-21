@@ -67,14 +67,14 @@ export class IntroComponent implements OnInit, OnDestroy {
 
     await this.delay(300);
 
-    await this.typeText('CUARTEL GENERAL \u2014 SALA DE OPERACIONES');
+    await this.typeText('REGISTRO DE ACCESO \u2014 SALA DE OPERACIONES');
     this.lines.push(this.currentLine);
     this.currentLine = '';
     this.cdr.detectChanges();
 
     await this.delay(200);
 
-    await this.typeText('REGISTRO DE ACCESO \u2014 NIVEL: ALTO SECRETO');
+    await this.typeText('NIVEL: ALTO SECRETO');
     this.lines.push(this.currentLine);
     this.currentLine = '';
     this.lines.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
@@ -82,14 +82,7 @@ export class IntroComponent implements OnInit, OnDestroy {
 
     await this.delay(400);
 
-    await this.typeText(`FECHA........  [${day} ${month} 194_]`);
-    this.lines.push(this.currentLine);
-    this.currentLine = '';
-    this.cdr.detectChanges();
-
-    await this.delay(200);
-
-    await this.typeText(`HORA.........  [${hours}:${minutes}]`);
+    await this.typeText(`FECHA........  ${day} ${month} 194\u2588 \u2014 ${hours}:${minutes}`);
     this.lines.push(this.currentLine);
     this.currentLine = '';
     this.cdr.detectChanges();
@@ -99,25 +92,18 @@ export class IntroComponent implements OnInit, OnDestroy {
     await this.typeText('IDENTIFICACI\u00d3N...  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588');
     this.lines.push(this.currentLine);
     this.currentLine = '';
-    this.cdr.detectChanges();
-
-    await this.delay(200);
-
-    await this.typeText('AUTORIZACI\u00d3N.....  COMANDANTE EN JEFE');
-    this.lines.push(this.currentLine);
-    this.currentLine = '';
     this.lines.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
     this.cdr.detectChanges();
 
-    await this.delay(600);
+    await this.delay(400);
 
-    await this.typeText('ACCESO AL B\u00daNKER.....  AUTORIZADO');
+    await this.typeText('ACCESO.....  AUTORIZADO');
     this.lines.push(this.currentLine);
     this.currentLine = '';
     this.typingDone = true;
     this.cdr.detectChanges();
 
-    await this.delay(800);
+    await this.delay(3000);
 
     if (this.cursorInterval) {
       clearInterval(this.cursorInterval);
@@ -129,7 +115,7 @@ export class IntroComponent implements OnInit, OnDestroy {
     this.isFadingOut = true;
     this.cdr.detectChanges();
 
-    await this.delay(600);
+    await this.delay(1000);
 
     if (!this.destroyed) {
       this.router.navigate(['/principal']);

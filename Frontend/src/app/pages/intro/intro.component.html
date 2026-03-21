@@ -1,4 +1,4 @@
-<div class="intro-screen" [class.fade-out]="isFadingOut">
+<div class="intro-screen">
   <div class="terminal">
     <div class="line" *ngFor="let line of lines; let last = last">
       {{ line }}<span
@@ -14,4 +14,5 @@
       >█</span>
     </div>
   </div>
+  <div class="black-overlay" [class.black-overlay--active]="isFadingOut"></div>
 </div>
