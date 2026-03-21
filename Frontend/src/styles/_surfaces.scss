@@ -1,19 +1,21 @@
 // ── SUPERFICIES
 // Fondos con imágenes WebP — no usar gradientes para simular madera.
-// game-escene-table.webp e initial-escene-war-room.webp están en src/assets/images/
+// game-scene-table.webp e initial-scene-war-room.webp están en src/assets/images/
 
 .scene-game {
-  background-image: url('/assets/images/game-escene-table.webp');
+  background-image: url('/assets/images/game-scene-table.webp');
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   position: relative;
   min-height: 100vh;
 }
 
 .scene-intro {
-  background-image: url('/assets/images/initial-escene-war-room.webp');
+  background-image: url('/assets/images/initial-scene-war-room.webp');
   background-size: cover;
   background-position: center 30%;
+  background-attachment: fixed;
   position: relative;
   min-height: 100vh;
 }

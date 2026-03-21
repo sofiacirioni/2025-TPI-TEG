@@ -1,14 +1,14 @@
 import {Routes} from '@angular/router';
-import {FormUsuarioComponent} from '../features/Registrarse/registrarse';
-import {PrincipalComponent} from '../features/Principal/principal.component';
-import {PerfilUsuario} from '../features/PerfilUsuario/perfilUsuario';
-import {SalaComponent} from '../features/Sala/sala.component';
-import {LoginComponent} from '../features/InicioSesion/inicioSesion.component';
-import {ConfigPartidaComponent} from '../features/ConfigPartida/configPartida';
-import {TableroComponent} from '../features/tablero/tablero.component';
-import {EstadisticaComponent } from '../features/Estadistica/estadistica';
-import {CreditosComponent} from '../features/creditos/creditos.component';
-import {AyudaComponent} from '../features/Ayuda/ayuda';
+import {FormUsuarioComponent} from '../pages/registrarse/registrarse.component';
+import {PrincipalComponent} from '../pages/principal/principal.component';
+import {PerfilUsuario} from '../pages/perfil-usuario/perfil-usuario.component';
+import {SalaComponent} from '../pages/sala/sala.component';
+import {LoginComponent} from '../pages/inicio-sesion/inicio-sesion.component';
+import {ConfigPartidaComponent} from '../pages/config-partida/config-partida.component';
+import {TableroComponent} from '../pages/tablero/tablero.component';
+import {EstadisticaComponent} from '../pages/estadistica/estadistica.component';
+import {CreditosComponent} from '../pages/creditos/creditos.component';
+import {AyudaComponent} from '../pages/ayuda/ayuda.component';
 
 export const routes: Routes = [
   { //Redireccionamiento

@@ -1,0 +1,104 @@
+.bg-light-pink {
+  background-color: #fff5f9;
+}
+.titulo-estadisticas {
+  font-size: 2rem;
+  font-weight: bold;
+  background-color: #c9a3b7;
+  color: white;
+  padding: 0.5rem 2rem;
+  border-radius: 2rem;
+  display: inline-block;
+}
+.bg-purple {
+  background-color: #c9a3b7;
+}
+.user-icon {
+  width: 48px;
+  height: 48px;
+  background-color: black;
+  border-radius: 50%;
+}
+.custom-table {
+}
+.custom-table th,
+.custom-table td {
+  border: 1px dotted gray !important;
+}
+.custom-table {
+  background-color: #fceef3;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.custom-table th,
+.custom-table td {
+  vertical-align: middle;
+}
+
+.custom-table th {
+  background-color: #f59faf;
+  background: linear-gradient(180deg, #f59faf, #e45b6a);
+  vertical-align: middle;
+  color: white;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+.table thead {
+  background-color: #f8e6ec;
+}
+.btn-light {
+  background-color: white;
+  border-color: #ccc;
+}
+
+.body{
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+#volver
+{
+
+  width: 40px;
+  height: 40px;
+
+  background-image: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  margin-top: 0px;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+
+}
+.jugar {
+  position: relative;
+  background: linear-gradient(145deg, #f59faf, #e45b6a);
+  color: white;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 700;
+  padding: 20px 50px;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 4px 10px rgba(228, 91, 106, 0.3);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 10;
+}

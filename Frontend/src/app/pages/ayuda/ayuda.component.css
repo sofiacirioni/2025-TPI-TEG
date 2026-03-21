@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.container {
+  background-color: var(--bg-paper);
+  border: 1px solid var(--border-color);
+  /* Book spine effect */
+  border-left: 12px solid var(--text-secondary);
+  border-radius: 4px;
+  box-shadow: 15px 15px 20px rgba(0, 0, 0, 0.2);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 50px;
+  position: relative;
+}
+
+.container::before {
+  /* Paper edge stain */
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(62, 39, 35, 0.05));
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+}
+
+h1 {
+  text-align: center;
+  border-bottom: 3px double var(--accent-gold);
+  padding-bottom: 20px;
+  margin-bottom: 40px;
+  font-size: 2.8rem;
+  letter-spacing: 2px;
+}
+
+p,
+li {
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 1.1rem;
+  margin-bottom: 1em;
+}
+
+strong {
+  color: var(--accent-red);
+}
+
+ul {
+  list-style-type: square;
+  padding-left: 20px;
+}
+
+/* Scrollbar customization if needed */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-paper-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
