@@ -1,5 +1,13 @@
 // ── TIPOGRAFÍA
 
+// Reset base — el navegador aplica margin:8px al body por defecto;
+// sin Bootstrap reboot esto genera el borde blanco alrededor de la página.
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #1C0E05; // $color-mesa — fallback si el componente no cubre
+}
+
 // Titulares nativos
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Special Elite', serif;

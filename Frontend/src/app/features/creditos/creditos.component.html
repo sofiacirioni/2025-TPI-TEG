@@ -1,271 +1,215 @@
-<!-- Expedientes Clasificados — diseño war-room, paleta TEG -->
-<div class="scene-game creditos-page">
+<!-- Expedientes Clasificados — columna vertical de carpetas -->
+<div class="creditos-page scene-game">
   <div class="lamp-overlay"></div>
 
-  <!-- Header -->
-  <header class="creditos-header text-center">
-    <img src="/assets/vectors/top-secret-stamp.svg" class="creditos-stamp" alt="" aria-hidden="true">
-    <h1 class="teg-display creditos-titulo">Expedientes Clasificados</h1>
-    <p class="teg-lead creditos-subtitulo">Equipo de desarrollo &mdash; TPI 2025</p>
-  </header>
+  <div class="creditos-columna">
 
-  <div class="container-fluid px-4 px-lg-5 pb-5">
+    <!-- Título: papel apoyado sobre la mesa -->
+    <div class="titulo-papel">
+      <img src="/assets/vectors/top-secret-stamp.svg" class="titulo-sello" aria-hidden="true">
+      <h1 class="teg-h2 titulo-principal">Expedientes Clasificados</h1>
+      <p class="teg-small titulo-subtitulo">Equipo de desarrollo &mdash; TPI 2025</p>
+    </div>
 
-    <!-- 1. Lara Heredia — color naranja -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-4 col-md-5">
-        <div class="expediente-foto expediente-foto--naranja surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+    <!-- Carpeta 1: Lara Heredia — foto izquierda -->
+    <article class="carpeta carpeta--1">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--naranja">
+          <img src="/assets/vectors/left-papel-clip.svg" class="clip-foto clip-foto--left" aria-hidden="true">
           <img ngSrc="/assets/images/members/LaraHeredia.png"
-               alt="Lara Heredia"
-               class="expediente-img"
+               alt="Lara Heredia" class="expediente-img"
                height="1024" width="1024">
-          <span class="expediente-legajo expediente-legajo--naranja teg-label">Lara Heredia · 412181</span>
+          <span class="expediente-legajo expediente-legajo--naranja">Lara Heredia · 412181</span>
         </div>
-      </div>
-      <div class="col-lg-8 col-md-7">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Laretta Fuoco Lento</h2>
           <p class="expediente-subtitulo">La Parrillera de Europa del Este</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Incendios estratégicos en fronteras ajenas</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Ocupa tu país y cocina tu ejército</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"No me provoques… o te derrito el mapa."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Incendios estratégicos en fronteras ajenas</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Ocupa tu país y cocina tu ejército</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"No me provoques… o te derrito el mapa."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Asedio Incandescente</span>
             <span class="expediente-habilidad">Humareda Desorientadora</span>
             <span class="expediente-habilidad">Banquete Punitivo</span>
           </div>
         </div>
       </div>
-    </div>
+    </article>
 
-    <!-- 2. Cande Blanco — color rojo -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-8 col-md-7 order-md-1 order-2">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+    <!-- Carpeta 2: Cande Blanco — foto derecha -->
+    <article class="carpeta carpeta--2 carpeta--foto-der">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--rojo">
+          <img src="/assets/vectors/right-papel-clip.svg" class="clip-foto clip-foto--right" aria-hidden="true">
+          <img ngSrc="/assets/images/members/CandeBlanco.jpeg"
+               alt="Cande Blanco" class="expediente-img"
+               height="1536" width="1024">
+          <span class="expediente-legajo expediente-legajo--rojo">M. Candelaria Blanco · 412381</span>
+        </div>
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Candelarione Il Silenzio Bianco</h2>
           <p class="expediente-subtitulo">La Dama del Invierno</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Traición diplomática intercontinental</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Hacer pactos… y romperlos con una sonrisa</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"Yo no conquisto países. Ellos se entregan."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Traición diplomática intercontinental</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Hacer pactos… y romperlos con una sonrisa</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"Yo no conquisto países. Ellos se entregan."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Manipulación Gélida</span>
             <span class="expediente-habilidad">Aura de Confianza Forzada</span>
             <span class="expediente-habilidad">Fragmentación de Alianzas</span>
           </div>
         </div>
       </div>
-      <div class="col-lg-4 col-md-5 order-md-2 order-1">
-        <div class="expediente-foto expediente-foto--rojo surface-paper--card surface-paper--tilt-left shadow-mesa-md">
-          <img ngSrc="/assets/images/members/CandeBlanco.jpeg"
-               alt="Cande Blanco"
-               class="expediente-img"
-               height="1536" width="1024">
-          <span class="expediente-legajo expediente-legajo--rojo teg-label">M. Candelaria Blanco · 412381</span>
-        </div>
-      </div>
-    </div>
+    </article>
 
-    <!-- 3. Sofia Cirioni — color purpura -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-4 col-md-5">
-        <div class="expediente-foto expediente-foto--purpura surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+    <!-- Carpeta 3: Sofia Cirioni — foto izquierda -->
+    <article class="carpeta carpeta--3">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--purpura">
+          <img src="/assets/vectors/left-papel-clip.svg" class="clip-foto clip-foto--left" aria-hidden="true">
           <img ngSrc="/assets/images/members/SofiCirioni.png"
-               alt="Sofia Cirioni"
-               class="expediente-img"
+               alt="Sofia Cirioni" class="expediente-img"
                height="1024" width="1024">
-          <span class="expediente-legajo expediente-legajo--purpura teg-label">Sofía Cirioni · 415591</span>
+          <span class="expediente-legajo expediente-legajo--purpura">Sofía Cirioni · 415591</span>
         </div>
-      </div>
-      <div class="col-lg-8 col-md-7">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Sofiáccio Il Pugnale Rosa</h2>
           <p class="expediente-subtitulo">La Estocada Elegante</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Eliminación súbita con estilo</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Ataque silencioso y mortal desde Asia</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"El continente es tuyo… hasta que dejo de sonreír."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Eliminación súbita con estilo</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Ataque silencioso y mortal desde Asia</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"El continente es tuyo… hasta que dejo de sonreír."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Paso Silencioso</span>
             <span class="expediente-habilidad">Toque Mortal</span>
             <span class="expediente-habilidad">Sonrisa Gélida</span>
           </div>
         </div>
       </div>
-    </div>
+    </article>
 
-    <!-- 4. Meli Abril — color verde -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-8 col-md-7 order-md-1 order-2">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+    <!-- Carpeta 4: Meli Abril — foto derecha -->
+    <article class="carpeta carpeta--4 carpeta--foto-der">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--verde">
+          <img src="/assets/vectors/right-papel-clip.svg" class="clip-foto clip-foto--right" aria-hidden="true">
+          <img ngSrc="/assets/images/members/MeliAbril.png"
+               alt="Meli Abril" class="expediente-img"
+               height="1024" width="1024">
+          <span class="expediente-legajo expediente-legajo--verde">Melina L. Abril · 412122</span>
+        </div>
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Abrilona Tempesta Dolce</h2>
           <p class="expediente-subtitulo">La Lluvia que Mata Despacio</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Sabotaje climático en movimientos de tropas</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Te confunde hasta que te rendís</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"El caos es mi idioma natal."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Sabotaje climático en movimientos de tropas</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Te confunde hasta que te rendís</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"El caos es mi idioma natal."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Neblina del Olvido</span>
             <span class="expediente-habilidad">Gotas de Duda</span>
             <span class="expediente-habilidad">Canto del Viento Engañoso</span>
           </div>
         </div>
       </div>
-      <div class="col-lg-4 col-md-5 order-md-2 order-1">
-        <div class="expediente-foto expediente-foto--verde surface-paper--card surface-paper--tilt-left shadow-mesa-md">
-          <img ngSrc="/assets/images/members/MeliAbril.png"
-               alt="Meli Abril"
-               class="expediente-img"
-               height="1024" width="1024">
-          <span class="expediente-legajo expediente-legajo--verde teg-label">Melina L. Abril · 412122</span>
-        </div>
-      </div>
-    </div>
+    </article>
 
-    <!-- 5. Maxi Carignano — color azul -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-4 col-md-5">
-        <div class="expediente-foto expediente-foto--azul surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+    <!-- Carpeta 5: Maxi Carignano — foto izquierda -->
+    <article class="carpeta carpeta--5">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--azul">
+          <img src="/assets/vectors/left-papel-clip.svg" class="clip-foto clip-foto--left" aria-hidden="true">
           <img ngSrc="/assets/images/members/Maxi.png"
-               alt="Maxi Carignano"
-               class="expediente-img"
+               alt="Maxi Carignano" class="expediente-img"
                height="1024" width="1024">
-          <span class="expediente-legajo expediente-legajo--azul teg-label">Maximiliano Carignano · 405269</span>
+          <span class="expediente-legajo expediente-legajo--azul">Maximiliano Carignano · 405269</span>
         </div>
-      </div>
-      <div class="col-lg-8 col-md-7">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Maximino Corazón de Hierro</h2>
           <p class="expediente-subtitulo">El Martillo de Kamchatka</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Invasiones masivas con mano de obra emocional</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Rompe defensas y corazones</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"No me subestimes: traigo dados... y traumas."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Invasiones masivas con mano de obra emocional</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Rompe defensas y corazones</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"No me subestimes: traigo dados... y traumas."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Impacto Emocional</span>
             <span class="expediente-habilidad">Marea de Memorias</span>
             <span class="expediente-habilidad">Dados de la Desesperación</span>
           </div>
         </div>
       </div>
-    </div>
+    </article>
 
-    <!-- 6. Cande Arguello — color sello -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-8 col-md-7 order-md-1 order-2">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+    <!-- Carpeta 6: Cande Arguello — foto derecha -->
+    <article class="carpeta carpeta--6 carpeta--foto-der">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--sello">
+          <img src="/assets/vectors/right-papel-clip.svg" class="clip-foto clip-foto--right" aria-hidden="true">
+          <img ngSrc="/assets/images/members/CandeArguello.png"
+               alt="Cande Arguello" class="expediente-img"
+               height="1024" width="1024">
+          <span class="expediente-legajo expediente-legajo--sello">Candela Argüello Juarez · 412072</span>
+        </div>
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Arguellina Cara Scura</h2>
           <p class="expediente-subtitulo">La Mirada que Elimina</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Intimidación psicológica sin mover tropas</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Te hace rendir sin atacar</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"Si me miraste, ya es tarde."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Intimidación psicológica sin mover tropas</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Te hace rendir sin atacar</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"Si me miraste, ya es tarde."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Mirada Letal</span>
             <span class="expediente-habilidad">Presencia Intimidante</span>
             <span class="expediente-habilidad">Silencio Mortal</span>
           </div>
         </div>
       </div>
-      <div class="col-lg-4 col-md-5 order-md-2 order-1">
-        <div class="expediente-foto expediente-foto--sello surface-paper--card surface-paper--tilt-left shadow-mesa-md">
-          <img ngSrc="/assets/images/members/CandeArguello.png"
-               alt="Cande Arguello"
-               class="expediente-img"
-               height="1024" width="1024">
-          <span class="expediente-legajo expediente-legajo--sello teg-label">Candela Argüello Juarez · 412072</span>
-        </div>
-      </div>
-    </div>
+    </article>
 
-    <!-- 7. Agos Chapeta — color dorado -->
-    <div class="row mb-5 g-4 align-items-stretch">
-      <div class="col-lg-4 col-md-5">
-        <div class="expediente-foto expediente-foto--dorado surface-paper--card surface-paper--tilt-right shadow-mesa-md">
+    <!-- Carpeta 7: Agos Chapeta — foto izquierda -->
+    <article class="carpeta carpeta--7">
+      <div class="carpeta-interior">
+        <div class="carpeta-foto carpeta-foto--dorado">
+          <img src="/assets/vectors/left-papel-clip.svg" class="clip-foto clip-foto--left" aria-hidden="true">
           <img ngSrc="/assets/images/members/AgosCh.png"
-               alt="Agos Chapeta"
-               class="expediente-img"
+               alt="Agos Chapeta" class="expediente-img"
                height="718" width="718">
-          <span class="expediente-legajo expediente-legajo--dorado teg-label">Zoe A. Chapeta · 412252</span>
+          <span class="expediente-legajo expediente-legajo--dorado">Zoe A. Chapeta · 412252</span>
         </div>
-      </div>
-      <div class="col-lg-8 col-md-7">
-        <div class="expediente-info surface-paper--card shadow-mesa-md">
+        <div class="carpeta-info">
           <h2 class="teg-h2 expediente-alias">Chapetina Mano Tiesa</h2>
           <p class="expediente-subtitulo">La Ejecutora del Conurbano Global</p>
-          <div class="mb-2">
-            <span class="expediente-campo">Delito:</span>
-            <p class="expediente-valor">Golpes directos sin previo aviso</p>
-          </div>
-          <div class="mb-2">
-            <span class="expediente-campo">Especialidad:</span>
-            <p class="expediente-valor">Ataques frontales que parecen personales</p>
-          </div>
-          <div class="mb-3">
-            <span class="expediente-campo">Frase mítica:</span>
-            <p class="expediente-frase">"Te dije que no era un juego."</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
+          <span class="expediente-campo">Delito:</span>
+          <p class="expediente-valor">Golpes directos sin previo aviso</p>
+          <span class="expediente-campo">Especialidad:</span>
+          <p class="expediente-valor">Ataques frontales que parecen personales</p>
+          <span class="expediente-campo">Frase mítica:</span>
+          <p class="expediente-frase">"Te dije que no era un juego."</p>
+          <div class="habilidades">
             <span class="expediente-habilidad">Golpe Sorpresa Urbano</span>
             <span class="expediente-habilidad">Confrontación Ineludible</span>
             <span class="expediente-habilidad">Fuerza de la Convicción</span>
           </div>
         </div>
       </div>
-    </div>
+    </article>
 
-  </div><!-- /container-fluid -->
+  </div><!-- /creditos-columna -->
 
-  <div class="text-center pb-5">
+  <div class="creditos-volver">
     <button class="btn-teg-dark" (click)="volver()">&#8592; Volver</button>
   </div>
 

@@ -11,7 +11,7 @@ import {Router, RouterLink} from "@angular/router";
     RouterLink
   ],
   templateUrl: './creditos.component.html',
-  styleUrl: './creditos.component.css'
+  styleUrl: './creditos.component.scss'
 })
 export class CreditosComponent {
   private router: Router
