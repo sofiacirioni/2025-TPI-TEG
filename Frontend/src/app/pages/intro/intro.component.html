@@ -1,0 +1,17 @@
+<div class="intro-screen" [class.fade-out]="isFadingOut">
+  <div class="terminal">
+    <div class="line" *ngFor="let line of lines; let last = last">
+      {{ line }}<span
+        class="cursor"
+        *ngIf="last && typingDone"
+        [style.opacity]="showCursor ? '1' : '0'"
+      >█</span>
+    </div>
+    <div class="line" *ngIf="currentLine">
+      {{ currentLine }}<span
+        class="cursor"
+        [style.opacity]="showCursor ? '1' : '0'"
+      >█</span>
+    </div>
+  </div>
+</div>

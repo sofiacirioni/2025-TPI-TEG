@@ -1,4 +1,5 @@
 import {Routes} from '@angular/router';
+import {IntroComponent} from '../pages/intro/intro.component';
 import {FormUsuarioComponent} from '../pages/registrarse/registrarse.component';
 import {PrincipalComponent} from '../pages/principal/principal.component';
 import {PerfilUsuario} from '../pages/perfil-usuario/perfil-usuario.component';
@@ -11,10 +12,9 @@ import {CreditosComponent} from '../pages/creditos/creditos.component';
 import {AyudaComponent} from '../pages/ayuda/ayuda.component';
 
 export const routes: Routes = [
-  { //Redireccionamiento
+  { // Secuencia de entrada (typewriter)
     path: '',
-    redirectTo: 'principal',
-    pathMatch: 'full'
+    component: IntroComponent
   },
   { //Pantalla de inicio, incluye boton de jugar
     path: 'principal',

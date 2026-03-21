@@ -1,52 +1,94 @@
 # Revisión visual UI — TEG Design System
 
-Usá Playwright para hacer una revisión visual completa de la interfaz 
-actual contra los criterios del design system TEG.
+Ejecuta una revisión visual completa de la interfaz usando Playwright. El frontend debe estar corriendo en http://localhost:4200. Si no está corriendo, levantalo con `cd Frontend && npm start` antes de empezar.
 
-## Checklist a verificar
+## Instrucciones
 
-### Fuentes
-- [ ] Abrí DevTools Network, filtrá por "font"
-- [ ] Verificar que se cargan archivos TTF desde /assets/fonts/
-- [ ] Verificar que NO hay requests a fonts.googleapis.com
-- [ ] Capturar screenshot de un título H1 o display — debe verse 
-      Special Elite (tipografía de máquina de escribir)
-- [ ] Capturar screenshot de párrafo de cuerpo — debe verse Roboto Slab 
-      (serif con remates)
+Usá el Bash tool para correr comandos de Playwright. Capturá screenshots con `page.screenshot()` y guardálos en `/tmp/review-ui/`. Analizá cada screenshot visualmente.
 
-### Cursor
-- [ ] Verificar que el cursor custom aparece (no el cursor de flecha 
-      nativo del sistema)
-- [ ] Hover sobre un botón — debe cambiar a la mano señalando
+### 1. Setup
 
-### Viñeta
-- [ ] Capturar screenshot full-page
-- [ ] Los cuatro bordes deben tener oscurecimiento gradual visible
-- [ ] El centro debe estar más iluminado que los bordes
+```bash
+mkdir -p /tmp/review-ui
+```
 
-### Atmósfera general
-- [ ] La pantalla visible se percibe como "documento de época" o 
-      "interfaz militar histórica"
-- [ ] No hay elementos que rompan la coherencia visual (colores 
-      fuera de paleta, fuentes modernas, iconos muy contemporáneos)
+Iniciá un script Playwright inline con Node.js:
 
-### Componentes existentes
-- [ ] Navegar a cada ruta disponible en app.routes.ts
-- [ ] Capturar screenshot de cada pantalla
-- [ ] Identificar cualquier componente que use clases Bootstrap 
-      sin override (btn btn-primary, card, badge, etc.) y que 
-      visualmente no coincida con el design system
+```bash
+cd "Frontend" && node -e "
+const { chromium } = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch({ headless: false });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const errors = [];
+  const requests404 = [];
 
-### Errores de consola
-- [ ] Verificar que no hay errores 404 de assets (fuentes, SVGs, imágenes)
-- [ ] Verificar que no hay errores de Angular en consola
+  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+  page.on('response', res => { if (res.status() === 404) requests404.push(res.url()); });
 
-## Formato del reporte
+  const routes = [
+    'principal', 'iniciar-sesion', 'registrarse', 'perfilUsuario',
+    'entrarCrearSala', 'configPartida', 'creditos', 'estadisticas', 'ayuda'
+  ];
 
-Para cada ítem fallido, reportar:
-- Qué se esperaba
-- Qué se encontró
-- Screenshot o selector CSS del elemento problemático
-- Sugerencia de corrección
+  for (const route of routes) {
+    await page.goto('http://localhost:4200/' + route, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: '/tmp/review-ui/' + route + '.png', fullPage: true });
+    console.log('Capturado: ' + route);
+  }
 
-Para cada ítem aprobado, una línea: ✓ [nombre del ítem]
+  console.log('--- ERRORES DE CONSOLA ---');
+  errors.forEach(e => console.log(e));
+  console.log('--- REQUESTS 404 ---');
+  requests404.forEach(u => console.log(u));
+
+  await browser.close();
+})();
+"
+```
+
+### 2. Checklist a verificar
+
+Para cada screenshot capturado, revisá visualmente:
+
+**Fuentes**
+- El texto de títulos/headings usa Special Elite (tipografía de máquina de escribir)
+- El texto de cuerpo usa Roboto Slab (serif con remates)
+- No hay fuentes sans-serif modernas visibles (Arial, Helvetica, etc.)
+
+**Viñeta (vignette)**
+- Los cuatro bordes de la pantalla tienen oscurecimiento gradual
+- El centro está más iluminado que los bordes
+
+**Fondo**
+- Pantalla `principal`: fondo `initial-scene-war-room.webp` (sala de guerra)
+- Resto de pantallas: fondo `game-scene-table.webp` (mesa de juego)
+- El fondo no se ve ampliado, pixelado ni cortado extrañamente
+- El fondo es consistente en todas las pantallas (mismo nivel de zoom)
+
+**Coherencia visual**
+- Paleta de colores acorde al design system (tonos marrones, rojos oscuros, crema)
+- No hay botones Bootstrap sin override (btn-primary azul, card gris, etc.)
+- No hay iconos muy contemporáneos que rompan la estética
+
+**Errores técnicos**
+- Sin errores 404 en assets (fuentes, SVGs, imágenes)
+- Sin errores de Angular en consola
+
+### 3. Formato del reporte
+
+Al finalizar, producí un reporte con este formato:
+
+Para cada ítem aprobado:
+`✓ [nombre del ítem]`
+
+Para cada ítem fallido:
+```
+✗ [nombre del ítem]
+  Esperado: ...
+  Encontrado: ...
+  Pantalla/selector: ...
+  Sugerencia: ...
+```

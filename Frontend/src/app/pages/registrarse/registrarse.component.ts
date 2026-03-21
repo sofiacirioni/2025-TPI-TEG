@@ -15,13 +15,13 @@ import { NgIf, NgFor, CommonModule } from '@angular/common';
 export class FormUsuarioComponent implements OnInit {
 
   imagen: string[] =
-    ['assets/miembros/AgosCh.png',
-      'assets/miembros/CandeArguello.png',
-      'assets/miembros/CandeBlanco.jpeg',
-      'assets/miembros/LaraHeredia.png',
-      'assets/miembros/MeliAbril.png',
-      'assets/miembros/SofiCirioni.png',
-      'assets/miembros/Maxi.png']
+    ['assets/members/AgosCh.png',
+      'assets/members/CandeArguello.png',
+      'assets/members/CandeBlanco.png',
+      'assets/members/LaraHeredia.png',
+      'assets/members/MeliAbril.png',
+      'assets/members/SofiCirioni.png',
+      'assets/members/Maxi.png']
 
   mostrarGaleria = false;
   imagenSeleccionadaTemporal: string | null = null;

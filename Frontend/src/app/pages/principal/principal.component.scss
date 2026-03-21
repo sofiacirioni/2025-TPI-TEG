@@ -1,0 +1,156 @@
+:host {
+  display: block;
+}
+
+// ── Container ──────────────────────────────────────────────────────────────
+.Container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ── Background scene (capa separada para zoom independiente) ───────────────
+.bg-scene {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, transparent 40%, rgba(62, 39, 35, 0.4) 100%),
+    url('/assets/images/initial-scene-war-room.webp');
+  background-size: cover;
+  background-position: center 30%;
+  transform: scale(1);
+  transform-origin: center center;
+  will-change: transform;
+  z-index: 0;
+}
+
+.bg-scene--zooming {
+  transform: scale(1.28);
+  transition: transform 2s ease-in;
+}
+
+// ── Panel UI (centrado, inferior) ──────────────────────────────────────────
+.ui-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 80px;
+  z-index: 20;
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.Container.ui-fading .ui-panel,
+.Container.ui-fading .btn-perfil,
+.Container.ui-fading .btn-creditos,
+.Container.ui-fading .btn-ayuda {
+  opacity: 0;
+  pointer-events: none;
+}
+
+// ── Título "T · E · G" ─────────────────────────────────────────────────────
+.teg-title {
+  color: var(--color-claro);
+  letter-spacing: 0.28em;
+  text-shadow: 0 0 30px rgba(255, 180, 60, 0.4);
+  margin-bottom: 8px;
+}
+
+// ── Subtítulo ──────────────────────────────────────────────────────────────
+.teg-subtitle {
+  color: var(--color-claro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+// ── Iconos de navegación (base) ────────────────────────────────────────────
+.nav-icon-btn {
+  position: absolute;
+  background: none;
+  border: none;
+  color: var(--color-claro);
+  opacity: 0.75;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+  line-height: 1;
+  z-index: 20;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.nav-icon-btn--label {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.btn-perfil {
+  top: 20px;
+  right: 20px;
+}
+
+.btn-creditos {
+  bottom: 20px;
+  right: 20px;
+}
+
+.btn-ayuda {
+  bottom: 24px;
+  left: 24px;
+}
+
+// ── Canvas de partículas ───────────────────────────────────────────────────
+.particle-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  width: 100%;
+  height: 100%;
+}
+
+// ── Overlay oscuro ─────────────────────────────────────────────────────────
+.bg-dark-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  pointer-events: none;
+  z-index: 60;
+  transition: background 0.9s ease;
+}
+
+.bg-dark-overlay--active {
+  background: rgba(0, 0, 0, 1);
+}
+
+// ── Crossfade overlay (sin zoom, solo fade) ────────────────────────────────
+.overlay-zoom {
+  position: fixed;
+  inset: 0;
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.overlay-zoom--active {
+  opacity: 1;
+  transition: opacity 1.6s ease;
+}
