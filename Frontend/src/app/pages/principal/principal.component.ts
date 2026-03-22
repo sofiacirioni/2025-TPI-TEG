@@ -47,7 +47,7 @@ export class PrincipalComponent implements AfterViewInit, OnDestroy {
     const canvas = this.canvasRef.nativeElement;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    this.particles = Array.from({ length: 80 }, () =>
+    this.particles = Array.from({ length: 130 }, () =>
       this.createParticle(canvas.width, canvas.height)
     );
   }
@@ -132,7 +132,7 @@ export class PrincipalComponent implements AfterViewInit, OnDestroy {
     await this.delay(500);
     this.darkening = true;
 
-    // 1600ms: pantalla negra completa (700 + ~900ms de transición)
+    // 1600ms: pantalla negra completa (700 + ~900ms de transicion)
     await this.delay(900);
     this.zoomActive = true;
 

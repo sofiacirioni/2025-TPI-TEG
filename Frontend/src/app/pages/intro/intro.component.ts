@@ -82,7 +82,7 @@ export class IntroComponent implements OnInit, OnDestroy {
 
     await this.delay(400);
 
-    await this.typeText(`FECHA........  ${day} ${month} 194\u2588 \u2014 ${hours}:${minutes}`);
+    await this.typeText(`FECHA........ [ ${day} ${month} 194\u2588 \u2014 ${hours}:${minutes} ]`);
     this.lines.push(this.currentLine);
     this.currentLine = '';
     this.cdr.detectChanges();

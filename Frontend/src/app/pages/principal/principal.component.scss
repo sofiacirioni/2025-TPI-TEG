@@ -78,20 +78,20 @@
 }
 
 // ── Iconos de navegación (base) ────────────────────────────────────────────
+// z-index > 9999 para quedar encima de la viñeta global (.vignette-global)
 .nav-icon-btn {
   position: absolute;
   background: none;
   border: none;
   color: var(--color-claro);
-  opacity: 0.75;
-  cursor: pointer;
+  opacity: 0.9;
   padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity 0.4s ease;
   line-height: 1;
-  z-index: 20;
+  z-index: 10000;
 
   &:hover {
     opacity: 1;

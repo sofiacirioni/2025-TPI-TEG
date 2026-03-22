@@ -1,249 +1,207 @@
-# 🎮 TEG - Monorepo
+# TEG — Táctica y Estrategia de Guerra
 
-Aplicación web para jugar **TEG** (Táctica y Estrategia de Guerra), un juego de estrategia y conquista.
-
-Este proyecto es un monorepo que contiene:
-- **Frontend**: Angular 20
-- **Backend**: Java 17 + Spring Boot 3.5.0
+Juego de estrategia por turnos implementado como aplicación web fullstack. Monorepo con Angular 21 (frontend) + Spring Boot 3.3.5 (backend).
 
 ---
 
-## 📋 Requisitos Previos
+## Stack
 
-### Para el Backend:
-- **Java JDK 17** o superior
-- **Maven 3.6+** (o usar el wrapper incluido: `mvnw`)
-
-### Para el Frontend:
-- **Node.js 18+** y **npm** (o **yarn**)
-
----
-
-## 🚀 Instalación y Levantado
-
-### 1️⃣ Backend (Java/Spring Boot)
-
-#### Opción A: Usando Maven Wrapper (Recomendado)
-
-```bash
-# Navegar a la carpeta del backend
-cd Backend
-
-# Instalar dependencias y compilar (primera vez)
-./mvnw clean install
-
-# En Windows:
-mvnw.cmd clean install
-
-# Levantar el servidor
-./mvnw spring-boot:run
-
-# En Windows:
-mvnw.cmd spring-boot:run
-```
-
-#### Opción B: Usando Maven instalado
-
-```bash
-cd Backend
-
-# Instalar dependencias y compilar
-mvn clean install
-
-# Levantar el servidor
-mvn spring-boot:run
-```
-
-#### Verificar que el Backend está corriendo:
-- El servidor se levantará en: **http://localhost:8080**
-- Swagger UI (documentación API): **http://localhost:8080/swagger-ui.html**
-- H2 Console (base de datos): **http://localhost:8080/h2-console**
-
-**Credenciales H2 Console:**
-- JDBC URL: `jdbc:h2:file:./data/tegdb`
-- Username: `sa`
-- Password: (vacío)
+| Capa | Tecnología |
+|---|---|
+| Frontend | Angular 21, TypeScript 5.8, Bootstrap 5, SCSS |
+| Backend | Java 17, Spring Boot 3.3.5, Maven |
+| Base de datos | H2 file-based (`Backend/data/tegdb`) |
+| Tiempo real | WebSocket (STOMP + SockJS) |
+| Tests FE | Jasmine + Karma |
+| Tests BE | JUnit + Mockito |
+| API docs | Swagger `/swagger-ui.html` |
 
 ---
 
-### 2️⃣ Frontend (Angular)
+## URLs de desarrollo
 
-```bash
-# Navegar a la carpeta del frontend
-cd Frontend
+| Servicio | URL |
+|---|---|
+| Frontend | http://localhost:4200 |
+| Backend API | http://localhost:8080/api/v1 |
+| WebSocket | http://localhost:8080/ws |
+| Swagger | http://localhost:8080/swagger-ui.html |
+| H2 Console | http://localhost:8080/h2-console |
 
-# Instalar dependencias (primera vez)
-npm install
-
-# Levantar el servidor de desarrollo
-npm start
-
-# O alternativamente:
-ng serve
-```
-
-#### Verificar que el Frontend está corriendo:
-- El servidor se levantará en: **http://localhost:4200**
+**Credenciales H2:** usuario `sa`, password vacío, JDBC URL `jdbc:h2:file:./data/tegdb`
 
 ---
 
-## 🔧 Configuración
+## Instalación y levantado
 
 ### Backend
 
-La configuración del backend se encuentra en:
-```
-Backend/src/main/resources/application.properties
-```
+```bash
+cd Backend
 
-**Configuración actual:**
-- Puerto: `8080`
-- Base de datos: H2 (archivo persistente en `Backend/data/tegdb.mv.db`)
-- CORS: Habilitado para `http://localhost:4200`
+# Primera vez
+./mvnw clean install          # Linux/Mac
+mvnw.cmd clean install        # Windows
+
+# Levantar
+./mvnw spring-boot:run
+mvnw.cmd spring-boot:run      # Windows
+```
 
 ### Frontend
 
-La configuración del frontend se encuentra en:
-```
-Frontend/src/environments/environment.ts
+```bash
+cd Frontend
+npm install       # primera vez
+npm start         # levanta en localhost:4200
 ```
 
-**Configuración actual:**
-- API URL: `http://localhost:8080/api/v1`
-- WebSocket URL: `http://localhost:8080/ws`
+### Ambos simultáneamente (desde la raíz)
 
-Si necesitas cambiar el puerto del backend, actualiza:
-1. `Backend/src/main/resources/application.properties` → `server.port`
-2. `Frontend/src/environments/environment.ts` → `apiUrl` y `wsUrl`
+```bash
+npm start
+```
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del proyecto
 
 ```
 2025-TPI-TEG/
-├── Backend/              # Spring Boot Backend
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/     # Código fuente Java
-│   │   │   └── resources/
-│   │   │       └── application.properties
-│   │   └── test/         # Tests
-│   ├── data/             # Base de datos H2 (generada automáticamente)
-│   ├── pom.xml           # Dependencias Maven
-│   └── mvnw              # Maven Wrapper
+├── Backend/                    # Spring Boot
+│   ├── src/main/java/
+│   │   ├── Controller/         # 11 controladores REST
+│   │   ├── Services/           # Interfaces de servicio
+│   │   ├── ServicesImpl/       # Implementaciones
+│   │   ├── Repositories/       # JPA repositories (13)
+│   │   ├── Entities/           # Entidades JPA (16)
+│   │   ├── Dtos/               # Data Transfer Objects
+│   │   ├── models/             # Enums y modelos de dominio
+│   │   └── configs/            # CORS, WebSocket, Swagger
+│   ├── data/                   # Base de datos H2 (tegdb.mv.db)
+│   └── pom.xml
 │
-├── Frontend/             # Angular Frontend
-│   ├── src/
-│   │   ├── app/          # Código fuente Angular
-│   │   ├── assets/       # Recursos estáticos
-│   │   └── environments/ # Configuración de entornos
-│   ├── package.json      # Dependencias npm
-│   └── angular.json      # Configuración Angular
-│
-└── .gitignore           # Archivos ignorados por Git (unificado)
+└── Frontend/                   # Angular 21
+    ├── src/
+    │   ├── app/
+    │   │   ├── core/
+    │   │   │   ├── services/   # Servicios HTTP y de negocio
+    │   │   │   └── models/     # Clases, interfaces, enums
+    │   │   ├── pages/
+    │   │   │   ├── intro/          # Animación typewriter de entrada
+    │   │   │   ├── principal/      # Menú principal con partículas
+    │   │   │   ├── inicio-sesion/  # Login
+    │   │   │   ├── registrarse/    # Registro
+    │   │   │   ├── sala/           # Lobby de sala
+    │   │   │   ├── config-partida/ # Configuración de partida
+    │   │   │   ├── tablero/        # Tablero de juego (mapa SVG)
+    │   │   │   ├── perfil-usuario/ # Perfil
+    │   │   │   ├── estadistica/    # Estadísticas
+    │   │   │   ├── creditos/       # Créditos del equipo
+    │   │   │   └── ayuda/          # Reglas del juego
+    │   │   └── routes/
+    │   └── styles/             # Design system SCSS
+    │       ├── _tokens.scss    # Variables y CSS custom properties
+    │       ├── _typography.scss
+    │       ├── _buttons.scss
+    │       ├── _surfaces.scss
+    │       ├── _cursors.scss   # Cursores custom SVG
+    │       ├── _vignette.scss  # Overlay de viñeta global
+    │       └── _fonts.scss
+    └── public/
+        └── mapa-teg-vector-optimizado.svg
 ```
 
 ---
 
-## 🛠️ Comandos Útiles
-
-### Backend
+## Comandos útiles
 
 ```bash
-# Compilar sin ejecutar
-./mvnw clean package
+# Tests backend
+cd Backend && ./mvnw test
 
-# Ejecutar tests
-./mvnw test
+# Tests frontend
+cd Frontend && npm test
 
-# Limpiar proyecto
-./mvnw clean
-```
+# Build producción
+cd Frontend && npm run build
 
-### Frontend
-
-```bash
-# Compilar para producción
-npm run build
-
-# Ejecutar tests
-npm test
-
-# Verificar código
-ng lint
+# Limpiar caché Angular (si hay errores de webpack raros)
+cd Frontend && rm -rf .angular/cache && npm start
 ```
 
 ---
 
-## 🐛 Solución de Problemas
+## Notas importantes
 
-### Backend no inicia
-1. Verifica que Java 17+ esté instalado: `java -version`
-2. Verifica que el puerto 8080 no esté en uso
-3. Revisa los logs en la consola para errores específicos
+- **DB H2 persistente**: el archivo `Backend/data/tegdb.mv.db` se mantiene entre reinicios. Para reset limpio, eliminar ese archivo.
+- **CORS**: configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
+- **Bots**: `BotService` juega automáticamente los turnos de jugadores bot — revisar antes de modificar el flujo de turnos.
+- **Mapa SVG**: cargado vía HTTP desde `public/`, parseado con DOMParser. Los países tienen IDs 1-50 = `pais.idPais`.
+- **Caché Angular**: si `npm start` muestra errores de módulos no encontrados pero `ng build` compila bien, borrar `.angular/cache` y reiniciar.
 
-### Frontend no se conecta al Backend
-1. Verifica que el backend esté corriendo en `http://localhost:8080`
-2. Revisa la consola del navegador (F12) para errores CORS
-3. Verifica que `Frontend/src/environments/environment.ts` tenga la URL correcta
+---
 
-### Errores de dependencias
-```bash
-# Backend: Limpiar y reinstalar
-cd Backend
-./mvnw clean install
+## Flujo de navegación
 
-# Frontend: Eliminar node_modules y reinstalar
-cd Frontend
-rm -rf node_modules package-lock.json
-npm install
+```
+/ (intro)         → animación typewriter "REGISTRO DE ACCESO..."
+/principal        → menú principal con fondo war-room y partículas
+/iniciar-sesion   → login
+/registrarse      → registro de usuario
+/entrarCrearSala  → lobby (crear/unirse a sala)
+/configPartida    → configurar jugadores y bots
+/juego/:url       → tablero de juego (uuid de partida)
+/perfilUsuario    → perfil del usuario logueado
+/estadisticas     → estadísticas de partidas
+/creditos         → equipo de desarrollo
+/ayuda            → reglas del juego
 ```
 
 ---
 
-## 📚 Documentación Adicional
+## Design system
 
-- **API Documentation**: http://localhost:8080/swagger-ui.html (cuando el backend esté corriendo)
-- **JavaDoc**: `Backend/docs/java_doc/`
-- **Documentación de la App**: `Backend/docs/app_doc/`
+El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom:
 
----
-
-## 👥 Desarrollo
-
-### Flujo de trabajo recomendado:
-
-1. **Iniciar Backend primero** (puerto 8080)
-2. **Luego iniciar Frontend** (puerto 4200)
-3. Abrir el navegador en `http://localhost:4200`
-
-### Hot Reload:
-- **Backend**: Spring Boot DevTools está configurado (reinicio automático)
-- **Frontend**: Angular CLI tiene hot reload por defecto
+- **Tipografías**: Special Elite (headings/terminal) + Roboto Slab (cuerpo)
+- **Paleta**: tonos marrones, rojos oscuros y crema sobre fondo mesa de madera
+- **Cursores**: SVGs custom (hand-default / hand-pointer) aplicados globalmente
+- **Viñeta**: overlay radial fijo (`z-index: 9999`) que oscurece los bordes en todas las pantallas
+- **Fondos**: `initial-scene-war-room.webp` (pantalla principal) / `game-scene-table.webp` (resto)
 
 ---
 
-## 📝 Notas
+## Historial de desarrollo (sesiones principales)
 
-- La base de datos H2 es persistente (archivo en `Backend/data/`)
-- Los datos se mantienen entre reinicios del servidor
-- Para resetear la base de datos, elimina los archivos `.mv.db` y `.trace.db` en `Backend/data/`
+### Migración frontend (rama `feature/front-migration`)
+- Migración completa de components a Angular standalone
+- Integración del mapa SVG interactivo con sistema de turnos
+- Corrección de flujo de ataque y lógica de juego
+
+### Design system (sesión 2025-03-19/20)
+- Implementación de SCSS parcial con Bootstrap 5.3
+- Tokens de color, tipografía, botones, superficies y cursores custom
+- Pantalla de créditos con layout de expedientes/carpetas
+
+### Pantalla principal y animación de intro (sesión 2026-03-21)
+- **IntroComponent**: animación typewriter estilo terminal clasificada, con fecha/hora real del sistema y año ficticio `194█`
+- **PrincipalComponent**: layout con panel inferior (T·E·G / subtítulo / JUGAR), botones de navegación en esquinas, canvas de 130 partículas doradas
+- Transición JUGAR: zoom-in del fondo → oscurecimiento → crossfade a mesa de juego (3.2s total)
+- Fade suave intro→principal: overlay negro + fade-in del host
+- Iconos de nav con `z-index: 10000` para quedar encima de la viñeta global
+- Cursores custom aplicados correctamente (sin override en componentes)
 
 ---
 
-## ✅ Checklist de Verificación
+## Equipo
 
-Antes de empezar a desarrollar, verifica:
-
-- [ ] Java 17+ instalado y en PATH
-- [ ] Node.js 18+ instalado
-- [ ] Backend se levanta correctamente en puerto 8080
-- [ ] Frontend se levanta correctamente en puerto 4200
-- [ ] Frontend puede comunicarse con el Backend (sin errores CORS)
-- [ ] Swagger UI accesible en http://localhost:8080/swagger-ui.html
-
----
-
-**¡Listo para desarrollar! 🚀**
-
+Proyecto académico — TPI 2025 — UTN regional Córdoba, desarrollo en equipo.
+### Integrantes:
+- Abril Melina
+- Arguello Juarez Candela
+- Blanco M. Candelaria
+- Carignano Maximiliano
+- Chapeta Zoe Agostina
+- Cirioni Sofía (Refactorizacion front-end y diseño UI)
+- Heredia Lara
