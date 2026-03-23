@@ -2,13 +2,14 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterLink } from '@angular/router';
+import { StampComponent } from '../../components/index';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, StampComponent],
   templateUrl: './inicio-sesion.component.html',
-  styleUrls: ['./inicio-sesion.component.css']
+  styleUrls: ['./inicio-sesion.component.scss']
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
@@ -19,6 +20,12 @@ export class LoginComponent {
     nombreUsuario: ['', Validators.required],
     contrasenia:   ['', Validators.required]
   });
+
+  showPassword = false;
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   onSubmit(): void {
     if (this.loginForm.valid) {

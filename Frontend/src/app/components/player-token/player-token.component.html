@@ -1,0 +1,4 @@
+<div class="token" [class]="'token--' + size + ' token--' + player">
+  <img [src]="tokenSrc" [alt]="player" class="token-img" />
+  <span class="token-count" *ngIf="count > 0">{{ count }}</span>
+</div>

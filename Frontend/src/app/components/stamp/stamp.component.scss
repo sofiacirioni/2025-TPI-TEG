@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  pointer-events: none;
+}
+
+.stamp-img {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  &.blend-mode {
+    mix-blend-mode: multiply;
+  }
+}

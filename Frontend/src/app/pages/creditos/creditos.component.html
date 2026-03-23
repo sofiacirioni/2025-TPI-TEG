@@ -5,11 +5,11 @@
   <div class="creditos-columna">
 
     <!-- Título: papel apoyado sobre la mesa -->
-    <div class="titulo-papel">
-      <img src="/assets/vectors/top-secret-stamp.svg" class="titulo-sello" aria-hidden="true">
+    <app-paper-card [tilt]="-0.8" size="lg">
+      <app-stamp class="titulo-sello" [rotation]="-8" [opacity]="0.72"></app-stamp>
       <h1 class="teg-h2 titulo-principal">Expedientes Clasificados</h1>
       <p class="teg-small titulo-subtitulo">Equipo de desarrollo &mdash; TPI 2025</p>
-    </div>
+    </app-paper-card>
 
     <!-- Carpeta 1: Lara Heredia — foto izquierda -->
     <article class="carpeta carpeta--1">

@@ -1,0 +1,266 @@
+// ── Host / Fondo ──────────────────────────────────────────────────────────
+// Fondo en :host (background-attachment: fixed) evita problemas de
+// stacking context que tiene el approach de .bg-fixed con z-index: -1
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+// ── Pantalla ──────────────────────────────────────────────────────────────
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+}
+
+// ── Formulario ────────────────────────────────────────────────────────────
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 580px;
+}
+
+// ── Tarjeta del pase ──────────────────────────────────────────────────────
+.pase-card {
+  position: relative;
+  width: 100%;
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border-radius: 2px;
+  transform: rotate(-0.3deg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    inset 0 0 40px rgba(50, 28, 8, 0.10);
+  overflow: visible;
+}
+
+// Borde decorativo SVG (esquinas redondeadas, stroke #a01515)
+// preserveAspectRatio="none" en el SVG permite que se estire al tamaño del card
+// inset: 16px → 16px de margen entre borde exterior del card y el path SVG
+.pase-border-svg {
+  position: absolute;
+  inset: 16px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  pointer-events: none;
+  opacity: 0.6;
+  display: block;
+}
+
+// ── Contenedor interno — alinea con el borde decorativo ───────────────────
+// margin: 16px coincide con el inset del SVG, todo el contenido queda dentro
+.pase-inner {
+  margin: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Encabezado ────────────────────────────────────────────────────────────
+// Sin margin — pase-inner se encarga del offset respecto al borde deco
+.pase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1.5px solid rgba(160, 21, 21, 0.6);
+  opacity: 0.9;
+}
+
+.pase-header-text {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(67, 42, 30, 0.7);
+}
+
+.pase-nivel {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(67, 42, 30, 0.55);
+}
+
+// ── Título ────────────────────────────────────────────────────────────────
+// Sin margin — pase-inner se encarga del offset
+.pase-titulo {
+  padding: 0.75rem 0 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(160, 21, 21, 0.6);
+
+  span {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    letter-spacing: 0.2em;
+    color: var(--color-sello);
+  }
+}
+
+// ── Cuerpo ────────────────────────────────────────────────────────────────
+.pase-body {
+  padding: 0.75rem 1.75rem 1.5rem;
+  position: relative;
+}
+
+.pase-instruccion {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--color-oscuro);
+  text-align: center;
+  margin-top: 0.5rem;
+  margin-bottom: 2.25rem;
+}
+
+// ── Campos del formulario ─────────────────────────────────────────────────
+.pase-campo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  // Padding derecho para que los inputs no queden debajo del sello
+  padding-right: 130px;
+}
+
+.pase-label {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--color-oscuro);
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.pase-input-wrap {
+  flex: 1;
+}
+
+// Mismo wrapper para ambos campos — garantiza igual ancho visual
+.pase-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 280px;
+}
+
+.pase-input {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(160, 21, 21, 0.5);
+  padding: 4px 28px 4px 2px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-oscuro);
+  outline: none;
+  transition: border-bottom-color 0.2s ease;
+
+  &:focus {
+    border-bottom-color: rgba(160, 21, 21, 0.9);
+  }
+
+  &::placeholder {
+    color: rgba(67, 42, 30, 0.4);
+    font-size: 12px;
+  }
+}
+
+// ── Toggle de contraseña ──────────────────────────────────────────────────
+.toggle-password {
+  position: absolute;
+  right: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.75;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--color-oscuro);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+// ── Error de validación ───────────────────────────────────────────────────
+.pase-error {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--color-sello);
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+
+// ── Sello oficial ─────────────────────────────────────────────────────────
+// Posicionado respetando el inset del borde SVG (16px + margen visual)
+.pase-sello-wrap {
+  position: absolute;
+  right: 1.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 110px;
+  height: 110px;
+  pointer-events: none;
+}
+
+// ── Acciones (botón + link) ───────────────────────────────────────────────
+.pase-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pase-registro {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pase-registro-texto {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(239, 232, 206, 1);
+}
+
+.pase-registro-link {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-claro);
+  text-decoration: none;
+  border-bottom: 2px solid rgba(239, 232, 206, 0.35);
+  transition: border-color 0.2s, opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+    border-bottom-color: rgba(239, 232, 206, 0.65);
+  }
+}

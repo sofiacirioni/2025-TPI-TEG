@@ -25,28 +25,18 @@ $papel-textura: repeating-linear-gradient(
   padding: 3rem 1rem 4rem;
 }
 
-// ── Título-papel ──────────────────────────────────────────────
-.titulo-papel {
-  position: relative;
-  background-color: $papel-bg;
-  background-image: $papel-textura;
-  padding: 2rem 2.5rem;
-  border-radius: 2px;
-  transform: rotate(-0.8deg);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
-              inset 0 0 30px rgba(50, 28, 8, 0.12);
+// ── Título-papel (ahora PaperCardComponent) ────────────────────
+app-paper-card {
+  display: block;
   margin-bottom: 2rem;
-  overflow: hidden;
 }
 
+// Sello posicionado dentro del paper-card (transform/opacity los maneja StampComponent)
 .titulo-sello {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
   width: 96px;
-  opacity: 0.72;
-  transform: rotate(-8deg);
-  pointer-events: none;
 }
 
 .titulo-principal {

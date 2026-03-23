@@ -6,7 +6,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   border-radius: 999px;
-  padding: 10px 28px;
+  padding: 14px 28px 10px;
   background: transparent;
   cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, pointer;
   transition: all 0.3s ease;
@@ -50,6 +50,33 @@
     background: rgba(239, 232, 206, 0.10);
     border-color: rgba(239, 232, 206, 0.65);
     color: rgba(239, 232, 206, 1);
+  }
+}
+
+// Botón primario de acción — fondo verde oscuro ($color-secondary)
+// Usar para acciones principales sobre fondo oscuro o claro
+// Hover: verde más oscuro (darken 8%)
+.btn-teg-primary {
+  @extend %btn-teg-base;
+  background-color: $color-secondary;
+  color: rgba(239, 232, 206, 0.92);
+  border-color: $color-secondary;
+
+  &:hover {
+    background-color: darken($color-secondary, 8%);
+    border-color: darken($color-secondary, 8%);
+    color: rgba(239, 232, 206, 1);
+  }
+
+  &:active {
+    transform: scale(0.97);
+    background-color: darken($color-secondary, 15%);
+  }
+
+  &:disabled,
+  &[disabled] {
+    opacity: 0.4;
+    pointer-events: none;
   }
 }
 
