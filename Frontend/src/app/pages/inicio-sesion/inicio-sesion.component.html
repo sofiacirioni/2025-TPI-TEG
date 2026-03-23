@@ -2,7 +2,12 @@
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
 
     <!-- Tarjeta Pase de Acceso -->
-    <div class="pase-card">
+    <div class="pase-card"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="40"
+         [delay]="0"
+         [slideDuration]="600">
 
       <!-- Borde decorativo SVG con esquinas redondeadas -->
       <img class="pase-border-svg" src="/assets/vectors/deco-border.svg" alt="" aria-hidden="true">
@@ -92,7 +97,12 @@
     </div>
 
     <!-- Acciones -->
-    <div class="pase-actions">
+    <div class="pase-actions"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="24"
+         [delay]="150"
+         [slideDuration]="500">
       <button type="submit" class="btn-teg-primary">· ENTREGAR ·</button>
       <div class="pase-registro">
         <span class="pase-registro-texto">¿No tiene credenciales?</span>
