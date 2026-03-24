@@ -25,6 +25,7 @@
  *
  * Pantallas donde se usa actualmente:
  *   - InicioSesionComponent (pase-card, pase-actions)
+ *   - RegistrarseComponent (ficha-incorporacion, registro-actions)
  */
 import { Directive, ElementRef, Input, OnInit } from '@angular/core';
 
@@ -47,33 +48,40 @@ export class SlideInDirective implements OnInit {
 
     el.style.opacity = '0';
 
-    const fromTransform = this.getFromTransform();
-    const existingTransform = getComputedStyle(el).transform;
-    const baseTransform = existingTransform === 'none' ? '' : existingTransform;
+    // Use requestAnimationFrame to read computed styles after the first
+    // paint — ensures CSS transforms (like rotate) are already applied
+    requestAnimationFrame(() => {
+      const existingTransform = getComputedStyle(el).transform;
+      const baseTransform = existingTransform === 'none' ? '' : existingTransform;
+      const fromTransform = this.getFromTransform();
 
-    setTimeout(() => {
-      const anim = el.animate(
-        [
+      setTimeout(() => {
+        const anim = el.animate(
+          [
+            {
+              opacity: '0',
+              transform: `${baseTransform} ${fromTransform}`.trim()
+            },
+            {
+              opacity: '1',
+              transform: baseTransform || 'none'
+            }
+          ],
           {
-            opacity: '0',
-            transform: `${baseTransform} ${fromTransform}`.trim()
-          },
-          {
-            opacity: '1',
-            transform: baseTransform || 'none'
+            duration: this.slideDuration,
+            easing: this.slideEasing,
+            fill: 'forwards'
           }
-        ],
-        {
-          duration: this.slideDuration,
-          easing: this.slideEasing,
-          fill: 'forwards'
-        }
-      );
+        );
 
-      anim.onfinish = () => {
-        el.style.opacity = '1';
-      };
-    }, this.delay);
+        anim.onfinish = () => {
+          // Set final inline opacity, then cancel the animation to release
+          // the fill: 'forwards' transform effect — lets the CSS transform take over
+          el.style.opacity = '1';
+          anim.cancel();
+        };
+      }, this.delay);
+    });
   }
 
   private getFromTransform(): string {

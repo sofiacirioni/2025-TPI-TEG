@@ -1,7 +1,6 @@
 /* Expedientes Clasificados — layout carpetas apiladas */
 
 // ── Textura de papel (replicada sin importar _surfaces.scss) ──
-$papel-bg: #EFE8CE;
 $papel-textura: repeating-linear-gradient(
   44deg,
   rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
@@ -40,7 +39,7 @@ app-paper-card {
 }
 
 .titulo-principal {
-  color: #432A1E;
+  color: var(--color-oscuro);
   margin-bottom: 0.2rem;
 }
 
@@ -100,7 +99,7 @@ app-paper-card {
 .carpeta-foto {
   flex: 0 0 150px;
   position: relative;
-  background-color: $papel-bg;
+  background-color: var(--color-claro);
   background-image: $papel-textura;
   padding: 0.5rem;
   border-radius: 2px;
@@ -140,13 +139,13 @@ app-paper-card {
 }
 
 // Acento lateral por color de jugador
-.carpeta-foto--naranja { border-left: 4px solid #BF6800; }
-.carpeta-foto--rojo    { border-left: 4px solid #A01515; }
-.carpeta-foto--purpura { border-left: 4px solid #6B2490; }
-.carpeta-foto--verde   { border-left: 4px solid #1E7A50; }
-.carpeta-foto--azul    { border-left: 4px solid #1A4080; }
-.carpeta-foto--sello   { border-left: 4px solid #A01515; }
-.carpeta-foto--dorado  { border-left: 4px solid #6B4C00; }
+.carpeta-foto--naranja { border-left: 4px solid var(--player-naranja); }
+.carpeta-foto--rojo    { border-left: 4px solid var(--player-rojo); }
+.carpeta-foto--purpura { border-left: 4px solid var(--player-purpura); }
+.carpeta-foto--verde   { border-left: 4px solid var(--player-verde); }
+.carpeta-foto--azul    { border-left: 4px solid var(--player-azul); }
+.carpeta-foto--sello   { border-left: 4px solid var(--color-sello); }
+.carpeta-foto--dorado  { border-left: 4px solid var(--player-dorado); }
 
 // ── Badge legajo (debajo de la foto) ─────────────────────────
 .expediente-legajo {
@@ -154,22 +153,22 @@ app-paper-card {
   margin-top: 0.4rem;
   padding: 3px 6px;
   border-radius: 999px;
-  font-family: 'Special Elite', serif;
+  font-family: var(--font-heading);
   font-size: 8px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #EFE8CE;
+  color: var(--color-claro);
   text-align: center;
   line-height: 1.4;
 }
 
-.expediente-legajo--naranja { background-color: #BF6800; }
-.expediente-legajo--rojo    { background-color: #A01515; }
-.expediente-legajo--purpura { background-color: #6B2490; }
-.expediente-legajo--verde   { background-color: #1E7A50; }
-.expediente-legajo--azul    { background-color: #1A4080; }
-.expediente-legajo--sello   { background-color: #884028; }
-.expediente-legajo--dorado  { background-color: #6B4C00; }
+.expediente-legajo--naranja { background-color: var(--player-naranja); }
+.expediente-legajo--rojo    { background-color: var(--player-rojo); }
+.expediente-legajo--purpura { background-color: var(--player-purpura); }
+.expediente-legajo--verde   { background-color: var(--player-verde); }
+.expediente-legajo--azul    { background-color: var(--player-azul); }
+.expediente-legajo--sello   { background-color: var(--color-medio); }
+.expediente-legajo--dorado  { background-color: var(--player-dorado); }
 
 // ── Info de la carpeta ────────────────────────────────────────
 .carpeta-info {
@@ -178,43 +177,43 @@ app-paper-card {
 }
 
 .expediente-alias {
-  color: #432A1E;
+  color: var(--color-oscuro);
   margin-bottom: 0.15rem;
 }
 
 .expediente-subtitulo {
-  font-family: 'Roboto Slab', serif;
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 0.8rem;
-  color: #884028;
+  color: var(--color-medio);
   text-decoration: underline;
   margin-bottom: 0.75rem;
 }
 
 .expediente-campo {
   display: block;
-  font-family: 'Roboto Slab', serif;
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 0.72rem;
-  color: #432A1E;
+  color: var(--color-oscuro);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 1px;
 }
 
 .expediente-valor {
-  font-family: 'Roboto Slab', serif;
+  font-family: var(--font-body);
   font-size: 0.82rem;
-  color: #884028;
+  color: var(--color-medio);
   margin-bottom: 0.5rem;
 }
 
 .expediente-frase {
-  font-family: 'Roboto Slab', serif;
+  font-family: var(--font-body);
   font-style: italic;
   font-weight: 700;
   font-size: 0.82rem;
-  color: #432A1E;
+  color: var(--color-oscuro);
   margin-bottom: 0.5rem;
 }
 
@@ -231,11 +230,11 @@ app-paper-card {
   padding: 2px 8px;
   border: 1px solid rgba(67, 42, 30, 0.45);
   border-radius: 999px;
-  font-family: 'Special Elite', serif;
+  font-family: var(--font-heading);
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #432A1E;
+  color: var(--color-oscuro);
   background: transparent;
 }
 

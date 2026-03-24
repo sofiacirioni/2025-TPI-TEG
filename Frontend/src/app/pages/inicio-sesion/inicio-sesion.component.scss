@@ -168,7 +168,7 @@ form {
   font-size: 13px;
   color: var(--color-oscuro);
   outline: none;
-  transition: border-bottom-color 0.2s ease;
+  transition: border-bottom-color var(--transition-fast);
 
   &:focus {
     border-bottom-color: rgba(160, 21, 21, 0.9);
@@ -190,7 +190,7 @@ form {
   display: flex;
   align-items: center;
   opacity: 0.4;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast);
 
   &:hover {
     opacity: 0.75;
@@ -257,7 +257,7 @@ form {
   color: var(--color-claro);
   text-decoration: none;
   border-bottom: 2px solid rgba(239, 232, 206, 0.35);
-  transition: border-color 0.2s, opacity 0.2s;
+  transition: border-color var(--transition-fast), opacity var(--transition-fast);
 
   &:hover {
     opacity: 0.8;

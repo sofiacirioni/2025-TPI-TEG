@@ -1,61 +1,66 @@
-import {Component, OnInit} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {Usuario} from '../../core/models/interfaces/usuario.interface';
-import {ApiService} from '../../core/services/registrarse.service';
-import {Router, RouterLink} from '@angular/router';
-import { NgIf, NgFor, CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Usuario } from '../../core/models/interfaces/usuario.interface';
+import { ApiService } from '../../core/services/registrarse.service';
+import { Router, RouterLink } from '@angular/router';
+import { StampComponent } from '../../components/index';
+import { SlideInDirective } from '../../shared/directives/index';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-registro',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, NgIf,NgFor,CommonModule],
+  imports: [FormsModule, RouterLink, StampComponent, SlideInDirective],
   templateUrl: './registrarse.component.html',
-  styleUrls: ['./registrarse.component.css']
+  styleUrls: ['./registrarse.component.scss']
 })
-export class FormUsuarioComponent implements OnInit {
+export class FormUsuarioComponent {
 
-  imagen: string[] =
-    ['assets/members/AgosCh.png',
-      'assets/members/CandeArguello.png',
-      'assets/members/CandeBlanco.png',
-      'assets/members/LaraHeredia.png',
-      'assets/members/MeliAbril.png',
-      'assets/members/SofiCirioni.png',
-      'assets/members/Maxi.png']
+  imagen: string[] = [
+    'assets/members/AgosCh.png',
+    'assets/members/CandeArguello.png',
+    'assets/members/CandeBlanco.png',
+    'assets/members/LaraHeredia.png',
+    'assets/members/MeliAbril.png',
+    'assets/members/SofiCirioni.png',
+    'assets/members/Maxi.png'
+  ];
 
   mostrarGaleria = false;
-  imagenSeleccionadaTemporal: string | null = null;
+  showPassword = false;
+  showConfirmPassword = false;
+  confirmarContrasenia = '';
 
-  toggleGaleria() {
+  usuario: Usuario = {
+    nombre: '',
+    apellido: '',
+    correo: '',
+    contrasenia: '',
+    imagen: ''
+  };
+
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
+
+  toggleGaleria(): void {
     this.mostrarGaleria = !this.mostrarGaleria;
-
     if (this.mostrarGaleria) {
-      this.usuario.imagen = "";
-      this.imagenSeleccionadaTemporal = null;
+      this.usuario.imagen = '';
     }
   }
 
-  seleccionarImagen(img: string) {
+  seleccionarImagen(img: string): void {
     this.usuario.imagen = img;
     this.mostrarGaleria = false;
   }
 
-  usuario: Usuario = {
-    nombre:"",
-    apellido:"",
-    correo:"",
-    contrasenia:"",
-    imagen:""
-  };
-
-
-
-  constructor(private apiService: ApiService ,
-  private router: Router
-)  {
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
   }
-  ngOnInit(): void {
 
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   onSubmit(): void {
@@ -67,25 +72,17 @@ export class FormUsuarioComponent implements OnInit {
       imagen: this.usuario.imagen,
     };
 
-    console.log('Payload a enviar:', payload);
-
     this.apiService.crearUsuario(payload).subscribe({
-      next: (data) => {
-        alert("Usuario creado con éxito");
-        console.log('Usuario creado:', data);
+      next: () => {
+        alert('Usuario creado con éxito');
         this.router.navigate(['/iniciar-sesion']);
-
       },
-
       error: (error) => {
         if (error.error && error.error.mensaje) {
-          // ✅ Mostramos el mensaje exacto que vino del backend
           alert(error.error.mensaje);
         } else {
-          // Otro error no esperado
           alert('Ocurrió un error inesperado.');
         }
-        console.error('Detalle del error:', error);
       }
     });
   }
