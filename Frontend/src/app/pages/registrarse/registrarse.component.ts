@@ -16,13 +16,13 @@ import { SlideInDirective } from '../../shared/directives/index';
 export class FormUsuarioComponent {
 
   imagen: string[] = [
-    'assets/members/AgosCh.png',
-    'assets/members/CandeArguello.png',
-    'assets/members/CandeBlanco.png',
-    'assets/members/LaraHeredia.png',
-    'assets/members/MeliAbril.png',
-    'assets/members/SofiCirioni.png',
-    'assets/members/Maxi.png'
+    'assets/images/members/AgosCh.png',
+    'assets/images/members/CandeArguello.png',
+    'assets/images/members/CandeBlanco.png',
+    'assets/images/members/LaraHeredia.png',
+    'assets/images/members/MeliAbril.png',
+    'assets/images/members/SofiCirioni.png',
+    'assets/images/members/Maxi.png'
   ];
 
   mostrarGaleria = false;
@@ -32,7 +32,6 @@ export class FormUsuarioComponent {
 
   usuario: Usuario = {
     nombre: '',
-    apellido: '',
     correo: '',
     contrasenia: '',
     imagen: ''
@@ -66,7 +65,6 @@ export class FormUsuarioComponent {
   onSubmit(): void {
     const payload = {
       nombre: this.usuario.nombre,
-      apellido: this.usuario.apellido,
       correo: this.usuario.correo,
       contrasenia: this.usuario.contrasenia,
       imagen: this.usuario.imagen,

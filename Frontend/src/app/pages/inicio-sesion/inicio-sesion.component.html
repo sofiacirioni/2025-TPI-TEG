@@ -103,7 +103,7 @@
          [slideDistance]="24"
          [delay]="150"
          [slideDuration]="500">
-      <button type="submit" class="btn-teg-primary">· ENTREGAR ·</button>
+      <button type="submit" class="btn-teg-primary" [disabled]="loginForm.invalid">· ENTREGAR ·</button>
       <div class="pase-registro">
         <span class="pase-registro-texto">¿No tiene credenciales?</span>
         <a class="pase-registro-link" [routerLink]="['../registrarse']">Solicitar pase</a>

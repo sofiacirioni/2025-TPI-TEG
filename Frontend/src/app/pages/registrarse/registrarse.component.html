@@ -13,7 +13,7 @@
 
         <!-- Encabezado -->
         <div class="ficha-header">
-          <span class="ficha-header-izq">Cuerpo de Comandantes — TEG</span>
+          <span class="ficha-header-izq">Cuerpo de Inteligencia — TEG</span>
           <span class="ficha-header-der">Form. IC-44</span>
         </div>
 
@@ -58,26 +58,14 @@
           <div class="identidad-campos">
 
             <div class="field">
-              <label class="field-label" for="nombre">NOMBRE DE COMANDANTE</label>
+              <label class="field-label" for="nombre">NOMBRE EN CLAVE</label>
               <input class="field-input" id="nombre" type="text"
                      [(ngModel)]="usuario.nombre" name="nombre"
                      required #nombre="ngModel"
-                     placeholder="Alias de guerra"
+                     placeholder="Usuario"
                      autocomplete="given-name">
               @if (nombre.invalid && (nombre.dirty || nombre.touched)) {
                 <span class="field-error">▸ El nombre es obligatorio</span>
-              }
-            </div>
-
-            <div class="field">
-              <label class="field-label" for="apellido">APELLIDO</label>
-              <input class="field-input" id="apellido" type="text"
-                     [(ngModel)]="usuario.apellido" name="apellido"
-                     required #apellido="ngModel"
-                     placeholder="Apellido"
-                     autocomplete="family-name">
-              @if (apellido.invalid && (apellido.dirty || apellido.touched)) {
-                <span class="field-error">▸ El apellido es obligatorio</span>
               }
             </div>
 
@@ -86,7 +74,7 @@
               <input class="field-input" id="correo" type="email"
                      [(ngModel)]="usuario.correo" name="correo"
                      required email #correo="ngModel"
-                     placeholder="Dirección de contacto"
+                     placeholder="Dirección de correo"
                      autocomplete="email">
               @if (correo.invalid && (correo.dirty || correo.touched)) {
                 <span class="field-error">▸ Correo inválido</span>
@@ -176,15 +164,6 @@
           <app-stamp type="teg-stamp" [rotation]="8" [opacity]="0.55" [blend]="true"></app-stamp>
         </div>
 
-        <!-- Firma -->
-        <div class="ficha-firma">
-          <div class="firma-campo">
-            <div class="firma-linea"></div>
-            <span class="firma-label">FIRMA DEL SOLICITANTE</span>
-          </div>
-          <div class="ficha-nro">REG. N° ████<br>194_</div>
-        </div>
-
       </div>
     </div>
 
@@ -197,7 +176,7 @@
          [slideDuration]="500">
       <button type="submit" class="btn-teg-primary"
               [disabled]="f.invalid || confirmarContrasenia !== usuario.contrasenia">
-        · FIRMAR SOLICITUD ·
+        · SOLICITAR ·
       </button>
       <div class="registro-login">
         <span class="registro-login-texto">¿Ya tiene credenciales?</span>

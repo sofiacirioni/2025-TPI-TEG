@@ -33,7 +33,7 @@ form {
 .ficha-incorporacion {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 580px;
   background-color: var(--color-claro);
   background-image: repeating-linear-gradient(
     44deg,
@@ -45,14 +45,14 @@ form {
     0 8px 32px rgba(0, 0, 0, 0.65),
     inset 0 0 40px rgba(50, 28, 8, 0.10),
     inset 0 0 0 16px #EFE8CE,
-    inset 0 0 0 17.5px rgba(160, 21, 21, 0.4);
+    inset 0 0 0 17px rgba(67, 42, 30, 0.2);
   transform: rotate(0.3deg);
   overflow: visible;
 }
 
 // ── Contenedor interno ─────────────────────────────────────────────────────
 .ficha-inner {
-  margin: 20px;
+  margin: 16px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -60,60 +60,61 @@ form {
 
 // ── Encabezado ─────────────────────────────────────────────────────────────
 .ficha-header {
-  padding: 0.5rem 0;
+  padding: 0.5rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1.5px solid rgba(160, 21, 21, 0.4);
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
   margin-bottom: 0.75rem;
 }
 
 .ficha-header-izq {
   font-family: var(--font-heading);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
-  color: rgba(67, 42, 30, 0.65);
+  color: rgba(67, 42, 30, 0.6);
 }
 
 .ficha-header-der {
   font-family: var(--font-heading);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
-  color: rgba(67, 42, 30, 0.4);
+  color: rgba(67, 42, 30, 0.6);
 }
 
 // ── Título ─────────────────────────────────────────────────────────────────
 .ficha-titulo {
   text-align: center;
-  padding: 0.5rem 0 0.6rem;
-  border-bottom: 1px solid rgba(160, 21, 21, 0.25);
-  margin-bottom: 1rem;
+  padding: 0.5rem 0 0;
+  margin-bottom: 2rem;
 }
 
 .ficha-titulo-principal {
   font-family: var(--font-heading);
-  font-size: 17px;
+  font-size: 22px;
   letter-spacing: 0.15em;
   color: var(--color-sello);
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
 .ficha-titulo-subtitulo {
   font-family: var(--font-body);
   font-weight: 300;
-  font-size: 10px;
-  color: rgba(67, 42, 30, 0.55);
-  margin-top: 3px;
+  font-size: 13px;
+  color: rgba(67, 42, 30, 0.9);
 }
 
 // ── Títulos de sección ─────────────────────────────────────────────────────
 .ficha-seccion-title {
   font-family: var(--font-heading);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: rgba(67, 42, 30, 0.45);
   text-transform: uppercase;
-  border-bottom: 0.5px solid rgba(160, 21, 21, 0.2);
-  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  padding: 0 1rem 4px;
   margin-bottom: 0.75rem;
 }
 
@@ -122,11 +123,12 @@ form {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  padding: 0 1rem;
 }
 
 // Slot de avatar
 .avatar-slot {
-  width: 72px;
+  width: 120px;
   flex-shrink: 0;
   align-self: flex-start;
   border: 1px solid rgba(160, 21, 21, 0.3);
@@ -139,10 +141,10 @@ form {
   position: relative;
   overflow: visible;
 
-  // Cuando hay imagen seleccionada
-  img:not(.seleccionada) {
-    width: 72px;
-    height: 72px;
+  // Imagen seleccionada como preview (hijo directo, no las de la galería)
+  > img {
+    width: 120px;
+    height: 120px;
     object-fit: cover;
     border-radius: 1px;
     display: block;
@@ -150,8 +152,8 @@ form {
 }
 
 .avatar-placeholder {
-  width: 72px;
-  height: 72px;
+  width: 120px;
+  height: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -188,15 +190,15 @@ form {
   border-radius: 2px;
   padding: 6px;
   display: grid;
-  grid-template-columns: repeat(4, 44px);
+  grid-template-columns: repeat(4, 64px);
   gap: 4px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 
   img {
-    width: 44px;
-    height: 44px;
+    width: 64px;
+    height: 64px;
     object-fit: cover;
-    border-radius: 50%;
+    border-radius: 2px;
     cursor: pointer;
     border: 2px solid transparent;
     transition: border-color var(--transition-fast);
@@ -219,12 +221,14 @@ form {
   flex-direction: column;
   gap: 0.5rem;
   min-width: 0;
+  max-width: 210px;
 }
 
 // ── Sección II: Credenciales ───────────────────────────────────────────────
 .ficha-credenciales {
   margin-bottom: 0.75rem;
-  padding-right: 110px;
+  padding-left: 1rem;
+  max-width: 250px;
 }
 
 // ── Campos genéricos ───────────────────────────────────────────────────────
@@ -232,14 +236,14 @@ form {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 0.6rem;
+  margin-bottom: 1.5rem;
 }
 
 .field-label {
   font-family: var(--font-heading);
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.14em;
-  color: rgba(67, 42, 30, 0.5);
+  color: var(--color-oscuro);
   text-transform: uppercase;
 }
 
@@ -252,11 +256,11 @@ form {
 .field-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(160, 21, 21, 0.4);
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
   padding: 3px 26px 3px 2px;
   font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--color-oscuro);
+  font-size: 13px;
+  color: #1A4080;
   outline: none;
   width: 100%;
   transition: border-color var(--transition-fast);
@@ -267,7 +271,7 @@ form {
 
   &::placeholder {
     color: rgba(67, 42, 30, 0.35);
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
@@ -310,10 +314,10 @@ form {
 // ── Sello ──────────────────────────────────────────────────────────────────
 .ficha-sello-wrap {
   position: absolute;
-  right: 0;
-  bottom: 3.5rem;
-  width: 100px;
-  height: 100px;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  width: 130px;
+  height: 130px;
   pointer-events: none;
 }
 
@@ -380,13 +384,13 @@ form {
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--color-claro);
+  color: var(--color-mar);
   text-decoration: none;
-  border-bottom: 2px solid rgba(239, 232, 206, 0.35);
+  border-bottom: 2px solid rgba(184, 216, 213, 0.35);
   transition: border-color var(--transition-fast), opacity var(--transition-fast);
 
   &:hover {
     opacity: 0.8;
-    border-bottom-color: rgba(239, 232, 206, 0.65);
+    border-bottom-color: rgba(184, 216, 213, 0.65);
   }
 }

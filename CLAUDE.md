@@ -134,3 +134,49 @@ npx playwright test nombre-test.spec.ts
 - El CORS está configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
 - Los bots (`BotService`) tienen lógica de juego automática — revisar antes de modificar el flujo de turnos.
 - El mapa del tablero es SVG interactivo (`mapa-svg/`).
+
+## Design System — TEG Online
+
+### Concepto y atmósfera
+La interfaz simula un cuarto de operaciones militares del siglo XX 
+(circa 1939–1945). El jugador debe sentirse como un comandante 
+reunido alrededor de una mesa de planificación estratégica. Toda decisión visual debe 
+reforzar esta experiencia de inmersión histórica.
+
+Referencias visuales: Cabinet War Rooms de Churchill, película 
+Darkest Hour (2017), documentos clasificados de la OSS/MI6.
+
+### Escenas principales
+- **Escena intro** (`scene-intro`): vista en perspectiva del cuarto 
+  de guerra, oscuro, con lámpara encendida. Imagen: 
+  `initial-escene-war-room.webp`
+- **Escena juego** (`scene-game`): plano cenital de la mesa de madera 
+  con objetos de época en los bordes. Imagen: `game-escene-table.webp`
+
+### Criterios visuales que DEBEN cumplirse
+1. Las fuentes Special Elite (títulos) y Roboto Slab (cuerpo) deben 
+   cargarse desde assets locales — nunca desde Google Fonts
+2. El cursor debe ser una mano de caballero victoriano en todo momento
+3. La viñeta oscura debe ser visible en los cuatro bordes de la pantalla
+4. Ningún elemento de UI debe verse "moderno" — sin bordes redondeados 
+   grandes, sin sombras de colores, sin gradientes vibrantes
+5. Los botones siguen el patrón pill con Special Elite y puntos medios: 
+   · ACCIÓN ·
+6. Los colores de jugador sobre fondo #EFE8CE deben tener contraste 
+   mínimo 3:1 — no modificar sin verificar accesibilidad
+
+### Paleta
+- Fondo papel/mapa: #EFE8CE
+- Texto principal: #432A1E  
+- Fondo mesa: imagen WebP (no CSS)
+- Sello/peligro: #A01515
+- Jugadores: rojo #A01515, azul #1A4080, naranja #BF6800, 
+  púrpura #6B2490, verde #1E7A50, dorado #6B4C00
+
+### Lo que NO debe aparecer
+- Fuentes sans-serif modernas (Arial, Inter, sistema)
+- Colores saturados fuera de la paleta definida
+- Sombras de colores (solo sombras negras/oscuras cálidas)
+- Bordes redondeados mayores a 8px (excepto botones pill)
+- Cualquier elemento que rompa la ilusión de "documento físico 
+  sobre una mesa de madera"
