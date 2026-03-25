@@ -46,8 +46,7 @@ export class PerfilUsuario implements OnInit {
   }
 
   usuario: Usuario = {
-    nombre:"",
-    apellido:"",
+    usuario:"",
     correo:"",
     contrasenia:"",
     imagen:""

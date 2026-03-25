@@ -58,14 +58,20 @@
           <div class="identidad-campos">
 
             <div class="field">
-              <label class="field-label" for="nombre">NOMBRE EN CLAVE</label>
-              <input class="field-input" id="nombre" type="text"
-                     [(ngModel)]="usuario.nombre" name="nombre"
-                     required #nombre="ngModel"
+              <label class="field-label" for="usuarioInput">NOMBRE EN CLAVE</label>
+              <input class="field-input" id="usuarioInput" type="text"
+                     [(ngModel)]="usuario.usuario" name="usuarioInput"
+                     required maxlength="50"
+                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9 _-]+$"
+                     #usuarioRef="ngModel"
                      placeholder="Usuario"
-                     autocomplete="given-name">
-              @if (nombre.invalid && (nombre.dirty || nombre.touched)) {
-                <span class="field-error">▸ El nombre es obligatorio</span>
+                     autocomplete="username">
+              @if (usuarioRef.invalid && (usuarioRef.dirty || usuarioRef.touched)) {
+                @if (usuarioRef.errors?.['required']) {
+                  <span class="field-error">▸ El usuario es obligatorio</span>
+                } @else if (usuarioRef.errors?.['pattern']) {
+                  <span class="field-error">▸ Solo letras, números, guiones y espacios</span>
+                }
               }
             </div>
 
@@ -73,7 +79,8 @@
               <label class="field-label" for="correo">CORREO</label>
               <input class="field-input" id="correo" type="email"
                      [(ngModel)]="usuario.correo" name="correo"
-                     required email #correo="ngModel"
+                     required email maxlength="100"
+                     #correo="ngModel"
                      placeholder="Dirección de correo"
                      autocomplete="email">
               @if (correo.invalid && (correo.dirty || correo.touched)) {
@@ -95,7 +102,7 @@
               <input class="field-input" id="contrasenia"
                      [type]="showPassword ? 'text' : 'password'"
                      [(ngModel)]="usuario.contrasenia" name="contrasenia"
-                     required minlength="8"
+                     required minlength="8" maxlength="100"
                      pattern="^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$"
                      #pass="ngModel"
                      placeholder="Mínimo 8 caracteres"
@@ -133,7 +140,7 @@
               <input class="field-input" id="confirmarClave"
                      [type]="showConfirmPassword ? 'text' : 'password'"
                      [(ngModel)]="confirmarContrasenia" name="confirmarClave"
-                     required
+                     required maxlength="100"
                      placeholder="Repetir clave secreta"
                      autocomplete="new-password">
               <button type="button" class="toggle-password" (click)="toggleConfirmPassword()"

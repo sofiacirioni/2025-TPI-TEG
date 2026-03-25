@@ -31,7 +31,7 @@ export class FormUsuarioComponent {
   confirmarContrasenia = '';
 
   usuario: Usuario = {
-    nombre: '',
+    usuario: '',
     correo: '',
     contrasenia: '',
     imagen: ''
@@ -64,7 +64,7 @@ export class FormUsuarioComponent {
 
   onSubmit(): void {
     const payload = {
-      nombre: this.usuario.nombre,
+      usuario: this.usuario.usuario,
       correo: this.usuario.correo,
       contrasenia: this.usuario.contrasenia,
       imagen: this.usuario.imagen,
