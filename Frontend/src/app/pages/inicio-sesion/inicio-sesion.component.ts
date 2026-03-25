@@ -13,9 +13,9 @@ import { SlideInDirective } from '../../shared/directives/index';
   styleUrls: ['./inicio-sesion.component.scss']
 })
 export class LoginComponent {
-  private fb = inject(FormBuilder);
+  private fb          = inject(FormBuilder);
   private authService = inject(AuthService);
-  private router = inject(Router);
+  private router      = inject(Router);
 
   loginForm: FormGroup = this.fb.group({
     nombreUsuario: ['', Validators.required],
@@ -29,15 +29,11 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
-    if (this.loginForm.valid) {
-      const { nombreUsuario, contrasenia } = this.loginForm.value;
-      this.authService.login(nombreUsuario, contrasenia).subscribe({
-        next: usuario => {
-          localStorage.setItem('usuario', JSON.stringify(usuario));
-          this.router.navigate(['/principal']);
-        },
-        error: () => alert('Usuario o contraseña incorrectos')
-      });
-    }
+    if (this.loginForm.invalid) return;
+    const { nombreUsuario, contrasenia } = this.loginForm.value;
+    this.authService.login(nombreUsuario, contrasenia).subscribe({
+      next: () => this.router.navigate(['/principal']),
+      error: () => alert('Usuario o contraseña incorrectos')
+    });
   }
 }

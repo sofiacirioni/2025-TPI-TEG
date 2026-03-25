@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import {RouterOutlet} from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,11 @@ import {RouterOutlet} from '@angular/router';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {}
+export class AppComponent implements OnInit {
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    // Intenta recuperar sesión con el refresh token HttpOnly al cargar la app
+    this.authService.tryRefresh().subscribe();
+  }
+}

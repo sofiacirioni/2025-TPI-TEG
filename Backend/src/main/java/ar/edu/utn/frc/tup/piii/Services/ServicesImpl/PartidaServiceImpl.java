@@ -135,7 +135,7 @@ public class PartidaServiceImpl implements PartidaService {
                 JugadorEntity nuevoJugador = new JugadorEntity();
                 nuevoJugador.setUsuario(usuario);
                 nuevoJugador.setSala(partida.getConfiguracion());
-                nuevoJugador.setNombre(usuario.getNombre());
+                nuevoJugador.setNombre(usuario.getUsuario());
                 nuevoJugador.setPerdio(false);
                 jugadorRepository.save(nuevoJugador);
 

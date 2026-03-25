@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Usuario } from '../../core/models/interfaces/usuario.interface';
-import { ApiService } from '../../core/services/registrarse.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterLink } from '@angular/router';
 import { StampComponent } from '../../components/index';
 import { SlideInDirective } from '../../shared/directives/index';
@@ -25,28 +24,26 @@ export class FormUsuarioComponent {
     'assets/images/members/Maxi.png'
   ];
 
-  mostrarGaleria = false;
-  showPassword = false;
+  mostrarGaleria      = false;
+  showPassword        = false;
   showConfirmPassword = false;
   confirmarContrasenia = '';
 
-  usuario: Usuario = {
-    usuario: '',
-    correo: '',
+  usuario = {
+    usuario:     '',
+    correo:      '',
     contrasenia: '',
-    imagen: ''
+    imagen:      ''
   };
 
   constructor(
-    private apiService: ApiService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   toggleGaleria(): void {
     this.mostrarGaleria = !this.mostrarGaleria;
-    if (this.mostrarGaleria) {
-      this.usuario.imagen = '';
-    }
+    if (this.mostrarGaleria) this.usuario.imagen = '';
   }
 
   seleccionarImagen(img: string): void {
@@ -54,33 +51,20 @@ export class FormUsuarioComponent {
     this.mostrarGaleria = false;
   }
 
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
-
-  toggleConfirmPassword(): void {
-    this.showConfirmPassword = !this.showConfirmPassword;
-  }
+  togglePassword(): void        { this.showPassword = !this.showPassword; }
+  toggleConfirmPassword(): void { this.showConfirmPassword = !this.showConfirmPassword; }
 
   onSubmit(): void {
-    const payload = {
-      usuario: this.usuario.usuario,
-      correo: this.usuario.correo,
+    this.authService.register({
+      usuario:     this.usuario.usuario,
+      correo:      this.usuario.correo,
       contrasenia: this.usuario.contrasenia,
-      imagen: this.usuario.imagen,
-    };
-
-    this.apiService.crearUsuario(payload).subscribe({
-      next: () => {
-        alert('Usuario creado con éxito');
-        this.router.navigate(['/iniciar-sesion']);
-      },
+      imagen:      this.usuario.imagen
+    }).subscribe({
+      next: () => this.router.navigate(['/principal']),
       error: (error) => {
-        if (error.error && error.error.mensaje) {
-          alert(error.error.mensaje);
-        } else {
-          alert('Ocurrió un error inesperado.');
-        }
+        const msg = error?.error?.mensaje ?? error?.error?.message ?? 'Ocurrió un error inesperado.';
+        alert(msg);
       }
     });
   }
