@@ -1,0 +1,7 @@
+target/
+.mvn/
+*.md
+.git/
+data/
+hs_err_pid*
+docs/

@@ -131,6 +131,11 @@ coverage/
 test-results/
 junit.xml
 
+# ========== VARIABLES DE ENTORNO ==========
+.env
+*.env.local
+.env.*.local
+
 # ========== MISCELÁNEOS ==========
 *.swp
 *.swo
