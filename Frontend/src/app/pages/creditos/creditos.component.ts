@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { PaperCardComponent } from '../../components/paper-card/paper-card.component';
-import { StampComponent } from '../../components/stamp/stamp.component';
+import { PaperCardComponent } from '../../shared/components/paper-card/paper-card.component';
+import { StampComponent } from '../../shared/components/stamp/stamp.component';
 
 @Component({
   selector: 'app-creditos',

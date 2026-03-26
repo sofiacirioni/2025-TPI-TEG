@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { Router, RouterLink } from '@angular/router';
-import { StampComponent } from '../../components/index';
+import { StampComponent } from '../../shared/components/index';
 import { SlideInDirective } from '../../shared/directives/index';
 
 @Component({
