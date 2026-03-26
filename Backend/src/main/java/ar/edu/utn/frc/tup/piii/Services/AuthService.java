@@ -17,7 +17,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -72,23 +74,29 @@ public class AuthService {
     }
 
     public RefreshResponseDto refresh(HttpServletRequest request) {
-        String refreshToken = null;
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("refresh_token".equals(cookie.getName())) {
-                    refreshToken = cookie.getValue();
-                    break;
-                }
-            }
+        String refreshToken = extractRefreshCookie(request);
+
+        if (refreshToken == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token ausente");
         }
 
-        if (refreshToken == null || !jwtService.isTokenValid(refreshToken)) {
-            throw new IllegalStateException("Refresh token inválido o ausente.");
+        if (!jwtService.isTokenValid(refreshToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token inválido");
         }
 
         String correo = jwtService.extractUsername(refreshToken);
         String newAccessToken = jwtService.generateAccessToken(correo);
         return new RefreshResponseDto(newAccessToken);
+    }
+
+    private String extractRefreshCookie(HttpServletRequest req) {
+        if (req.getCookies() == null) return null;
+        for (Cookie cookie : req.getCookies()) {
+            if ("refresh_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     public void logout(HttpServletResponse response) {

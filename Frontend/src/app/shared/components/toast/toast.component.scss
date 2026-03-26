@@ -1,0 +1,134 @@
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: calc(var(--z-vignette) + 1);
+  width: 280px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  position: relative;        /* stacking context para ::before/::after */
+  border-radius: 1px;
+  overflow: hidden;
+  background-color: rgba(10, 6, 2, 0.9); /* fondo oscuro visible en tiras laterales */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.65),
+              3px 3px 0 rgba(0,0,0,0.25);
+  transform: translateX(300px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.2,0.8,0.3,1),
+              opacity 0.35s ease;
+  cursor: pointer;
+
+  &.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  &.hide {
+    transform: translateX(300px);
+    opacity: 0;
+  }
+
+  /* ── Tiras de perforaciones ────────────────────────────
+     Cada tira tiene fondo de papel con círculos OSCUROS
+     pintados encima — simulan agujeros que muestran el
+     fondo negro del .toast. El color del círculo coincide
+     con background-color de .toast.
+     La variable --paper-bg se hereda desde .toast (padre)
+     al pseudo-elemento vía cascada CSS.
+  ─────────────────────────────────────────────────────── */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 18px;
+    z-index: 0;
+    background-color: var(--paper-bg, var(--color-claro));
+    background-image: radial-gradient(
+      circle 5px at 9px 9px,
+      rgba(10, 6, 2, 0.9) 100%,
+      transparent 0
+    );
+    background-size: 18px 20px;
+    background-position: 0 10px;
+    background-repeat: repeat-y;
+  }
+  &::before { left: 0; }
+  &::after  { right: 0; }
+}
+
+/* El papel NO usa radial-gradient para agujeros.
+   Solo tiene la textura diagonal y el color base.
+   margin: 0 18px deja las tiras de perforaciones visibles. */
+.toast-paper {
+  background-color: var(--paper-bg, var(--color-claro));
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
+    transparent 1px, transparent 8px
+  );
+  margin: 0 18px;
+  padding: 0 10px;
+  position: relative;
+  z-index: 1; /* encima de las tiras ::before/after */
+
+  /* Líneas divisorias en el borde del papel (junto a las tiras) */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(67,42,30,0.15);
+  }
+  &::before { left: -1px; }
+  &::after  { right: -1px; }
+}
+
+.toast-header {
+  padding: 8px 4px 5px;
+  border-bottom-width: 1.5px;
+  border-bottom-style: solid;
+}
+
+.toast-type {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.toast-msg {
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  padding: 6px 4px 10px;
+  color: var(--color-oscuro);
+  min-height: 28px;
+}
+
+/* Variantes por tipo */
+.toast--success {
+  .toast-header { border-bottom-color: var(--color-secondary); }
+  .toast-type   { color: var(--color-secondary); }
+}
+
+.toast--error {
+  .toast-header { border-bottom-color: var(--color-sello); }
+  .toast-type   { color: var(--color-sello); }
+}
+
+.toast--warning {
+  .toast-header { border-bottom-color: var(--color-medio); }
+  .toast-type   { color: var(--color-medio); }
+}
+
+.toast--info {
+  .toast-header { border-bottom-color: var(--player-azul); }
+  .toast-type   { color: var(--player-azul); }
+}

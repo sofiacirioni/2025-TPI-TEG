@@ -192,6 +192,30 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - Iconos de nav con `z-index: 10000` para quedar encima de la viñeta global
 - Cursores custom aplicados correctamente (sin override en componentes)
 
+### Auth, seguridad y sistema de notificaciones (sesión 2026-03-25)
+
+#### Backend — limpieza y hardening de auth
+- **Endpoints duplicados eliminados**: removidos `POST /api/v1/usuario` (registro antiguo) y `POST /api/v1/usuario/login` de `UsuarioController`; la autenticación queda centralizada exclusivamente en `AuthController`
+- **BCrypt corregido en `actualizarUsuario`**: se reemplazó comparación en texto plano (`.equals()`) por `passwordEncoder.matches()` y `passwordEncoder.encode()`
+- **DTOs eliminados**: `Credencial.java` y `UsuarioDeleteDto.java` (sin uso)
+- **`findByCorreoAndContrasenia` eliminado** de `UsuarioRepository`
+- **`/auth/refresh` devuelve 401 correctamente**: se extrajo helper `extractRefreshCookie()` y se lanza `ResponseStatusException(HttpStatus.UNAUTHORIZED)` en lugar de `IllegalStateException` (que mapeaba como 500)
+- **`AuthEntryPoint.java` (nuevo)**: implementa `AuthenticationEntryPoint`, responde JSON `{error, status: 401}` ante requests no autenticados — eliminando los 403 incorrectos
+- **`cookie.secure` configurable por entorno**: via `@Value("${cookie.secure:false}")`, `application-prod.properties` y `.env.example`; `ResponseCookie` con `SameSite: Strict` en prod y `Lax` en dev
+
+#### Frontend — limpieza de auth
+- **`registrarse.service.ts` eliminado** (ApiService legacy sin uso)
+- **`principal.component.ts`**: reemplazado `localStorage.getItem('usuario')` por `authService.isAuthenticated()`
+- **`perfil-usuario.component.ts`**: removido `localStorage.setItem('usuario', ...)`
+
+#### Sistema de notificaciones tipo teletipo
+- **`NotificationService`** (`core/services/`): `BehaviorSubject` con tipos `success | error | warning | info`, auto-dismiss configurable, `dismiss(id)` manual
+- **`ToastComponent`** (`shared/components/toast/`): standalone, efecto typewriter (26ms/char), animación slide-in desde la derecha, `z-index: calc(var(--z-vignette) + 1)` para quedar sobre la viñeta global
+- **Estética de teletipo**: tiras de perforaciones laterales (pseudo-elementos `::before`/`::after`) con círculos oscuros sobre fondo de papel, textura diagonal sutil, tinte de color por tipo via CSS custom property `--paper-bg`
+- **Integrado en `app.component.html`** sobre `<router-outlet>`
+- **Login y registro**: reemplazados `alert()` por `notificationService.error()` / `success()` con mensajes en tono militar
+- **Barrel files**: `shared/components/index.ts` y `core/services/index.ts`
+
 ---
 
 ## Equipo

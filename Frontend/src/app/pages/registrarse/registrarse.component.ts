@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { Router, RouterLink } from '@angular/router';
 import { StampComponent } from '../../components/index';
 import { SlideInDirective } from '../../shared/directives/index';
@@ -38,6 +39,7 @@ export class FormUsuarioComponent {
 
   constructor(
     private authService: AuthService,
+    private notificationService: NotificationService,
     private router: Router
   ) {}
 
@@ -61,10 +63,15 @@ export class FormUsuarioComponent {
       contrasenia: this.usuario.contrasenia,
       imagen:      this.usuario.imagen
     }).subscribe({
-      next: () => this.router.navigate(['/principal']),
-      error: (error) => {
-        const msg = error?.error?.mensaje ?? error?.error?.message ?? 'Ocurrió un error inesperado.';
-        alert(msg);
+      next: () => {
+        this.notificationService.success('Acreditación aprobada. Acceso concedido.');
+        this.router.navigate(['/principal']);
+      },
+      error: (err) => {
+        const msg = err.status === 409 || err.status === 400
+          ? 'El usuario ya existe en el registro.'
+          : 'Error al procesar la solicitud.';
+        this.notificationService.error(msg);
       }
     });
   }
