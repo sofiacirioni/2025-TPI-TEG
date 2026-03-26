@@ -9,6 +9,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,11 +32,11 @@ public class PartidaController {
     private UsuarioService usuarioService;
 
     @PostMapping("/crear/{idSala}")
-    public ResponseEntity<?> crearPartida(@PathVariable Long idSala, @RequestParam Long idUsuario) {
-        Usuario usuarioActual = usuarioService.obtenerByIdUsuario(idUsuario);
-        if (usuarioActual == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autorizado");
-        }
+    public ResponseEntity<?> crearPartida(
+            @PathVariable Long idSala,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Usuario usuarioActual = usuarioService.obtenerByCorreo(userDetails.getUsername());
 
         Partida partida = partidaService.crearPartidaYAsignarJugadores(idSala, usuarioActual);
 

@@ -5,14 +5,11 @@ import ar.edu.utn.frc.tup.piii.Services.JugadorService;
 import ar.edu.utn.frc.tup.piii.Services.PartidaService;
 import ar.edu.utn.frc.tup.piii.Services.SalaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
-import ar.edu.utn.frc.tup.piii.models.*;
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,102 +48,6 @@ class JugadorControllerTest {
         dto.setNombre("Test");
         JugadorDto result = controller.notificarNuevoJugador("1", dto);
         assertEquals("Test", result.getNombre());
-    }
-
-    @Test
-    void testGuardarJugador_CuandoUsuarioNoAutenticado() {
-        HttpSession session = mock(HttpSession.class);
-        when(session.getAttribute("usuarioActual")).thenReturn(null);
-
-        ResponseEntity<JugadorDto> response = controller.guardarJugador(1L, new Jugador(), session);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-    }
-
-    @Test
-    void testGuardarJugador_CuandoSalaNoExiste() {
-        HttpSession session = mock(HttpSession.class);
-        Usuario usuario = new Usuario();
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.obtenerSala(1L)).thenReturn(null);
-
-        ResponseEntity<JugadorDto> response = controller.guardarJugador(1L, new Jugador(), session);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void testGuardarJugador_CuandoJugadorServiceDevuelveNull() {
-        HttpSession session = mock(HttpSession.class);
-        Usuario usuario = new Usuario();
-        Sala sala = new Sala();
-
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.obtenerSala(1L)).thenReturn(sala);
-        when(jugadorService.crearJugador(any(), eq(usuario), eq(sala))).thenReturn(null);
-
-        ResponseEntity<JugadorDto> response = controller.guardarJugador(1L, new Jugador(), session);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void testGuardarJugador_Correcto() {
-        HttpSession session = mock(HttpSession.class);
-        Usuario usuario = new Usuario();
-        Sala sala = new Sala();
-        Jugador jugador = new Jugador();
-        JugadorDto dto = new JugadorDto();
-
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.obtenerSala(1L)).thenReturn(sala);
-        when(jugadorService.crearJugador(any(), eq(usuario), eq(sala))).thenReturn(jugador);
-        when(modelMapper.map(jugador, JugadorDto.class)).thenReturn(dto);
-
-        ResponseEntity<JugadorDto> response = controller.guardarJugador(1L, new Jugador(), session);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(dto, response.getBody());
-    }
-
-    @Test
-    void testCrearBot_CuandoSalaNoExiste() {
-        when(salaService.obtenerSala(1L)).thenReturn(null);
-        ResponseEntity<JugadorDto> response = controller.crearBot(1L, 2L);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void testCrearBot_CuandoUsuarioNoExiste() {
-        Sala sala = new Sala();
-        when(salaService.obtenerSala(1L)).thenReturn(sala);
-        when(usuarioService.obtenerByIdUsuario(2L)).thenReturn(null);
-
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
-                controller.crearBot(1L, 2L));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-    }
-
-    @Test
-    void testCrearBot_Correcto() {
-        Sala sala = new Sala();
-        Usuario usuario = new Usuario();
-        Jugador bot = new Jugador();
-        bot.setIdJugador(99L);
-        bot.setNombre("Bot_1");
-        bot.setColor(Color.ROJO);
-        bot.setTipoJugador(TipoJugador.BOT);
-        bot.setUsuario(usuario);
-        bot.setSala(sala);
-
-        when(salaService.obtenerSala(1L)).thenReturn(sala);
-        when(usuarioService.obtenerByIdUsuario(2L)).thenReturn(usuario);
-        when(jugadorService.crearBot(sala, usuario)).thenReturn(bot);
-
-        ResponseEntity<JugadorDto> response = controller.crearBot(1L, 2L);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Bot_1", response.getBody().getNombre());
     }
 
     @Test

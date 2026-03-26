@@ -2,7 +2,6 @@ package ar.edu.utn.frc.tup.piii.Services;
 
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.AuthResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.LoginRequestDto;
-import ar.edu.utn.frc.tup.piii.Dtos.Auth.RefreshResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.RegisterRequestDto;
 import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.UsuarioRepository;
@@ -73,7 +72,7 @@ public class AuthService {
                 user.getCorreo(), user.getImagen());
     }
 
-    public RefreshResponseDto refresh(HttpServletRequest request) {
+    public AuthResponseDto refresh(HttpServletRequest request) {
         String refreshToken = extractRefreshCookie(request);
 
         if (refreshToken == null) {
@@ -85,8 +84,12 @@ public class AuthService {
         }
 
         String correo = jwtService.extractUsername(refreshToken);
+        UsuarioEntity user = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
         String newAccessToken = jwtService.generateAccessToken(correo);
-        return new RefreshResponseDto(newAccessToken);
+        return new AuthResponseDto(newAccessToken, user.getIdUsuario(), user.getUsuario(),
+                user.getCorreo(), user.getImagen());
     }
 
     private String extractRefreshCookie(HttpServletRequest req) {

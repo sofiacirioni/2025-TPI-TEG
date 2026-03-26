@@ -7,7 +7,6 @@ import ar.edu.utn.frc.tup.piii.Services.PartidaService;
 import ar.edu.utn.frc.tup.piii.Services.SalaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.*;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/jugador")
 public class JugadorController {
+
     @Autowired
     public JugadorService jugadorService;
     @Autowired
@@ -42,25 +43,21 @@ public class JugadorController {
     public JugadorDto notificarNuevoJugador(@DestinationVariable String salaId, JugadorDto jugadorDto) {
         return jugadorDto;
     }
+
     @PostMapping("/sala/{idSala}/jugador")
     public ResponseEntity<JugadorDto> guardarJugador(
             @PathVariable Long idSala,
             @RequestBody @Valid Jugador jugador,
-            HttpSession session) {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        Usuario usuarioActual = (Usuario) session.getAttribute("usuarioActual");
-        if (usuarioActual == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        Usuario usuarioActual = usuarioService.obtenerByCorreo(userDetails.getUsername());
 
-        // Obtener la sala
         Sala sala = salaService.obtenerSala(idSala);
         if (sala == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         Jugador jugadorGuardado = jugadorService.crearJugador(jugador, usuarioActual, sala);
-
         if (jugadorGuardado == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -70,14 +67,15 @@ public class JugadorController {
     }
 
     @GetMapping("/crearBot/{idSala}")
-    public ResponseEntity<JugadorDto> crearBot(@PathVariable Long idSala, @RequestParam Long idUsuario) {
+    public ResponseEntity<JugadorDto> crearBot(
+            @PathVariable Long idSala,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
         Sala sala = salaService.obtenerSala(idSala);
         if (sala == null)
             return ResponseEntity.notFound().build();
 
-        Usuario usuarioActual = usuarioService.obtenerByIdUsuario(idUsuario);
-        if (usuarioActual == null)
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autorizado");
+        Usuario usuarioActual = usuarioService.obtenerByCorreo(userDetails.getUsername());
 
         Jugador bot = jugadorService.crearBot(sala, usuarioActual);
         JugadorDto dto = new JugadorDto();
@@ -89,7 +87,6 @@ public class JugadorController {
         dto.setIdSala(bot.getSala().getIdSala());
         return ResponseEntity.ok(dto);
     }
-
 
     @PostMapping("/{idJugador}/votar-pausa")
     public ResponseEntity<String> votarPausa(@PathVariable Long idJugador) {

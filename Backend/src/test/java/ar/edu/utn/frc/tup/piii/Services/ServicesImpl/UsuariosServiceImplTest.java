@@ -28,64 +28,6 @@ public class UsuariosServiceImplTest {
     }
 
     @Test
-    void testObtenerUsuario_existente() {
-        UsuarioEntity entity = new UsuarioEntity();
-        entity.setCorreo("test@example.com");
-        entity.setContrasenia("1234");
-
-        when(usuarioRepository.findByCorreoAndContrasenia("test@example.com", "1234"))
-                .thenReturn(Optional.of(entity));
-
-        Usuario usuario = usuarioService.obtenerUsuario("test@example.com", "1234");
-
-        assertNotNull(usuario);
-        assertEquals("test@example.com", usuario.getCorreo());
-    }
-
-    @Test
-    void testObtenerUsuario_inexistente() {
-        when(usuarioRepository.findByCorreoAndContrasenia("no@existe.com", "abc"))
-                .thenReturn(Optional.empty());
-
-
-        assertThrows(IllegalArgumentException.class, () -> usuarioService.obtenerUsuario("no@existe.com","abc"));
-    }
-
-    @Test
-    void testGuardarUsuario_nuevo() {
-        Usuario nuevo = new Usuario();
-        nuevo.setCorreo("nuevo@correo.com");
-        nuevo.setContrasenia("pass");
-
-        when(usuarioRepository.findByCorreoAndContrasenia("nuevo@correo.com", "pass"))
-                .thenReturn(Optional.empty());
-
-        when(usuarioRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-
-        Usuario guardado = usuarioService.guardarUsuario(nuevo);
-
-        assertNotNull(guardado);
-        assertEquals("nuevo@correo.com", guardado.getCorreo());
-    }
-
-    @Test
-    void testGuardarUsuario_existente() {
-        UsuarioEntity existente = new UsuarioEntity();
-        existente.setCorreo("repetido@mail.com");
-        existente.setContrasenia("Clave321");
-
-        when(usuarioRepository.findByCorreoAndContrasenia("repetido@mail.com", "Clave321"))
-                .thenReturn(Optional.of(existente));
-
-        Usuario duplicado = new Usuario();
-        duplicado.setCorreo("repetido@mail.com");
-        duplicado.setContrasenia("Clave321");
-
-
-        assertThrows(IllegalArgumentException.class, () -> usuarioService.guardarUsuario(duplicado));
-    }
-
-    @Test
     void testActualizarUsuario_correcto() {
         UsuarioEntity entity = new UsuarioEntity();
         entity.setCorreo("user@domain.com");

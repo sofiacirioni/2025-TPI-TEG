@@ -65,12 +65,11 @@ public class PartidaServiceImplTest {
     void setUp() {
         creadorEntity = new UsuarioEntity();
         creadorEntity.setIdUsuario(1L);
-        creadorEntity.setNombre("Creador");
+        creadorEntity.setUsuario("Creador");
 
         usuarioEntity = new UsuarioEntity();
         usuarioEntity.setIdUsuario(2L);
-        usuarioEntity.setNombre("Usuario Test");
-        usuarioEntity.setApellido("Apellido Test");
+        usuarioEntity.setUsuario("Usuario Test");
         usuarioEntity.setCorreo("test@example.com");
         usuarioEntity.setContrasenia("Password1@");
         usuarioEntity.setImagen("avatar.png");
@@ -190,7 +189,7 @@ public class PartidaServiceImplTest {
     void unirseAPartida_deberiaCrearNuevoJugadorYActualizarPartida() {
         UsuarioEntity nuevoUsuario = new UsuarioEntity();
         nuevoUsuario.setIdUsuario(999L);
-        nuevoUsuario.setNombre("Nuevo Usuario");
+        nuevoUsuario.setUsuario("Nuevo Usuario");
 
         salaEntity.setJugadores(new ArrayList<>());
 

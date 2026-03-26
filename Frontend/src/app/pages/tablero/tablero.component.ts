@@ -69,7 +69,7 @@ export class TableroComponent implements OnInit, OnDestroy {
         this.partida = result;
         this.turnoInfo = "Turno:\n";
         const usuarioActual = this.authService.getUsuario();
-        const idJugadorActual = Number(localStorage.getItem('idJugador'));
+        const idJugadorActual = this.authService.getJugadorId() ?? 0;
         const turnoActualNum = Number(this.partida.turnoActual);
         const turno = this.partida.turnos.find(t => Number(t.nroTurno) === turnoActualNum);
 

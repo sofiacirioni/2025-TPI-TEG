@@ -100,7 +100,7 @@ export class ConfigPartidaComponent implements OnInit, OnDestroy {
 
     this.configService.crearJugador(this.sala.idSala, nombreJugador).subscribe({
       next: (jugadorCreado: JugadorDto) => {
-        localStorage.setItem('idJugador', jugadorCreado.idJugador.toString());
+        this.authService.setJugadorId(jugadorCreado.idJugador);
         this.socketService.emitirNuevoJugador(this.sala.idSala, {
           nombre: nombreJugador
         });
@@ -128,9 +128,8 @@ export class ConfigPartidaComponent implements OnInit, OnDestroy {
     }
 
     const idSala = this.sala.idSala;
-    const idUsuario = usuarioActual.idUsuario;
 
-    this.configService.crearBot(idSala, idUsuario).subscribe({
+    this.configService.crearBot(idSala).subscribe({
       next: (botCreado) => {
         this.socketService.emitirNuevoJugador(idSala, {
           nombre: botCreado.nombre
@@ -153,9 +152,8 @@ export class ConfigPartidaComponent implements OnInit, OnDestroy {
     }
 
     const idSala = this.sala.idSala;
-    const idUsuario = usuarioActual.idUsuario;
 
-    this.configService.crearPartida(idSala, idUsuario).subscribe({
+    this.configService.crearPartida(idSala).subscribe({
       next: () => {
         this.socketService.emitirInicioPartida(idSala, {
           url: this.sala.url

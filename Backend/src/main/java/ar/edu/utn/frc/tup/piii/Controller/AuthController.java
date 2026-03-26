@@ -2,7 +2,6 @@ package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.AuthResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.LoginRequestDto;
-import ar.edu.utn.frc.tup.piii.Dtos.Auth.RefreshResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Auth.RegisterRequestDto;
 import ar.edu.utn.frc.tup.piii.Services.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +33,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshResponseDto> refresh(HttpServletRequest request) {
+    public ResponseEntity<AuthResponseDto> refresh(HttpServletRequest request) {
         return ResponseEntity.ok(authService.refresh(request));
     }
 

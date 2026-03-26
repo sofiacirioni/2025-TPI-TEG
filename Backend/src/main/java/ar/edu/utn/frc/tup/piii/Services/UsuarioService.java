@@ -7,5 +7,6 @@ public interface UsuarioService {
     Usuario actualizarUsuario(String correo, String contraseniaActual, String nuevaContrasenia, String imagen);
     Usuario eliminarUsuario(Long id);
     Usuario obtenerByIdUsuario(Long id);
+    Usuario obtenerByCorreo(String correo);
     Usuario actualizarImagen(String correo, String imagen);
 }

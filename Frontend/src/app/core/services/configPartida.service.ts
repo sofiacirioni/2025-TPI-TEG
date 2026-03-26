@@ -23,15 +23,16 @@ export class ConfigPartidaService {
       { withCredentials: true }
     );
   }
-  crearBot(idSala: number, idUsuario: number) {
+  crearBot(idSala: number) {
     return this.http.get<any>(
-      `${environment.apiUrl}/jugador/crearBot/${idSala}?idUsuario=${idUsuario}`,
+      `${environment.apiUrl}/jugador/crearBot/${idSala}`,
       { withCredentials: true }
     );
   }
-  crearPartida(idSala: number, idUsuario: number) {
+  crearPartida(idSala: number) {
     return this.http.post<any>(
-      `${environment.apiUrl}/partida/crear/${idSala}?idUsuario=${idUsuario}`,
+      `${environment.apiUrl}/partida/crear/${idSala}`,
+      {},
       { withCredentials: true }
     );
   }

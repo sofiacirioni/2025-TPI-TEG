@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, RefreshResponse, RegisterRequest, UserInfo } from '../models/interfaces/auth.interfaces';
+import { AuthResponse, RegisterRequest, UserInfo } from '../models/interfaces/auth.interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,6 +14,9 @@ export class AuthService {
 
   // Access token guardado en memoria — nunca en localStorage
   private accessToken: string | null = null;
+
+  // idJugador de la partida activa, guardado en memoria
+  private jugadorId: number | null = null;
 
   private currentUserSubject = new BehaviorSubject<UserInfo | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
@@ -49,15 +52,11 @@ export class AuthService {
 
   // Llamar al iniciar la app — recupera sesión si el refresh token (HttpOnly) sigue válido
   tryRefresh(): Observable<boolean> {
-    return this.http.post<RefreshResponse>(
+    return this.http.post<AuthResponse>(
       `${this.authUrl}/refresh`, {},
       { withCredentials: true }
     ).pipe(
-      tap(response => {
-        this.accessToken = response.accessToken;
-        const user = this.decodeToken(response.accessToken);
-        this.currentUserSubject.next(user);
-      }),
+      tap(response => this.handleAuthResponse(response)),
       map(() => true),
       catchError(() => {
         this.clearAuth();
@@ -72,6 +71,14 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return this.accessToken !== null;
+  }
+
+  setJugadorId(id: number): void {
+    this.jugadorId = id;
+  }
+
+  getJugadorId(): number | null {
+    return this.jugadorId;
   }
 
   getCurrentUser(): UserInfo | null {

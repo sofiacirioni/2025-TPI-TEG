@@ -71,6 +71,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public Usuario obtenerByCorreo(String correo) {
+        return usuarioRepository.findByCorreo(correo)
+                .map(u -> modelMapper.map(u, Usuario.class))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+    }
+
+    @Override
     public Usuario actualizarImagen(String correo, String imagen) {
         UsuarioEntity u = usuarioRepository
                 .findByCorreo(correo)
