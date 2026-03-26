@@ -1,5 +1,6 @@
 import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 interface Particle {
   x: number; y: number; r: number;
@@ -27,7 +28,7 @@ export class PrincipalComponent implements AfterViewInit, OnDestroy {
   private particles: Particle[] = [];
   private resizeHandler!: () => void;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   ngAfterViewInit(): void {
     this.initParticles();
@@ -104,15 +105,7 @@ export class PrincipalComponent implements AfterViewInit, OnDestroy {
   }
 
   private getTargetRoute(): string {
-    const usuarioStr = localStorage.getItem('usuario');
-    if (!usuarioStr) return '/iniciar-sesion';
-    try {
-      const usuario = JSON.parse(usuarioStr);
-      if (usuario && typeof usuario.correo === 'string' && usuario.correo.trim() !== '') {
-        return '/entrarCrearSala';
-      }
-    } catch {}
-    return '/iniciar-sesion';
+    return this.authService.isAuthenticated() ? '/entrarCrearSala' : '/iniciar-sesion';
   }
 
   async onJugar(): Promise<void> {
@@ -142,19 +135,9 @@ export class PrincipalComponent implements AfterViewInit, OnDestroy {
   }
 
   verificarUsuario(): void {
-    const usuarioStr = localStorage.getItem('usuario');
-    if (!usuarioStr) {
-      this.router.navigate(['/registrarse']);
-      return;
-    }
-    try {
-      const usuario = JSON.parse(usuarioStr);
-      if (usuario && typeof usuario.correo === 'string' && usuario.correo.trim() !== '') {
-        this.router.navigate(['/perfilUsuario']);
-      } else {
-        this.router.navigate(['/registrarse']);
-      }
-    } catch {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/perfilUsuario']);
+    } else {
       this.router.navigate(['/registrarse']);
     }
   }

@@ -22,6 +22,7 @@ import org.springframework.security.config.Customizer;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final AuthEntryPoint authEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,6 +43,9 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authEntryPoint)
                 )
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.disable())

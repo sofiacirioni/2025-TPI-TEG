@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +30,9 @@ public class AuthService {
 
     @Value("${jwt.refresh-token-expiration}")
     private long refreshExpiration;
+
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
 
     public AuthResponseDto login(LoginRequestDto request, HttpServletResponse response) {
         authManager.authenticate(
@@ -87,19 +92,32 @@ public class AuthService {
     }
 
     public void logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refresh_token", "");
-        cookie.setMaxAge(0);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/api/v1/auth/refresh");
-        response.addCookie(cookie);
+        clearRefreshTokenCookie(response);
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        Cookie cookie = new Cookie("refresh_token", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false); // true en producción con HTTPS
-        cookie.setPath("/api/v1/auth/refresh");
-        cookie.setMaxAge((int) (refreshExpiration / 1000));
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie
+                .from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/api/v1/auth/refresh")
+                .maxAge(refreshExpiration / 1000)
+                .sameSite(cookieSecure ? "Strict" : "Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie
+                .from("refresh_token", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .sameSite(cookieSecure ? "Strict" : "Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

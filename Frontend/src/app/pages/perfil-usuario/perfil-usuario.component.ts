@@ -30,13 +30,7 @@ export class PerfilUsuario implements OnInit {
       .actualizarImagen({ correo: this.usuario.correo, imagen: img })
       .subscribe({
         next: updated => {
-
           this.usuario.imagen = updated.imagen;
-          const stored = this.authService.getUsuario();
-          if (stored) {
-            stored.imagen = updated.imagen;
-            localStorage.setItem('usuario', JSON.stringify(stored));
-          }
           alert('Imagen actualizada con éxito.');
         },
         error: () => {

@@ -1,12 +1,9 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
-import ar.edu.utn.frc.tup.piii.Dtos.Login.Credencial;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioPutDto;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.Usuario;
-import jakarta.validation.Valid;
-import jakarta.servlet.http.HttpSession;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import org.springframework.web.bind.annotation.CrossOrigin;
-
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 
 @RestController
 @RequestMapping("/api/v1/usuario")
@@ -26,33 +20,6 @@ public class UsuarioController {
     public UsuarioService usuarioService;
     @Autowired
     public ModelMapper modelMapper;
-
-    @PostMapping
-    public ResponseEntity<UsuarioDto> GuardarUsuario(@RequestBody @Valid Usuario usuario) {
-
-        Usuario usuarioGuardado = usuarioService.guardarUsuario(usuario);
-
-        if (usuarioGuardado == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        UsuarioDto usuarioDto = modelMapper.map(usuarioGuardado, UsuarioDto.class);
-        return ResponseEntity.ok(usuarioDto);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<UsuarioDto> buscarUsuario(@RequestBody Credencial loginRequest, HttpSession session) {
-        Usuario usuario = usuarioService.obtenerUsuario(loginRequest.getCorreo(), loginRequest.getContrasenia());
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        session.setAttribute("usuarioActual", usuario);
-
-        UsuarioDto usuarioDto = modelMapper.map(usuario, UsuarioDto.class);
-        return ResponseEntity.ok(usuarioDto);
-    }
 
     @PutMapping("/actualizar")
     public ResponseEntity<UsuarioDto> actualizarUsuario(@RequestBody UsuarioPutDto request) {
@@ -88,6 +55,5 @@ public class UsuarioController {
         }
         UsuarioDto usuarioDto = modelMapper.map(usuarioEliminado, UsuarioDto.class);
         return ResponseEntity.ok(usuarioDto);
-
     }
 }
