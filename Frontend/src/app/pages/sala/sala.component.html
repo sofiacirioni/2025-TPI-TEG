@@ -1,126 +1,142 @@
-<head>
-  <!-- Fuentes Google -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-    rel="stylesheet"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Montserrat:ital,wght@0,900;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
-    rel="stylesheet"
-  />
-  <title>Elige una opción:</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
+<div class="sala-container">
 
-<body>
-<div class="container my-4">
+  <!-- Telegrama -->
+  <div class="telegrama-wrap"
+       appSlideIn
+       [slideFrom]="'bottom'"
+       [slideDistance]="40"
+       [delay]="0"
+       [slideDuration]="600">
 
-  <!-- Botones principales -->
-  <div class="mb-3">
-    <button class="unirseSala" (click)="abrirModalUnirse()">Unirse a una sala</button>
-    <button class="crearSala" (click)="abrirModal()">Crear una sala</button>
-    <button class="unirsePartida" (click)="abrirModalUnirsePartida()">Unirse a una partida</button>
-  </div>
+    <div class="tele-paper">
+      <div class="tele-contenido">
 
-  <!-- Modal Unirse a Sala -->
-  <div
-    class="modal fade show"
-    tabindex="-1"
-    style="display: block;"
-    *ngIf="mostrarModalUnirse"
-    (click)="cerrarModal($event)"
-  >
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Unirse a una sala</h5>
-          <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal($event)"></button>
+        <!-- Header -->
+        <div class="tele-header">
+          <div class="tele-header-left">
+            <div class="tele-titulo">Táctica y Estrategia de Guerra</div>
+            <div class="tele-subtitulo">Sala de Operaciones · Comando Supremo</div>
+          </div>
+          <div class="tele-header-right">
+            <div>TEL. N° 0047</div>
+            <div>{{ fechaHeader }}</div>
+          </div>
+          <app-stamp
+            type="clasificado"
+            [rotation]="-6"
+            [opacity]="0.65"
+            [blend]="true"
+            class="tele-sello">
+          </app-stamp>
         </div>
-        <form [formGroup]="unirseSala" (ngSubmit)="onUnirseSala()">
-          <div class="modal-body">
-            <label for="url" class="form-label">URL de la sala</label>
-            <input id="url" type="text" formControlName="url" class="form-control" />
-            <div *ngIf="unirseSala.get('url')?.invalid" class="text-danger mt-1">
-              El nombre es obligatorio
-            </div>
+
+        <!-- Metadatos -->
+        <div class="tele-meta">
+          <span class="meta-k">PARA:</span>
+          <span class="meta-v">{{ nombreUsuario }}</span>
+          <span class="meta-k">DE:</span>
+          <span class="meta-v">ESTADO MAYOR GENERAL</span>
+          <span class="meta-k">FECHA:</span>
+          <span class="meta-v">{{ fechaFormateada }} · {{ horaFormateada }}</span>
+          <span class="meta-k">REF.:</span>
+          <span class="meta-v">OPERACION-SALA / PRIORIDAD NORMAL</span>
+        </div>
+
+        <!-- Instrucción -->
+        <p class="tele-instruccion">
+          Se le ordena seleccionar una de las siguientes acciones y confirmar. STOP
+        </p>
+
+        <!-- Opciones -->
+        <div class="tele-opciones">
+
+          <!-- A: Crear sala -->
+          <div class="tele-opcion" [class.activa]="opcionActual === 'crear'" (click)="seleccionar('crear')">
+            <div class="tele-radio"></div>
+            <span class="tele-cod">A.</span>
+            <span class="tele-opcion-txt">Establecer nueva sala de operaciones</span>
           </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">Unirse</button>
-            <button type="button" class="btn btn-secondary" (click)="cerrarModal($event)">Cerrar</button>
+          <div class="tele-campo-nombre" [class.visible]="opcionActual === 'crear'">
+            <label class="campo-lbl">Nombre de la sala</label>
+            <input
+              class="campo-inp"
+              type="text"
+              [(ngModel)]="nombreSala"
+              placeholder="Dejar vacío para nombre automático"
+              maxlength="40"
+            >
           </div>
-        </form>
+
+          <!-- B: Unirse a sala -->
+          <div class="tele-opcion" [class.activa]="opcionActual === 'unirse'" (click)="seleccionar('unirse')">
+            <div class="tele-radio"></div>
+            <span class="tele-cod">B.</span>
+            <span class="tele-opcion-txt">Incorporarse a sala existente</span>
+          </div>
+          <div class="tele-campo-codigo" [class.visible]="opcionActual === 'unirse'">
+            <label class="campo-lbl">Código de operación</label>
+            <input
+              class="campo-inp"
+              type="text"
+              [(ngModel)]="codigoSala"
+              placeholder="Ingrese el código de sala"
+              style="text-transform: uppercase"
+            >
+          </div>
+
+          <!-- C: Retomar partida -->
+          <div class="tele-opcion" [class.activa]="opcionActual === 'retomar'" (click)="seleccionar('retomar')">
+            <div class="tele-radio"></div>
+            <span class="tele-cod">C.</span>
+            <span class="tele-opcion-txt">Retomar operacion en curso</span>
+          </div>
+          <div class="tele-campo-codigo" [class.visible]="opcionActual === 'retomar'">
+            <label class="campo-lbl">Código de operación</label>
+            <input
+              class="campo-inp"
+              type="text"
+              [(ngModel)]="codigoSala"
+              placeholder="Ingrese el código de sala"
+              style="text-transform: uppercase"
+            >
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="tele-footer">
+          <div class="tele-footer-left">
+            <div class="footer-lbl">Responsable:</div>
+            <div class="footer-nombre">{{ nombreUsuario }}</div>
+          </div>
+          <div class="tele-footer-right">
+            <div>Por orden del Estado Mayor</div>
+            <div>Transmitido via TELEX</div>
+            <div>Cifrado nivel 3</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Modal Crear Sala -->
-  <div
-    class="modal fade show"
-    tabindex="-1"
-    style="display: block;"
-    *ngIf="mostrarModal"
-    (click)="cerrarModal($event)"
-  >
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Crear una sala</h5>
-          <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal($event)"></button>
-        </div>
-        <form [formGroup]="crearSala" (ngSubmit)="onCrearSala()">
-          <div class="modal-body">
-            <label for="nombreSala" class="form-label">Nombre de la sala</label>
-            <input id="nombreSala" type="text" formControlName="nombreSala" class="form-control" />
-            <div *ngIf="crearSala.get('nombreSala')?.invalid" class="text-danger mt-1">
-              El nombre es obligatorio
-            </div>
+  <!-- Acciones fuera del telegrama -->
+  <div class="sala-actions"
+       appSlideIn
+       [slideFrom]="'bottom'"
+       [slideDistance]="24"
+       [delay]="150"
+       [slideDuration]="500">
 
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">Crear</button>
-            <button type="button" class="btn btn-secondary" (click)="cerrarModal($event)">Cerrar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+    <button
+      class="btn-teg-primary"
+      [disabled]="(opcionActual === 'unirse' || opcionActual === 'retomar') && !codigoSala.trim()"
+      (click)="confirmar()">
+      {{ textoBoton }}
+    </button>
 
-  <!-- Modal Unirse a Partida -->
-  <div
-    class="modal fade show"
-    tabindex="-1"
-    style="display: block;"
-    *ngIf="mostrarModalUnirsePartida"
-    (click)="cerrarModal($event)"
-  >
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Unirse a una partida</h5>
-          <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal($event)"></button>
-        </div>
-        <form [formGroup]="unirsePartida" (ngSubmit)="onUnirsePartida()">
-          <div class="modal-body">
-            <label for="urlPartida" class="form-label">URL de la partida</label>
-            <input id="urlPartida" type="text" formControlName="url" class="form-control" />
-            <div *ngIf="unirsePartida.get('urlPartida')?.invalid" class="text-danger mt-1">
-              La URL es obligatoria
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">Unirse</button>
-            <button type="button" class="btn btn-secondary" (click)="cerrarModal($event)">Cerrar</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <a class="sala-volver" routerLink="/principal">← Volver al principal</a>
+
   </div>
 
 </div>
-
-<!-- Botón de volver -->
-<a [routerLink]="['../principal']" id="volver" aria-label="Volver a la pantalla principal"></a>
-
-</body>

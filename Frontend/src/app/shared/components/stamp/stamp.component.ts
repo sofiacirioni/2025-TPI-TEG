@@ -14,7 +14,7 @@ export class StampComponent {
 
   get stampSrc(): string {
     switch (this.type) {
-      case 'clasificado': return '/assets/vectors/clasificado-stamp.svg';
+      case 'clasificado': return '/assets/vectors/classified-stamp.svg';
       case 'teg-stamp':   return '/assets/vectors/teg-stamp.svg';
       default:            return '/assets/vectors/top-secret-stamp.svg';
     }

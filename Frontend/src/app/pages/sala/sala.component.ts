@@ -1,162 +1,152 @@
-
 (window as any).global = window;
-import {Router, RouterLink} from '@angular/router';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {SalaService} from '../../core/services/sala.service';
-import {Component, ViewEncapsulation} from '@angular/core';
-import {NgFor, NgIf} from '@angular/common';
-import {Sala, SalaGet} from '../../core/models/interfaces/sala.interface';
-import {AuthService} from '../../core/services/auth.service';
+import { Component, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { SalaService } from '../../core/services/sala.service';
+import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { Sala } from '../../core/models/interfaces/sala.interface';
+import { StampComponent } from '../../shared/components/stamp/stamp.component';
+import { SlideInDirective } from '../../shared/directives/slide-in.directive';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-sala',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgIf],
+  imports: [FormsModule, RouterLink, StampComponent, SlideInDirective],
   templateUrl: './sala.component.html',
-  styleUrls: ['./sala.component.css'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./sala.component.scss']
 })
-export class SalaComponent {
-  crearSala!: FormGroup;
-  unirseSala!: FormGroup;
-  unirsePartida!: FormGroup;
+export class SalaComponent implements OnInit {
+  opcionActual: 'crear' | 'unirse' | 'retomar' = 'crear';
+  nombreSala: string = '';
+  codigoSala: string = '';
+  fechaFormateada: string = '';
+  fechaHeader: string = '';
+  horaFormateada: string = '';
+  nombreUsuario: string = '';
 
+  private readonly mesesAbreviados = [
+    'ENE','FEB','MAR','ABR','MAY','JUN',
+    'JUL','AGO','SEP','OCT','NOV','DIC'
+  ];
 
   constructor(
     private router: Router,
-    private fb: FormBuilder,
     private salaService: SalaService,
-  private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
-) {
-    this.crearSala = this.fb.group({
-      nombreSala: ['', Validators.required]
-    });
-    this.unirseSala = this.fb.group({
-      url: ['', Validators.required]
-    })
-    this.unirsePartida=this.fb.group({
-      url: ['', Validators.required]
+  ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.nombreUsuario = user?.usuario ?? 'DESCONOCIDO';
+
+    const ahora = new Date();
+    const dia = ahora.getDate().toString().padStart(2, '0');
+    const mes = this.mesesAbreviados[ahora.getMonth()];
+    const horas = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+
+    this.fechaFormateada = `${dia} ${mes} 1944`;
+    this.fechaHeader = `${dia}/${mes}/44`;
+    this.horaFormateada = `${horas}:${minutos} HRS`;
+  }
+
+  seleccionar(opcion: 'crear' | 'unirse' | 'retomar'): void {
+    this.opcionActual = opcion;
+  }
+
+  get textoBoton(): string {
+    const textos: Record<string, string> = {
+      crear:   '· CREAR SALA ·',
+      unirse:  '· INCORPORARSE ·',
+      retomar: '· RETOMAR POSICIÓN ·'
+    };
+    return textos[this.opcionActual];
+  }
+
+  confirmar(): void {
+    switch (this.opcionActual) {
+      case 'crear':   this.onCrearSala();     break;
+      case 'unirse':  this.onUnirseSala();    break;
+      case 'retomar': this.onUnirsePartida(); break;
     }
-
-  )
-  }
-  mostrarModal = false;
-
-  mostrarModalUnirse = false;
-
-  mostrarModalUnirsePartida=false;
-
-  abrirModal() {
-    this.mostrarModal = true;
   }
 
-  abrirModalUnirse() {
-    this.mostrarModalUnirse = true;
-  }
-  abrirModalUnirsePartida()
-  {
-    this.mostrarModalUnirsePartida = true;
-
-  }
-  cerrarModal(event?: MouseEvent) {
-    this.mostrarModal = false;
-    this.mostrarModalUnirse = false;
-    this.mostrarModalUnirsePartida = false;
-
+  generarNombreDefault(): string {
+    const nombres = [
+      'AGUILA', 'TORMENTA', 'CENTINELA',
+      'HALCON', 'TITAN', 'FORTALEZA',
+      'RELÁMPAGO', 'BASTIÓN', 'CÓNDOR'
+    ];
+    const num = Math.floor(Math.random() * 99) + 1;
+    const nombre = nombres[Math.floor(Math.random() * nombres.length)];
+    return `${nombre}-${num.toString().padStart(2, '0')}`;
   }
 
-  onCrearSala(): void {
-    if (this.crearSala.invalid) {
-      alert('El nombre de la sala es obligatorio.');
-      return;
-    }
-    const payload = this.crearSala.value;
-    console.log('Payload a enviar:', payload);
-
-    this.salaService.crearSala(payload).subscribe({
+  private onCrearSala(): void {
+    const nombre = this.nombreSala.trim() || `Operación ${this.generarNombreDefault()}`;
+    this.salaService.crearSala({ nombreSala: nombre }).subscribe({
       next: (data: Sala) => {
         this.salaService.setSala(data);
         this.router.navigate(['/configPartida']);
       },
       error: (error) => {
-        if (error.error && error.error.mensaje) {
-          alert(error.error.mensaje);
-        } else {
-          // Otro error no esperado
-          alert('Ocurrió un error inesperado.');
-        }
-        console.error('Detalle del error:', error);
+        const msg = error.error?.mensaje ?? 'Ocurrió un error inesperado.';
+        this.notificationService.error(msg);
+        console.error('Error al crear sala:', error);
       }
     });
   }
 
-  onUnirseSala(): void {
-    if (this.unirseSala.invalid) {
-      alert('El url de la sala es obligatorio.');
+  private onUnirseSala(): void {
+    const url = this.codigoSala.trim();
+    if (!url) {
+      this.notificationService.error('Debe ingresar el código de operación.');
       return;
     }
-
-    const url = this.unirseSala.value.url;
-
     this.salaService.unirseSala(url).subscribe({
       next: (data: Sala) => {
-        console.log('Uniéndose a la sala:', data);
-
         localStorage.setItem('urlSala', url);
-
         this.salaService.setSala(data);
-
         this.router.navigate(['/configPartida']);
       },
       error: (error) => {
-        if (error.error && error.error.mensaje) {
-          alert(error.error.mensaje);
-        } else {
-          alert('Ocurrió un error inesperado.');
-        }
-        console.error('Detalle del error:', error);
+        const msg = error.error?.mensaje ?? 'Ocurrió un error inesperado.';
+        this.notificationService.error(msg);
+        console.error('Error al unirse a sala:', error);
       }
     });
   }
-  onUnirsePartida(): void {
-    if (this.unirsePartida.invalid) {
-      alert('La URL es obligatoria');
+
+  private onUnirsePartida(): void {
+    const url = this.codigoSala.trim();
+    const usuarioActual = this.authService.getCurrentUser();
+
+    if (!usuarioActual?.idUsuario) {
+      this.notificationService.error('No hay usuario logueado.');
       return;
     }
-
-    const url = this.unirsePartida.value.url;
-    const usuarioActual = this.authService.getUsuario();
-
-    if (!usuarioActual || !usuarioActual.idUsuario) {
-      alert('No hay usuario logueado.');
+    if (!url) {
+      this.notificationService.error('Debe ingresar el código de operación.');
       return;
     }
 
     this.salaService.unirsePartida(url, usuarioActual.idUsuario).subscribe({
       next: (data: any) => {
         const sala = data.configuracion;
-
         if (!sala) {
-          alert('No se recibió configuración de sala válida.');
+          this.notificationService.error('No se recibió configuración de sala válida.');
           return;
         }
-
         this.salaService.setSala(sala);
         this.router.navigate(['/juego', url]);
       },
-      error: error => this.manejarError(error)
+      error: (error) => {
+        const msg = error.error?.mensaje ?? error.error?.error ?? 'Ocurrió un error inesperado.';
+        this.notificationService.error(msg);
+        console.error('Error al retomar partida:', error);
+      }
     });
-  }
-
-  private manejarError(error: any) {
-    if (error.error?.mensaje) {
-      alert(error.error.mensaje);
-    } else if (error.error?.error) {
-      alert(error.error.error);
-    } else {
-      alert('Ocurrió un error inesperado.');
-    }
-    console.error('Detalle del error:', error);
   }
 }
