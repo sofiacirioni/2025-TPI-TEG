@@ -32,19 +32,31 @@
 
         <!-- Metadatos -->
         <div class="tele-meta">
-          <span class="meta-k">PARA:</span>
-          <span class="meta-v">{{ nombreUsuario }}</span>
-          <span class="meta-k">DE:</span>
-          <span class="meta-v">ESTADO MAYOR GENERAL</span>
-          <span class="meta-k">FECHA:</span>
-          <span class="meta-v">{{ fechaFormateada }} · {{ horaFormateada }}</span>
-          <span class="meta-k">REF.:</span>
-          <span class="meta-v">OPERACION-SALA / PRIORIDAD NORMAL</span>
+          <div class="meta-col">
+            <div class="meta-fila">
+              <span class="meta-k">PARA:</span>
+              <span class="meta-v">{{ nombreUsuario }}</span>
+            </div>
+            <div class="meta-fila">
+              <span class="meta-k">FECHA:</span>
+              <span class="meta-v">{{ fechaFormateada }}</span>
+            </div>
+          </div>
+          <div class="meta-col">
+            <div class="meta-fila">
+              <span class="meta-k">DE:</span>
+              <span class="meta-v">ESTADO MAYOR GENERAL</span>
+            </div>
+            <div class="meta-fila">
+              <span class="meta-k">REF.:</span>
+              <span class="meta-v">OPERACION-SALA</span>
+            </div>
+          </div>
         </div>
 
         <!-- Instrucción -->
         <p class="tele-instruccion">
-          Se le ordena seleccionar una de las siguientes acciones y confirmar. STOP
+          SE LE ORDENA ATENDER UNA DE LAS SIGUIENTES ACCIONES Y CONFIRMAR.
         </p>
 
         <!-- Opciones -->
@@ -62,7 +74,7 @@
               class="campo-inp"
               type="text"
               [(ngModel)]="nombreSala"
-              placeholder="Dejar vacío para nombre automático"
+              placeholder="SALA-1"
               maxlength="40"
             >
           </div>
@@ -75,30 +87,20 @@
           </div>
           <div class="tele-campo-codigo" [class.visible]="opcionActual === 'unirse'">
             <label class="campo-lbl">Código de operación</label>
-            <input
-              class="campo-inp"
-              type="text"
-              [(ngModel)]="codigoSala"
-              placeholder="Ingrese el código de sala"
-              style="text-transform: uppercase"
-            >
-          </div>
-
-          <!-- C: Retomar partida -->
-          <div class="tele-opcion" [class.activa]="opcionActual === 'retomar'" (click)="seleccionar('retomar')">
-            <div class="tele-radio"></div>
-            <span class="tele-cod">C.</span>
-            <span class="tele-opcion-txt">Retomar operacion en curso</span>
-          </div>
-          <div class="tele-campo-codigo" [class.visible]="opcionActual === 'retomar'">
-            <label class="campo-lbl">Código de operación</label>
-            <input
-              class="campo-inp"
-              type="text"
-              [(ngModel)]="codigoSala"
-              placeholder="Ingrese el código de sala"
-              style="text-transform: uppercase"
-            >
+            <div class="codigo-boxes">
+              @for (char of codigoChars; track $index) {
+                <input
+                  class="codigo-box"
+                  type="text"
+                  maxlength="1"
+                  [value]="char"
+                  (input)="onCodigoInput($index, $event)"
+                  (keydown)="onCodigoKeydown($index, $event)"
+                  (paste)="onCodigoPaste($event)"
+                  autocomplete="off"
+                >
+              }
+            </div>
           </div>
 
         </div>
@@ -130,7 +132,7 @@
 
     <button
       class="btn-teg-primary"
-      [disabled]="(opcionActual === 'unirse' || opcionActual === 'retomar') && !codigoSala.trim()"
+      [disabled]="opcionActual === 'unirse' && codigoSala.length < 6"
       (click)="confirmar()">
       {{ textoBoton }}
     </button>

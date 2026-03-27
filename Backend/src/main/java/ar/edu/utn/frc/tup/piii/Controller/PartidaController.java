@@ -48,11 +48,13 @@ public class PartidaController {
         return ResponseEntity.ok(partidaDto);
     }
 
+    // TODO: evaluar si se mantiene para futuras versiones (era usado por opción C "retomar partida", eliminada en 2026-03-27)
     @GetMapping("/disponibles")
     public ResponseEntity<List<Partida>> listarPartidasDisponibles() {
         return ResponseEntity.ok(partidaService.listarPartidasDisponibles());
     }
 
+    // TODO: evaluar si se mantiene para futuras versiones (era usado por opción C "retomar partida", eliminada en 2026-03-27)
     @PostMapping("/{idPartida}/unirse/{idUsuario}")
     public ResponseEntity<Partida> unirseAPartida(@PathVariable Long idPartida, @PathVariable Long idUsuario) {
         return ResponseEntity.ok(partidaService.unirseAPartida(idUsuario, idPartida));

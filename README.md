@@ -216,6 +216,16 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - **Login y registro**: reemplazados `alert()` por `notificationService.error()` / `success()` con mensajes en tono militar
 - **Barrel files**: `shared/components/index.ts` y `core/services/index.ts`
 
+### SalaComponent — refactor a telegrama de época (sesión 2026-03-26)
+
+- **`pages/sala/sala.component.html`** reescrito: layout de telegrama militar con `.telegrama-wrap` / `.tele-paper`, perforaciones CSS, `SlideInDirective` (`appSlideIn`), grilla de metadatos (PARA / DE / FECHA / REF.), 3 opciones radio-style (A/B/C) con inputs colapsables inline, sello CLASSIFIED (blend-mode multiply), footer de estado mayor
+- **`pages/sala/sala.component.scss`** (migrado de `.css`): papel crema `#EDE5B0`, perforaciones via `::before`/`::after`, transición `max-height: 0 → 60px` para campos colapsables, `.tele-radio` con animación fill al seleccionar, `.sala-actions` fuera del telegrama con botón confirm y link volver
+- **`pages/sala/sala.component.ts`** reescrito: `FormsModule` reemplaza `ReactiveFormsModule`; estado con `opcionActual`, `nombreSala`, `codigoSala`; `seleccionar()`, `confirmar()`, `generarNombreDefault()`, `textoBoton` getter; `alert()` reemplazado por `notificationService.error()`; polyfill `(window as any).global = window` restaurado para compatibilidad SockJS
+- **`shared/components/stamp/stamp.component.ts`**: corregida ruta `'clasificado'` → `/assets/vectors/classified-stamp.svg`
+- **`shared/components/index.ts`**: agregado `export { StampComponent }` explícito para resolver problema de resolución webpack con `export *`
+- **`pages/registrarse/registrarse.component.ts`**: import de `StampComponent` movido a ruta directa (evita ambigüedad del barrel)
+- Revisión Playwright confirmada: todos los checks DOM pasan, 0 errores de consola, 0 requests 404
+
 ---
 
 ## Equipo

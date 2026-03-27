@@ -9,9 +9,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class SalaServiceImpl implements SalaService {
@@ -20,10 +20,21 @@ public class SalaServiceImpl implements SalaService {
     @Autowired
     public ModelMapper modelMapper;
 
+    private static final String CODIGO_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    // Sin I, O, 0, 1 para evitar confusión visual al compartir verbalmente
+
+    private String generarCodigoSala() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder codigo = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) {
+            codigo.append(CODIGO_CHARS.charAt(random.nextInt(CODIGO_CHARS.length())));
+        }
+        return codigo.toString();
+    }
+
     public Sala crearSala(Sala sala, Usuario creador, String nombre) {
 
-        String urlUnica = UUID.randomUUID().toString();
-        sala.setUrl(urlUnica);
+        sala.setUrl(generarCodigoSala());
         sala.setNombreSala(nombre);
         sala.setCreador(creador);
         sala.setEstado(EstadoSala.ESPERANDO);
