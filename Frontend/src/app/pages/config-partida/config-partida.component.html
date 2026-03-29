@@ -1,75 +1,183 @@
+<div class="config-container">
 
-  <title>Sala de Espera</title>
+  @if (sala) {
+    <!-- Documento Orden de Operaciones -->
+    <div class="orden-wrap"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="40"
+         [delay]="0"
+         [slideDuration]="600">
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Montserrat:ital,wght@0,900;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet" />
+      <div class="orden-paper">
+        <div class="orden-contenido">
 
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+          <!-- Header del documento -->
+          <div class="orden-header">
+            <div class="orden-numero">
+              O.O. N° {{sala.idSala}}<br>{{fechaOrden}}
+            </div>
+            <div class="orden-titulo">Orden de Operaciones</div>
+            <div class="orden-subtitulo">Sala de Operaciones · Táctica y Estrategia de Guerra</div>
+          </div>
 
-<body>
-<div class="wrapper container mt-5" *ngIf="sala">
-  <h2>SALA DE ESPERA - {{ sala.nombreSala }}</h2>
-  <p class="subtexto">Espere a que otros jugadores se unan y comience la partida...</p>
-  <p class="url">¡INVITA A TUS AMIGOS! -{{sala.url}}</p>
-  <!-- Botón para abrir el modal -->
-  <button class="btn btn-primary mb-3" (click)="abrirModal()">Elige tu nombre</button>
-
-  <!-- Modal de creación -->
-  <div
-    class="modal fade show"
-    tabindex="-1"
-    style="display: block;"
-    *ngIf="mostrarModal"
-    (click)="cerrarModal($event)"
-  >
-    <div class="modal-dialog" (click)="$event.stopPropagation()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Crear Jugador</h5>
-          <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal($event)"></button>
-        </div>
-
-        <form *ngIf="crearJugadorForm" [formGroup]="crearJugadorForm" (ngSubmit)="crearJugador()">
-          <div class="modal-body">
-            <div class="form-row d-flex align-items-center gap-3">
-              <label for="nombreJugador" class="form-label mb-0">Jugador:</label>
-              <input id="nombreJugador" formControlName="nombreJugador" class="form-control" />
+          <!-- Metadatos superiores -->
+          <div class="orden-meta-top">
+            <div class="meta-item">
+              <div class="meta-lbl">Nombre clave</div>
+              <div class="meta-val">{{sala.nombreSala}}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-lbl">Código de acceso</div>
+              <div class="meta-val codigo-acceso">{{sala.url}}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-lbl">Estado</div>
+              <div class="meta-val"
+                   [class.estado-listo]="puedeIniciar"
+                   [class.estado-aguardando]="!puedeIniciar">
+                {{puedeIniciar ? 'LISTO PARA INICIAR' : 'AGUARDANDO UNIDADES'}}
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-success" (click)="crearJugador()">OK</button>
 
+          <!-- Sección 1: Misión -->
+          <div class="seccion">
+            <div class="seccion-titulo">1. Misión</div>
+            <p class="seccion-texto">
+              Comandar las fuerzas asignadas para conquistar el mapa y cumplir el objetivo
+              secreto encomendado. Mínimo 2 unidades confirmadas para iniciar operaciones.
+            </p>
           </div>
 
-        </form>
+          <!-- Sección 2: Instrucciones de coordinación -->
+          <div class="seccion">
+            <div class="seccion-titulo">2. Instrucciones de coordinación</div>
+            <div class="codigo-bloque">
+              <div class="codigo-label">
+                Compartí este código con tus aliados para que se incorporen a la operación:
+              </div>
+              <div class="codigo-valor">{{sala.url}}</div>
+              <button class="btn-copiar" (click)="copiarCodigo()">
+                {{copiado ? '✓ Copiado' : 'Copiar'}}
+              </button>
+            </div>
+          </div>
+
+          <!-- Sección 3: Personal confirmado -->
+          <div class="seccion">
+            <div class="seccion-titulo">3. Personal confirmado</div>
+
+            <table class="jugadores-tabla">
+              <thead>
+                <tr>
+                  <th>Comandante</th>
+                  <th>Rango</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (jugador of jugadores; track jugador.id; let i = $index) {
+                  <tr class="fila-jugador">
+                    <td>
+                      <div class="jugador-nombre">
+                        <div class="jugador-icono"
+                             [style.background]="getColorJugador(i)">
+                          {{jugador.nombre.charAt(0).toUpperCase()}}
+                        </div>
+                        {{jugador.nombre}}
+                      </div>
+                    </td>
+                    <td class="col-rango">
+                      @if (jugador.esBot) {
+                        Unidad automática
+                      } @else if (jugador.idUsuario === sala.creador?.idUsuario) {
+                        Anfitrión
+                      } @else {
+                        Comandante
+                      }
+                    </td>
+                    <td>
+                      @if (jugador.esBot) {
+                        <span class="jugador-estado-bot">⚙ Activo</span>
+                      } @else {
+                        <span class="jugador-estado-ok">✓ Confirmado</span>
+                      }
+                    </td>
+                    <td>
+                      @if (esAnfitrion && jugador.idUsuario !== sala.creador?.idUsuario) {
+                        <button class="btn-eliminar"
+                                (click)="eliminarJugador(jugador.id)">
+                          ✕ Retirar
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+
+                @for (slot of slotsVacios; track $index) {
+                  <tr class="slot-vacio"
+                      (click)="agregarBot()"
+                      title="Agregar unidad automática">
+                    <td>
+                      <div class="slot-nombre">
+                        <div class="slot-plus">+</div>
+                        <span>Puesto vacante</span>
+                      </div>
+                    </td>
+                    <td></td>
+                    <td><span class="slot-hint">Clic para agregar bot</span></td>
+                    <td></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            @if (!puedeIniciar) {
+              <div class="espera-status">
+                <div class="dot-anim"></div>
+                Aguardando unidades adicionales...
+              </div>
+            }
+          </div>
+
+          <!-- Firma al pie -->
+          <div class="orden-firma">
+            <div class="firma-izq">
+              <div class="firma-nombre">{{nombreUsuario}}</div>
+              <div class="firma-linea"></div>
+              <div class="firma-etiqueta">Mensaje recibido</div>
+            </div>
+            <div class="firma-der">
+              Orden emitida por Estado Mayor<br>
+              Operación clasificada · Nivel 3<br>
+              TEG · 194█
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Lista de jugadores -->
-  <div class="caja-jugadores mt-4">
-    <div class="titulo-jugadores">JUGADORES</div>
+    <!-- Acciones externas al documento -->
+    <div class="config-acciones"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="24"
+         [delay]="150"
+         [slideDuration]="500">
 
-    <div class="jugador" *ngFor="let jugador of jugadores">
-      <span>{{ jugador.nombreJugador }}</span>
+      <button class="btn-teg-primary"
+              [disabled]="!puedeIniciar || !esAnfitrion"
+              (click)="iniciarPartida()">
+        · INICIAR OPERACIÓN ·
+      </button>
+
+      <a class="config-volver" (click)="abandonarSala()">
+        ← Abandonar sala
+      </a>
     </div>
-    <button class="btn btn-primary mb-3" *ngIf="esUsuarioCreador()" (click)="crearBot()">Crear Bot</button>
+  }
 
-
-  </div>
-
-  <!-- Botón para iniciar partida -->
-  <button type="button" class="partida" (click)="crearPartida()">Iniciar partida</button>
 </div>
-
-<!-- Botones de navegación -->
-<a [routerLink]="['../ayuda']" id="ayuda" class="btn btn-info position-fixed bottom-0 start-0 m-3">Ayuda</a>
-<a [routerLink]="['../principal']" id="volver" ></a>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>

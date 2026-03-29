@@ -51,7 +51,12 @@ export class ConfigPartidaService {
 
   getJugadores(idSala: number) {
     return this.http.get<any[]>(`${environment.apiUrl}/jugador/sala/${idSala}/jugadores`, { withCredentials: true }).pipe(
-      map(jugadores => jugadores.map(j => ({ nombreJugador: j.nombre })))
+      map(jugadores => jugadores.map(j => ({
+        id: j.idJugador as number,
+        nombre: j.nombre as string,
+        esBot: j.tipoJugador === 'BOT',
+        idUsuario: j.idUsuario as number,
+      })))
     );
   }
 

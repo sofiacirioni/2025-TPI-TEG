@@ -226,6 +226,20 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - **`pages/registrarse/registrarse.component.ts`**: import de `StampComponent` movido a ruta directa (evita ambigüedad del barrel)
 - Revisión Playwright confirmada: todos los checks DOM pasan, 0 errores de consola, 0 requests 404
 
+### SalaComponent — ajustes UX y perforaciones reales (sesión 2026-03-27)
+
+- **Perforaciones reales**: técnica migrada de `.tele-paper::before` a `.telegrama-wrap::before/after` — tiras con `background-color: transparent` + `radial-gradient(transparent 5px, #EDE5B0 5.5px)`; los agujeros muestran la imagen de mesa real a través del papel
+- **`.tele-paper` reestructurado**: `margin: 0 18px` para no cubrir las tiras; `padding: 1rem 0` para más espacio vertical; `border-left/right` como línea divisoria
+- **Input código → 6 cajas OTP** (`.codigo-box`): auto-foco al tipear, backspace retrocede, paste desde portapapeles distribuye en las 6 cajas; `codigoChars: string[]` + getter `codigoSala`; botón deshabilitado hasta completar los 6 caracteres
+- **Color inputs**: `var(--player-azul)` en `.campo-inp` y `.codigo-box`, consistente con login/registro
+- **Fecha con redacción**: `"DD MMM 194█"` y `"DD/MMM/4█"` — último dígito del año reemplazado por █ (U+2588), coherente con la intro
+- **Opacidad encabezado/metadatos**: `.tele-titulo`, `.tele-subtitulo`, `.tele-header-right`, `.meta-k`, `.meta-v` → `rgba(40, 25, 5, 0.3)` (igual que footer derecho)
+- **Código de sala 6 chars** (`SalaServiceImpl`): reemplaza `UUID.randomUUID()` por `generarCodigoSala()` con charset sin I/O/0/1
+- **Opción C eliminada**: tipo `opcionActual: 'crear' | 'unirse'`; `GET /partida/disponibles` y `POST /partida/{id}/unirse/{id}` marcados con TODO en `PartidaController`
+- **Metadatos en 2 columnas**: grid `1fr 1fr`, PARA+FECHA izq., DE+REF. der.
+- **Opción activa en rojo**: `var(--color-sello)` en texto, código y radio button (inner dot vía `::after`)
+- **Placeholder**: font-size 10px (igual al label), `text-transform: none` para no heredar uppercase del input
+
 ---
 
 ## Equipo

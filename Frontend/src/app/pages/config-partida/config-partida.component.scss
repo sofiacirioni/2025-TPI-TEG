@@ -1,0 +1,478 @@
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Layout general ─────────────────────────────────────── */
+
+.config-container {
+  background-attachment: fixed;
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+
+/* ─── Contenedor del documento ───────────────────────────── */
+
+.orden-wrap {
+  width: 100%;
+  max-width: 600px;
+  transform: rotate(-0.3deg);
+  filter:
+    drop-shadow(0 10px 28px rgba(0, 0, 0, 0.72))
+    drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.3));
+}
+
+/* ─── Papel ──────────────────────────────────────────────── */
+
+.orden-paper {
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.04) 0px,
+    rgba(88, 58, 24, 0.04) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 0.5px solid rgba(67, 42, 30, 0.12);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.orden-contenido {
+  padding: 1rem 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+
+.orden-header {
+  text-align: center;
+  padding: 0.6rem 0 0.75rem;
+  border-bottom: 1.5px solid rgba(67, 42, 30, 0.18);
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.orden-numero {
+  position: absolute;
+  top: 0.4rem;
+  right: 0;
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: rgba(67, 42, 30, 0.3);
+  text-align: right;
+  line-height: 1.6;
+}
+
+.orden-titulo {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  color: rgba(67, 42, 30, 0.9);
+  text-transform: uppercase;
+}
+
+.orden-subtitulo {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.5);
+}
+
+/* ─── Metadatos superiores ───────────────────────────────── */
+
+.orden-meta-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.3rem 1rem;
+  padding: 0.5rem 0 0.6rem;
+  border-bottom: 0.5px solid rgba(67, 42, 30, 0.12);
+  margin-bottom: 0.75rem;
+}
+
+.meta-lbl {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: rgba(67, 42, 30, 0.4);
+  text-transform: uppercase;
+}
+
+.meta-val {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(67, 42, 30, 0.8);
+}
+
+.codigo-acceso {
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(67, 42, 30, 0.85);
+}
+
+.estado-aguardando {
+  color: var(--color-medio);
+}
+
+.estado-listo {
+  color: var(--color-secondary);
+}
+
+/* ─── Secciones ──────────────────────────────────────────── */
+
+.seccion {
+  margin-bottom: 0.75rem;
+}
+
+.seccion-titulo {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(67, 42, 30, 0.55);
+  text-transform: uppercase;
+  border-bottom: 0.5px solid rgba(67, 42, 30, 0.12);
+  padding-bottom: 3px;
+  margin-bottom: 0.5rem;
+}
+
+.seccion-texto {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.6);
+  line-height: 1.6;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ─── Bloque de código ───────────────────────────────────── */
+
+.codigo-bloque {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(160, 21, 21, 0.05);
+  border: 0.5px solid rgba(160, 21, 21, 0.18);
+  border-radius: 1px;
+  padding: 0.5rem 0.75rem;
+}
+
+.codigo-label {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.55);
+  flex: 1;
+  line-height: 1.5;
+}
+
+.codigo-valor {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.28em;
+  color: var(--color-sello);
+  white-space: nowrap;
+}
+
+.btn-copiar {
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: rgba(67, 42, 30, 0.5);
+  background: transparent;
+  border: 0.5px solid rgba(67, 42, 30, 0.22);
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:hover {
+    background: rgba(67, 42, 30, 0.06);
+    color: rgba(67, 42, 30, 0.75);
+  }
+}
+
+/* ─── Tabla de jugadores ─────────────────────────────────── */
+
+.jugadores-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jugadores-tabla thead th {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: rgba(67, 42, 30, 0.35);
+  text-transform: uppercase;
+  border-bottom: 0.5px solid rgba(67, 42, 30, 0.12);
+  padding: 0 4px 4px;
+  text-align: left;
+}
+
+.jugadores-tabla td {
+  padding: 4px 4px;
+  border-bottom: 0.5px solid rgba(67, 42, 30, 0.06);
+  vertical-align: middle;
+}
+
+/* Fila de jugador */
+
+.fila-jugador td {
+  transition: background 0.15s;
+}
+
+.fila-jugador:hover td {
+  background: rgba(67, 42, 30, 0.02);
+}
+
+.jugador-nombre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  color: rgba(67, 42, 30, 0.85);
+}
+
+.jugador-icono {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-heading);
+  font-size: 9px;
+  color: white;
+}
+
+.col-rango {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.45);
+}
+
+.jugador-estado-ok {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: var(--color-secondary);
+}
+
+.jugador-estado-bot {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: var(--color-medio);
+}
+
+.btn-eliminar {
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: rgba(160, 21, 21, 0.5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+
+  &:hover {
+    color: var(--color-sello);
+  }
+}
+
+.fila-jugador:hover .btn-eliminar {
+  opacity: 1;
+}
+
+/* Slots vacíos */
+
+.slot-vacio {
+  cursor: pointer;
+
+  td {
+    border-bottom: 0.5px dashed rgba(67, 42, 30, 0.08);
+    transition: background 0.2s;
+  }
+
+  &:hover td {
+    background: rgba(67, 42, 30, 0.04);
+  }
+}
+
+.slot-nombre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.3);
+  transition: color 0.2s;
+}
+
+.slot-plus {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px dashed rgba(67, 42, 30, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: rgba(67, 42, 30, 0.2);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.slot-vacio:hover .slot-plus {
+  border-color: rgba(67, 42, 30, 0.5);
+  color: rgba(67, 42, 30, 0.6);
+  background: rgba(67, 42, 30, 0.05);
+}
+
+.slot-hint {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: rgba(67, 42, 30, 0);
+  font-style: italic;
+  transition: color 0.2s;
+}
+
+.slot-vacio:hover .slot-hint {
+  color: rgba(67, 42, 30, 0.35);
+}
+
+.slot-vacio:hover .slot-nombre {
+  color: rgba(67, 42, 30, 0.55);
+}
+
+/* Estado de espera */
+
+.espera-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 10px;
+  color: rgba(67, 42, 30, 0.45);
+  font-style: italic;
+  margin-top: 0.4rem;
+}
+
+.dot-anim {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  animation: pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.1); }
+}
+
+/* ─── Firma al pie ───────────────────────────────────────── */
+
+.orden-firma {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 0.5px solid rgba(67, 42, 30, 0.12);
+  padding-top: 0.6rem;
+  margin-top: 1rem;
+}
+
+.firma-izq {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.firma-nombre {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--player-azul);
+}
+
+.firma-linea {
+  width: 140px;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.25);
+  height: 16px;
+}
+
+.firma-etiqueta {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: rgba(67, 42, 30, 0.3);
+  text-transform: uppercase;
+}
+
+.firma-der {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 8px;
+  color: rgba(67, 42, 30, 0.2);
+  text-align: right;
+  line-height: 1.8;
+}
+
+/* ─── Acciones externas ──────────────────────────────────── */
+
+.config-acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transform: rotate(-0.3deg);
+}
+
+.config-volver {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-mar);
+  border-bottom: 1px solid rgba(184, 216, 213, 0.35);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.75;
+  }
+}

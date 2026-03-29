@@ -1,176 +1,198 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { SalaService } from '../../core/services/sala.service';
 import { ConfigPartidaService } from '../../core/services/configPartida.service';
-import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { WebSocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
-import {JugadorDto} from '../../core/models/interfaces/partida.interface';
+import { NotificationService } from '../../core/services/notification.service';
+import { SlideInDirective } from '../../shared/directives/slide-in.directive';
+
+interface JugadorLocal {
+  id: number;
+  nombre: string;
+  esBot: boolean;
+  idUsuario: number;
+}
 
 @Component({
   selector: 'app-config-partida',
   templateUrl: './config-partida.component.html',
-  styleUrls: ['./config-partida.component.css'],
+  styleUrls: ['./config-partida.component.scss'],
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    RouterLink, NgFor, NgIf,
-    CommonModule
-  ]
+  imports: [CommonModule, SlideInDirective]
 })
 export class ConfigPartidaComponent implements OnInit, OnDestroy {
   sala: any = null;
-  crearJugadorForm!: FormGroup;
-  mostrarModal = false;
-  jugadores: { nombreJugador: string }[] = [];
+  jugadores: JugadorLocal[] = [];
+  nombreUsuario: string = '';
+  copiado: boolean = false;
+  fechaOrden: string = '';
+
+  private authSub?: Subscription;
+
+  private readonly COLORES_JUGADOR = [
+    'var(--player-rojo)',
+    'var(--player-azul)',
+    'var(--player-naranja)',
+    'var(--player-purpura)',
+    'var(--player-verde)',
+    'var(--player-dorado)',
+  ];
+
+  private readonly mesesAbreviados = [
+    'ENE','FEB','MAR','ABR','MAY','JUN',
+    'JUL','AGO','SEP','OCT','NOV','DIC'
+  ];
 
   constructor(
     private salaService: SalaService,
     private configService: ConfigPartidaService,
-    private fb: FormBuilder,
     private router: Router,
     private socketService: WebSocketService,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit() {
     this.sala = this.salaService.getSala();
 
     if (!this.sala || !this.sala.idSala) {
-      alert('No hay sala seleccionada.');
+      this.notificationService.error('No hay sala seleccionada.');
       this.router.navigate(['/sala']);
       return;
     }
 
-    this.crearJugadorForm = this.fb.group({
-      nombreJugador: ['', Validators.required]
+    // Fecha estilo 1944
+    const ahora = new Date();
+    const dia = ahora.getDate().toString().padStart(2, '0');
+    const mes = this.mesesAbreviados[ahora.getMonth()];
+    this.fechaOrden = `${dia}/${mes}/4█`;
+
+    // Nombre del usuario logueado
+    this.authSub = this.authService.currentUser$.subscribe(user => {
+      if (user) this.nombreUsuario = user.usuario;
     });
 
-    // Cargar jugadores iniciales
-    this.configService.getJugadores(this.sala.idSala).subscribe({
-      next: jugadores => {
-        this.jugadores = jugadores;
-      },
-      error: (err) => {
-        console.error('Error al obtener jugadores', err);
-      }
-    });
-
-    // Escuchar inicio de partida 🔥 (esto va AFUERA del conectar)
+    // Escuchar inicio de partida
     this.socketService.suscribirseInicioPartida(this.sala.idSala, (data: any) => {
       if (data?.url) {
         this.router.navigate(['/juego', data.url]);
       }
     });
 
-    // Conectar al WebSocket
-    this.socketService.conectar(this.sala.idSala, (jugador: { nombre: string }) => {
-      if (!this.jugadores.some(j => j.nombreJugador === jugador.nombre)) {
-        this.jugadores.push({ nombreJugador: jugador.nombre });
+    // Conectar al WebSocket — recargar lista cuando alguien se une
+    const token = this.authService.getAccessToken() ?? undefined;
+    this.socketService.conectar(this.sala.idSala, (_jugador: { nombre: string }) => {
+      this.recargarJugadores();
+    }, token);
+
+    // Auto-crear jugador con el nombre del usuario si no hay uno activo
+    if (!this.authService.getJugadorId()) {
+      const usuario = this.authService.getCurrentUser();
+      if (usuario) {
+        this.configService.crearJugador(this.sala.idSala, usuario.usuario).subscribe({
+          next: (jugadorCreado: any) => {
+            this.authService.setJugadorId(jugadorCreado.idJugador);
+            this.socketService.emitirNuevoJugador(this.sala.idSala, { nombre: usuario.usuario });
+            this.recargarJugadores();
+          },
+          error: (err) => {
+            console.error('Error al crear jugador:', err);
+            this.recargarJugadores();
+          }
+        });
       }
-    });
+    } else {
+      this.recargarJugadores();
+    }
   }
 
   ngOnDestroy() {
+    this.authSub?.unsubscribe();
     this.socketService.desconectar();
   }
 
-  abrirModal() {
-    this.mostrarModal = true;
+  private recargarJugadores() {
+    this.configService.getJugadores(this.sala.idSala).subscribe({
+      next: (jugadores: JugadorLocal[]) => { this.jugadores = jugadores; },
+      error: (err) => console.error('Error al obtener jugadores', err)
+    });
   }
 
-  cerrarModal(event?: MouseEvent) {
-    this.mostrarModal = false;
+  get puedeIniciar(): boolean {
+    return this.jugadores.length >= 2;
   }
 
-  crearJugador() {
-    if (this.crearJugadorForm.invalid) {
-      alert('Debés ingresar el nombre del jugador.');
+  get esAnfitrion(): boolean {
+    return this.esUsuarioCreador();
+  }
+
+  get slotsVacios(): number[] {
+    const total = 6;
+    const vacios = Math.max(0, total - this.jugadores.length);
+    return Array(vacios).fill(0);
+  }
+
+  getColorJugador(index: number): string {
+    return this.COLORES_JUGADOR[index % this.COLORES_JUGADOR.length];
+  }
+
+  copiarCodigo() {
+    if (!this.sala?.url) return;
+    navigator.clipboard.writeText(this.sala.url).then(() => {
+      this.copiado = true;
+      setTimeout(() => { this.copiado = false; }, 2000);
+    });
+  }
+
+  agregarBot() {
+    const usuarioActual = this.authService.getCurrentUser();
+    if (!usuarioActual || !usuarioActual.idUsuario) {
+      this.notificationService.error('No hay usuario logueado.');
       return;
     }
-
-    const nombreJugador = this.crearJugadorForm.value.nombreJugador;
-    const usuarioActual = this.authService.getUsuario();
-
-    if (!usuarioActual) {
-      alert('No hay usuario logueado.');
-      return;
-    }
-
-    this.configService.crearJugador(this.sala.idSala, nombreJugador).subscribe({
-      next: (jugadorCreado: JugadorDto) => {
-        this.authService.setJugadorId(jugadorCreado.idJugador);
-        this.socketService.emitirNuevoJugador(this.sala.idSala, {
-          nombre: nombreJugador
-        });
-        this.jugadores.push({ nombreJugador });
-        this.crearJugadorForm.reset();
-        this.cerrarModal();
-        alert('Jugador creado con éxito');
+    this.configService.crearBot(this.sala.idSala).subscribe({
+      next: (botCreado: any) => {
+        this.socketService.emitirNuevoJugador(this.sala.idSala, { nombre: botCreado.nombre });
+        this.recargarJugadores();
       },
       error: (error) => {
-        alert(error.error?.mensaje || 'Ocurrió un error inesperado.');
+        this.notificationService.error(error.error?.message || 'Ocurrió un error inesperado.');
         console.error('Detalle del error:', error);
       }
     });
   }
 
-  eliminarJugador(jugador: { nombreJugador: string }) {
-    this.jugadores = this.jugadores.filter(j => j !== jugador);
+  eliminarJugador(id: number) {
+    this.jugadores = this.jugadores.filter(j => j.id !== id);
   }
 
-  crearBot() {
-    const usuarioActual = this.authService.getUsuario();
+  iniciarPartida() {
+    const usuarioActual = this.authService.getCurrentUser();
     if (!usuarioActual || !usuarioActual.idUsuario) {
-      alert('No hay usuario logueado.');
+      this.notificationService.error('No hay usuario logueado.');
       return;
     }
-
-    const idSala = this.sala.idSala;
-
-    this.configService.crearBot(idSala).subscribe({
-      next: (botCreado) => {
-        this.socketService.emitirNuevoJugador(idSala, {
-          nombre: botCreado.nombre
-        });
-        this.jugadores.push({ nombreJugador: botCreado.nombre });
-      },
-      error: (error) => {
-        alert(error.error?.message || 'Ocurrió un error inesperado.');
-        console.error('Detalle del error:', error);
-      }
-    });
-  }
-
-  crearPartida() {
-    const usuarioActual = this.authService.getUsuario();
-
-    if (!usuarioActual || !usuarioActual.idUsuario) {
-      alert('No hay usuario logueado.');
-      return;
-    }
-
-    const idSala = this.sala.idSala;
-
-    this.configService.crearPartida(idSala).subscribe({
+    this.configService.crearPartida(this.sala.idSala).subscribe({
       next: () => {
-        this.socketService.emitirInicioPartida(idSala, {
-          url: this.sala.url
-        });
-
-        alert('Partida creada correctamente.');
+        this.socketService.emitirInicioPartida(this.sala.idSala, { url: this.sala.url });
         this.router.navigate(['/juego', this.sala.url]);
       },
       error: (error) => {
-        alert(error.error?.message || error.error?.error || 'Ocurrió un error inesperado.');
+        this.notificationService.error(error.error?.message || error.error?.error || 'Ocurrió un error inesperado.');
         console.error('Detalle del error:', error);
       }
     });
   }
 
+  abandonarSala() {
+    this.router.navigate(['/sala']);
+  }
+
   esUsuarioCreador(): boolean {
-    const usuarioActual = this.authService.getUsuario();
+    const usuarioActual = this.authService.getCurrentUser();
     return !!usuarioActual && !!this.sala?.creador && this.sala.creador.idUsuario === usuarioActual.idUsuario;
   }
 }

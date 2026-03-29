@@ -18,10 +18,14 @@ export class WebSocketService {
     });
   }
 
-  conectar(salaId: number, callbackJugador?: (jugador: any) => void) {
+  conectar(salaId: number, callbackJugador?: (jugador: any) => void, token?: string) {
     if (this.conectado && this.salaId === salaId) return;
 
     this.salaId = salaId;
+
+    if (token) {
+      this.stompClient.connectHeaders = { Authorization: `Bearer ${token}` };
+    }
 
     this.stompClient.onConnect = () => {
       console.log('✅ Conectado al WebSocket');
