@@ -4,56 +4,66 @@
      viewBox="0 0 1920 1080"
      class="mapa-svg">
 
-  <!-- Fondo oceano -->
-  <rect width="1920" height="1080" fill="#6aabce" />
+  <!-- Fondo oceano con tono papel/tela -->
+  <rect width="1920" height="1080" fill="#8AABBC" />
 
   <!-- Borde del mapa -->
   @if (mapBorderPath) {
-    <path [attr.d]="mapBorderPath" fill="none" stroke="#2c1a0a" stroke-width="2" />
+    <path [attr.d]="mapBorderPath" fill="none" stroke="#2c1a0a" stroke-width="1.5" />
   }
 
-  <!-- Países coloreados por jugador -->
+  <!-- Países con fill RGBA — efecto papel conquistado -->
   @for (p of mapaPais; track p.id) {
     <path
       [attr.d]="p.forma"
       [attr.fill]="p.color"
-      [attr.stroke]="'#2c1a0a'"
-      [attr.stroke-width]="1.5"
-      [attr.opacity]="p.opacidad"
-      (click)="clickPais(p.id)"
-      (mouseenter)="p.opacidad = 1"
-      (mouseleave)="p.opacidad = 0.85"
-      style="cursor: pointer; transition: opacity 0.15s ease;"
+      stroke="#2c1a0a"
+      [attr.stroke-width]="p.opacidad > 1 ? 1.2 : 0.8"
+      [attr.filter]="p.opacidad > 1 ? 'brightness(1.1)' : 'none'"
+      style="cursor: pointer; transition: filter 0.15s ease, stroke-width 0.15s ease;"
+      (click)="clickPais(p.id, $event)"
+      (mouseenter)="p.opacidad = 1.15"
+      (mouseleave)="p.opacidad = 1"
     />
   }
 
   <!-- Etiquetas de países (layer3 del SVG original) -->
   @for (d of labelPaths; track d) {
-    <path [attr.d]="d" fill="#1a1208" stroke="none" pointer-events="none" />
+    <path [attr.d]="d" fill="#1a1208" stroke="none" pointer-events="none" opacity="0.55" />
   }
 
-  <!-- Cantidad de tropas sobre cada país -->
+  <!-- Fichas: círculo del jugador + tropas -->
   @for (p of mapaPais; track p.id) {
-    @if (p.cx > 0 && p.cy > 0) {
+    @if (p.cx > 0 && p.cy > 0 && p.tropas > 0) {
+      <!-- Sombra bajo la ficha -->
+      <circle
+        [attr.cx]="p.cx + 1"
+        [attr.cy]="p.cy + 1"
+        r="12"
+        fill="rgba(0,0,0,0.35)"
+        pointer-events="none"
+      />
+      <!-- Círculo de color del jugador -->
       <circle
         [attr.cx]="p.cx"
         [attr.cy]="p.cy"
-        r="16"
-        fill="white"
-        fill-opacity="0.75"
-        stroke="#2c1a0a"
+        r="12"
+        [attr.fill]="p.colorSolido"
+        stroke="rgba(239,232,206,0.7)"
         stroke-width="1"
         pointer-events="none"
       />
+      <!-- Cantidad de tropas -->
       <text
         [attr.x]="p.cx"
-        [attr.y]="p.cy + 6"
+        [attr.y]="p.cy + 4"
         text-anchor="middle"
-        font-family="Montserrat, sans-serif"
-        font-size="18"
+        font-family="'Special Elite', serif"
+        font-size="11"
         font-weight="700"
-        fill="#1a1208"
+        fill="#EFE8CE"
         pointer-events="none"
+        style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);"
       >{{ p.tropas }}</text>
     }
   }

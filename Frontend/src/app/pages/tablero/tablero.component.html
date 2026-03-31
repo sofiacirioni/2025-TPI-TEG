@@ -1,75 +1,336 @@
-<main class="tablero-layout">
-  <div class="tablero-inner">
+@if (partida) {
+<div class="tablero-container">
 
-    <div class="tablero-header">
-      <app-opciones-panel [partida]="partida"></app-opciones-panel>
+  <!-- Viñeta global -->
+  <div class="tablero-vignette"></div>
+
+  <!-- Luz de lámpara -->
+  <div class="tablero-luz"></div>
+
+  <!-- ══ BARRA SUPERIOR DE ESTADO ═════════════════════════════════ -->
+  <div class="info-barra">
+    <!-- Fase -->
+    <div class="info-item">
+      <span class="info-lbl">Fase</span>
+      <span class="info-val">{{ faseActual || '—' }}</span>
+      <div class="fase-dots">
+        <div class="fdot" [class.active]="faseActual === 'COLOCACION'"></div>
+        <div class="fdot" [class.active]="faseActual === 'ATACAR'"></div>
+        <div class="fdot" [class.active]="faseActual === 'MOVER_TROPAS'"></div>
+      </div>
     </div>
-
-    <div class="turno-info">
-      <pre id="turn-info" [ngStyle]="{'background-color': obtenerColorJugadorActual()}">{{ turnoInfo }}</pre>
+    <div class="vsep"></div>
+    <!-- Turno -->
+    <div class="info-item">
+      <span class="info-lbl">Turno</span>
+      <span class="info-val">{{ jugadorActualTurno?.nombre ?? '—' }}</span>
+      <span class="info-sub">N° {{ numeroTurno }}</span>
     </div>
-
+    <div class="vsep"></div>
+    <!-- Ejércitos disponibles -->
+    <div class="info-item">
+      <span class="info-lbl">Ejércitos disponibles</span>
+      <span class="info-val-big">{{ ejercitosDisponibles }}</span>
+    </div>
+    <div class="vsep"></div>
+    <!-- Timer -->
+    <div class="info-item">
+      <span class="info-lbl">Tiempo restante</span>
+      <span class="info-val info-timer" [class.timer-urgente]="tiempoRestante <= 30">
+        {{ timerDisplay }}
+      </span>
+    </div>
+    @if (esMiTurno) {
+      <div class="vsep"></div>
+      <button class="btn-avanzar" (click)="avanzarFaseTurno()">· AVANZAR FASE ·</button>
+    }
     @if (jugadorConsquisto) {
-      <div class="accion-carta">
-        <button (click)="obtenerTarjeta()" class="btn-teg">Obtener tarjeta</button>
+      <button class="btn-tarjeta" (click)="obtenerTarjeta()">· TARJETA ·</button>
+    }
+  </div>
+
+  <!-- ══ SOBRE DEL OBJETIVO (top-left) ════════════════════════════ -->
+  <div class="sobre-objetivo" (click)="objetivoVisible = !objetivoVisible">
+    <div class="sobre-paper">
+      <div class="sobre-solapa"></div>
+      <div class="sobre-sello">SECRETO</div>
+      <div class="sobre-label">MI OBJETIVO</div>
+    </div>
+  </div>
+
+  @if (objetivoVisible) {
+    <div class="objetivo-modal" (click)="objetivoVisible = false">
+      <div class="objetivo-titulo">ORDEN SECRETA</div>
+      <div class="objetivo-texto">{{ objetivoTexto || 'Cargando...' }}</div>
+    </div>
+  }
+
+  <!-- ══ ZONA CENTRAL: MAPA ════════════════════════════════════════ -->
+  <div class="mapa-zona"
+       (wheel)="onWheel($event)"
+       (mousedown)="onMouseDownMapa($event)"
+       (mousemove)="onMouseMoveMapa($event)"
+       (mouseup)="onMouseUpMapa()"
+       (mouseleave)="onMouseUpMapa()">
+
+    <div class="mapa-svg-wrap"
+         [style.transform]="mapTransform"
+         [style.cursor]="isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default')">
+      <app-mapa-svg
+        [paises]="partida.estadoPaises ?? []"
+        [jugadores]="partida.jugadores ?? []"
+        (paisClickeado)="paisClickeado($event)">
+      </app-mapa-svg>
+    </div>
+
+    <!-- Controles de zoom -->
+    <div class="zoom-controls">
+      <button (click)="zoomIn()" title="Acercar">+</button>
+      <button (click)="zoomOut()" title="Alejar">−</button>
+      <button (click)="resetZoom()" title="Restablecer">R</button>
+    </div>
+    <div class="zoom-indicator">{{ scale * 100 | number:'1.0-0' }}%</div>
+
+    <!-- ── Modal de país (tachuela) ──────────────────────────── -->
+    @if (paisModalSeleccionado) {
+      <div class="modal-pais" [style.left.px]="modalX" [style.top.px]="modalY">
+        <div class="tachuela"></div>
+        <div class="modal-head">
+          <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre }}</div>
+          <div class="modal-cont">{{ paisModalSeleccionado.pais.continente?.nombre }}</div>
+        </div>
+        <div class="modal-body-pais">
+          <div class="modal-row">
+            <span class="modal-lbl">Ejércitos</span>
+            <span class="modal-val">{{ paisModalSeleccionado.cantidadTropas }}</span>
+          </div>
+          <div class="modal-owner">
+            <div class="owner-dot" [style.background]="getColorSolidoPaisModal()"></div>
+            <span class="owner-nom">{{ getNombreJugadorPais(paisModalSeleccionado.idJugador) }}</span>
+          </div>
+
+          @if (estaJugandoModal) {
+            <!-- COLOCACION: agregar ejércitos -->
+            @if (puedoDefenderDesdeModal) {
+              <div class="modal-accion-group">
+                <label class="modal-input-lbl">Tropas a colocar</label>
+                <input class="modal-input" type="number" min="0" [max]="ejercitosDisponibles"
+                       [(ngModel)]="inputTropasModal" />
+                <button class="btn-modal btn-colocar" (click)="defenderDesdeModal()">
+                  · COLOCAR ·
+                </button>
+              </div>
+            }
+
+            <!-- ATACAR: seleccionar país enemigo -->
+            @if (puedoAtacarDesdeModal && paisesEnemigos.length > 0) {
+              <div class="modal-accion-group">
+                <label class="modal-input-lbl">Atacar hacia</label>
+                <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                  <option [value]="-1" disabled>Seleccioná país</option>
+                  @for (p of paisesEnemigos; track p.pais.idPais) {
+                    <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                  }
+                </select>
+                <button class="btn-modal btn-atacar" (click)="atacarDesdeModal()">
+                  · ATACAR ·
+                </button>
+              </div>
+            }
+
+            <!-- MOVER_TROPAS: reagrupar hacia aliado -->
+            @if (puedoReagruparDesdeModal && paisesAliados.length > 0) {
+              <div class="modal-accion-group">
+                <label class="modal-input-lbl">Reagrupar hacia</label>
+                <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                  <option [value]="-1" disabled>Seleccioná país</option>
+                  @for (p of paisesAliados; track p.pais.idPais) {
+                    <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                  }
+                </select>
+                <label class="modal-input-lbl">Tropas</label>
+                <input class="modal-input" type="number" min="0"
+                       [max]="paisModalSeleccionado.cantidadTropas - 1"
+                       [(ngModel)]="inputTropasModal" />
+                <button class="btn-modal btn-reagrupar" (click)="reagruparDesdeModal()">
+                  · REAGRUPAR ·
+                </button>
+              </div>
+            }
+          }
+
+          <button class="btn-modal-cerrar" (click)="cerrarModalPais()">✕ cerrar</button>
+        </div>
       </div>
     }
+  </div>
 
-    <div class="tablero-grid">
-      <div class="tablero-mapa">
-        <app-mapa-svg
-          [paises]="partida.estadoPaises"
-          [jugadores]="partida.jugadores"
-          (paisClickeado)="paisClickeado($event)">
-        </app-mapa-svg>
+  <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
+  @if (showAtaqueResultado && ataqueResultado) {
+    <div class="ataque-overlay" (click)="cerrarResultadoAtaque()">
+      <div class="ataque-modal" (click)="$event.stopPropagation()">
+        <div class="ataque-titulo">RESULTADO DEL ATAQUE</div>
+        <div class="ataque-info">
+          <span class="ataque-desde">{{ paisOrigenNombreModal }}</span>
+          <span class="ataque-flecha">→</span>
+          <span class="ataque-hacia">{{ paisDestinoNombreModal }}</span>
+        </div>
+        <div class="ataque-resultado" [class.exito]="ataqueResultado.ataqueExitoso"
+             [class.fallo]="!ataqueResultado.ataqueExitoso">
+          {{ ataqueResultado.ataqueExitoso ? '¡CONQUISTA!' : 'REPELIDO' }}
+        </div>
+        <div class="dados-fila">
+          <div class="dados-grupo">
+            <span class="dados-lbl">Atacante</span>
+            <div class="dados-vals">
+              @for (d of ataqueResultado.dadosAtaque; track $index) {
+                <span class="dado">{{ getEmojiDado(d) }}</span>
+              }
+            </div>
+          </div>
+          <div class="dados-grupo">
+            <span class="dados-lbl">Defensor</span>
+            <div class="dados-vals">
+              @for (d of ataqueResultado.dadosDefensor; track $index) {
+                <span class="dado">{{ getEmojiDado(d) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <button class="btn-modal btn-colocar" (click)="cerrarResultadoAtaque()">· ACEPTAR ·</button>
       </div>
+    </div>
+  }
 
-      <div class="tablero-cartas">
-        @if (puedeCanjear) {
-          <button class="btn-teg" (click)="abrirModalCanje()">Canjear cartas</button>
-        }
-        @for (estadoTarjeta of cartasJugador; track estadoTarjeta.idEstadoTarjeta) {
-          <div class="carta-item">
-            <h5>{{ estadoTarjeta.tarjeta.pais.nombre }}</h5>
-            <p>{{ estadoTarjeta.tarjeta.simbolo }}</p>
-            @if (estadoTarjeta.canjeada) {
-              <span class="estado-negativo">Canjeada</span>
-            } @else {
-              <span class="estado-positivo">Disponible</span>
-            }
-            @if (!estadoTarjeta.usada && estadoTarjeta.jugadorTienePais && esMiTurno) {
-              <button class="btn-teg btn-sm" (click)="usarTarjeta(estadoTarjeta)">Usar</button>
-            }
+  <!-- ══ VIGA + RELOJ (top-right) ═════════════════════════════════ -->
+  <div class="viga-container" aria-hidden="true">
+    <div class="viga-diagonal"></div>
+    <div class="viga-vertical"></div>
+  </div>
+
+  <svg class="reloj-svg" viewBox="0 0 88 88" aria-label="Reloj">
+    <!-- Marco exterior -->
+    <circle cx="44" cy="44" r="42" fill="#1C1008" stroke="#5C4A20" stroke-width="2"/>
+    <!-- Esfera -->
+    <circle cx="44" cy="44" r="36" fill="#F2EDD8" stroke="#8B7040" stroke-width="0.5"/>
+    <!-- Marcas horarias -->
+    @for (tick of clockTicks; track $index) {
+      <line
+        [attr.x1]="tick.x1" [attr.y1]="tick.y1"
+        [attr.x2]="tick.x2" [attr.y2]="tick.y2"
+        stroke="#8B7040" stroke-width="1.5"
+      />
+    }
+    <!-- Aguja de horas -->
+    <line x1="44" y1="44" x2="44" y2="28"
+          stroke="#432A1E" stroke-width="2.5" stroke-linecap="round"
+          [attr.transform]="'rotate(' + horasDeg + ', 44, 44)'"/>
+    <!-- Aguja de minutos -->
+    <line x1="44" y1="44" x2="44" y2="18"
+          stroke="#432A1E" stroke-width="1.5" stroke-linecap="round"
+          [attr.transform]="'rotate(' + minutosDeg + ', 44, 44)'"/>
+    <!-- Aguja de segundos -->
+    <line x1="44" y1="44" x2="44" y2="14"
+          stroke="#A01515" stroke-width="0.8" stroke-linecap="round"
+          [attr.transform]="'rotate(' + segundosDeg + ', 44, 44)'"/>
+    <!-- Centro -->
+    <circle cx="44" cy="44" r="2" fill="#432A1E"/>
+  </svg>
+
+  <!-- ══ PANEL DERECHO: FICHAS DE JUGADORES ═══════════════════════ -->
+  <div class="panel-jugadores">
+    @for (jugador of partida.jugadores ?? []; track jugador.idJugador; let i = $index) {
+      <div class="ficha-jugador"
+           [style.border-left-color]="getColorSolido(jugador.color)"
+           [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
+        <div class="ficha-avatar">
+          <img [src]="getPlayerSvg(jugador.color)" [alt]="jugador.color" />
+        </div>
+        <div class="ficha-info">
+          <div class="ficha-nombre">{{ jugador.nombre }}</div>
+          <div class="ficha-stats">
+            {{ countriasDeJugador(jugador.idJugador) }} países · {{ jugador.ejercito }} ej.
+          </div>
+          @if (esEsBot(jugador)) {
+            <div class="ficha-bot">BOT</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
+  <div class="panel-izquierdo">
+
+    <!-- Historial de operaciones -->
+    <div class="historial-panel">
+      <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
+      <div class="historial-lista">
+        @for (item of historial; track $index) {
+          <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
+            {{ item.texto }}
           </div>
         }
-      </div>
-
-      <div class="tablero-jugadores">
-        <app-jugador-panel [jugadores]="partida.jugadores"></app-jugador-panel>
+        @if (historial.length === 0) {
+          <div class="hist-item" style="opacity:0.35">Sin eventos registrados.</div>
+        }
       </div>
     </div>
 
-    @if (esMiTurno) {
-      <div class="tablero-avanzar">
-        <button class="btnAvanzar" (click)="avanzarFaseTurno()">Avanzar fase</button>
+    <!-- Tarjetas obtenidas -->
+    <div class="tarjetas-panel">
+      <div class="tarjetas-titulo">TARJETAS</div>
+      <div class="tarjetas-contenido">
+        @for (t of cartasJugador.slice(0, 5); track t.idEstadoTarjeta) {
+          <div class="tarjeta-mini" [class.canjeada]="t.canjeada" [title]="t.tarjeta?.pais?.nombre ?? ''">
+            {{ t.tarjeta?.simbolo?.charAt(0) ?? '?' }}
+          </div>
+        }
+        <span class="tarjetas-count">{{ cartasJugador.length }}</span>
       </div>
-    }
+      @if (puedeCanjear && esMiTurno) {
+        <button class="btn-canjear" (click)="abrirModalCanje()">· CANJEAR ·</button>
+      }
+    </div>
+
+    <!-- Chat grupal -->
+    <div class="chat-panel">
+      <div class="chat-titulo">CONVERSACIONES</div>
+      <div class="chat-mensajes">
+        @for (msg of chatMensajes; track $index) {
+          <div class="chat-msg">
+            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
+            {{ msg.texto }}
+          </div>
+        }
+        @if (chatMensajes.length === 0) {
+          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
+        }
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" type="text" placeholder="Escribir..."
+               [(ngModel)]="chatInput"
+               (keyup.enter)="enviarChat()" />
+        <button class="chat-send" (click)="enviarChat()">▶</button>
+      </div>
+    </div>
 
   </div>
-</main>
 
-<!-- Modal de canje (state-based, sin ng-bootstrap) -->
+</div><!-- .tablero-container -->
+
+<!-- ══ MODAL DE CANJE (overlay global) ══════════════════════════════ -->
 @if (showCanjeModal) {
   <div class="modal-overlay" (click)="cerrarModalCanje()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h4>Seleccionar combinación de canje</h4>
-        <button class="btn-close-custom" (click)="cerrarModalCanje()">✕</button>
+    <div class="canje-modal" (click)="$event.stopPropagation()">
+      <div class="canje-header">
+        <div class="canje-titulo">SELECCIONAR COMBINACIÓN DE CANJE</div>
+        <button class="btn-modal-cerrar" (click)="cerrarModalCanje()">✕</button>
       </div>
-      <div class="modal-body">
+      <div class="canje-body">
         @for (combinacion of combinacionesPosibles; track $index; let i = $index) {
           <div class="combo-item" [class.selected]="combinacionSeleccionada === i" (click)="seleccionarCombinacion(i)">
-            <p><strong>Opción {{ i + 1 }}</strong></p>
+            <strong>Opción {{ i + 1 }}</strong>
             <ul>
               @for (carta of combinacion; track carta.idEstadoTarjeta) {
                 <li>{{ carta.tarjeta?.simbolo }} — {{ carta.tarjeta?.pais.nombre }}</li>
@@ -78,12 +339,19 @@
           </div>
         }
       </div>
-      <div class="modal-footer">
-        <button class="btn-teg btn-secondary" (click)="cerrarModalCanje()">Cancelar</button>
-        <button class="btn-teg" [disabled]="combinacionSeleccionada === null" (click)="confirmarCanje()">
-          Confirmar canje
-        </button>
+      <div class="canje-footer">
+        <button class="btn-modal btn-reagrupar" (click)="cerrarModalCanje()">Cancelar</button>
+        <button class="btn-modal btn-colocar"
+                [disabled]="combinacionSeleccionada === null"
+                (click)="confirmarCanje()">Confirmar canje</button>
       </div>
     </div>
+  </div>
+}
+
+} @else {
+  <!-- Loading state -->
+  <div class="tablero-loading">
+    <div class="loading-texto">Cargando partida...</div>
   </div>
 }

@@ -3,6 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { EstadoPaisDto, JugadorDto } from '../../../../core/models/interfaces/partida.interface';
 import { paisSVG } from '../../../../core/models/interfaces/pais-svg.interface';
 
+export interface PaisClickEvent {
+  estadoPais: EstadoPaisDto;
+  event: MouseEvent;
+}
+
 @Component({
   selector: 'app-mapa-svg',
   imports: [],
@@ -12,7 +17,7 @@ import { paisSVG } from '../../../../core/models/interfaces/pais-svg.interface';
 export class MapaSvgComponent implements OnChanges, OnInit {
   @Input() paises: EstadoPaisDto[] = [];
   @Input() jugadores: JugadorDto[] = [];
-  @Output() paisClickeado = new EventEmitter<EstadoPaisDto>();
+  @Output() paisClickeado = new EventEmitter<PaisClickEvent>();
 
   mapaPais: paisSVG[] = [];
   labelPaths: string[] = [];
@@ -39,7 +44,6 @@ export class MapaSvgComponent implements OnChanges, OnInit {
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
 
-        // Extraer paths de países (IDs numéricos 1-50)
         svgDoc.querySelectorAll('path').forEach(path => {
           const id = Number(path.id);
           if (!isNaN(id) && id > 0) {
@@ -47,7 +51,6 @@ export class MapaSvgComponent implements OnChanges, OnInit {
           }
         });
 
-        // Extraer etiquetas de layer3
         const layer3 = svgDoc.getElementById('layer3');
         if (layer3) {
           layer3.querySelectorAll('path').forEach(path => {
@@ -56,7 +59,6 @@ export class MapaSvgComponent implements OnChanges, OnInit {
           });
         }
 
-        // Extraer borde del mapa (map-lines) - buscar por atributo inkscape:label
         svgDoc.querySelectorAll('path').forEach(el => {
           if (el.getAttribute('inkscape:label') === 'map-lines') {
             const d = el.getAttribute('d');
@@ -64,9 +66,7 @@ export class MapaSvgComponent implements OnChanges, OnInit {
           }
         });
 
-        // Computar centroides usando SVG temporal en el DOM
         this.computarCentroides();
-
         this.svgCargado = true;
         this.construirMapaPais();
       },
@@ -102,10 +102,11 @@ export class MapaSvgComponent implements OnChanges, OnInit {
       return {
         id: estadoPais.pais.idPais,
         nombre: estadoPais.pais.nombre,
-        color: this.obtenerColor(estadoPais.idJugador),
+        color: this.getColorPais(estadoPais),
+        colorSolido: this.getColorSolido(estadoPais),
         tropas: estadoPais.cantidadTropas,
         borde: 1,
-        opacidad: 0.8,
+        opacidad: 1,
         forma: this.svgPathsCache.get(estadoPais.pais.idPais) || '',
         cx: centroid.cx,
         cy: centroid.cy,
@@ -113,22 +114,38 @@ export class MapaSvgComponent implements OnChanges, OnInit {
     });
   }
 
-  clickPais(id: number) {
+  clickPais(id: number, event: MouseEvent) {
     const estadoPais = this.paises.find(p => p.pais.idPais === id);
-    if (estadoPais) this.paisClickeado.emit(estadoPais);
+    if (estadoPais) this.paisClickeado.emit({ estadoPais, event });
   }
 
-  obtenerColor(idJugador: number): string {
-    const jugador = this.jugadores.find(j => j.idJugador === idJugador);
-    if (!jugador) return '#888';
-    switch (jugador.color.toLowerCase()) {
-      case 'rojo':     return '#c0392b';
-      case 'verde':    return '#1a7a4a';
-      case 'azul':     return '#2c5f8a';
-      case 'amarillo': return '#c9a84c';
-      case 'violeta':  return '#7d3c98';
-      case 'naranja':  return '#c0621a';
-      default:         return '#888';
+  // Fill con opacidad para efecto papel
+  getColorPais(estadoPais: EstadoPaisDto): string {
+    const jugador = this.jugadores.find(j => j.idJugador === estadoPais.idJugador);
+    if (!jugador) return 'rgba(180,150,80,0.25)';
+    switch (jugador.color.toUpperCase()) {
+      case 'ROJO':     return 'rgba(160,21,21,0.45)';
+      case 'AZUL':     return 'rgba(26,64,128,0.45)';
+      case 'VERDE':    return 'rgba(30,122,80,0.45)';
+      case 'NARANJA':  return 'rgba(191,104,0,0.45)';
+      case 'AMARILLO': return 'rgba(107,76,0,0.45)';
+      case 'VIOLETA':  return 'rgba(107,36,144,0.45)';
+      default:         return 'rgba(180,150,80,0.25)';
+    }
+  }
+
+  // Color sólido para fichas (círculo + texto)
+  getColorSolido(estadoPais: EstadoPaisDto): string {
+    const jugador = this.jugadores.find(j => j.idJugador === estadoPais.idJugador);
+    if (!jugador) return 'rgba(180,150,80,0.5)';
+    switch (jugador.color.toUpperCase()) {
+      case 'ROJO':     return '#A01515';
+      case 'AZUL':     return '#1A4080';
+      case 'VERDE':    return '#1E7A50';
+      case 'NARANJA':  return '#BF6800';
+      case 'AMARILLO': return '#6B4C00';
+      case 'VIOLETA':  return '#6B2490';
+      default:         return '#555';
     }
   }
 }
