@@ -166,7 +166,16 @@ export class ConfigPartidaComponent implements OnInit, OnDestroy {
   }
 
   eliminarJugador(id: number) {
-    this.jugadores = this.jugadores.filter(j => j.id !== id);
+    this.configService.eliminarJugador(id).subscribe({
+      next: () => {
+        this.socketService.emitirNuevoJugador(this.sala.idSala, { nombre: '' });
+        this.recargarJugadores();
+      },
+      error: (err) => {
+        this.notificationService.error(err.error?.message || 'No se pudo retirar al jugador.');
+        console.error('Error al eliminar jugador:', err);
+      }
+    });
   }
 
   iniciarPartida() {

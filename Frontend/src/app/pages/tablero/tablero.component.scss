@@ -14,18 +14,20 @@
 .tablero-container {
   width: 100%;
   height: 100%;
-  background: #1E120A;
-  background-image: linear-gradient(160deg,#3D2810 0%,#2A1C0C 35%,#1A1008 70%,#0E0906 100%);
+  background-image: url('/assets/images/wall-scene.webp');
+  background-size: cover;
+  background-position: center;
   position: relative;
   overflow: hidden;
 }
 
 // ── Viñeta y luz ──────────────────────────────────────────────────
 .tablero-vignette {
-  position: absolute; inset: 0; pointer-events: none; z-index: 20;
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: calc(var(--z-vignette) + 1);
   background: radial-gradient(ellipse 90% 80% at 50% 40%,
-    transparent 35%, rgba(4,2,1,0.3) 60%,
-    rgba(4,2,1,0.7) 85%, #040201 100%);
+    transparent 35%, rgba(4,2,1,0.25) 60%,
+    rgba(4,2,1,0.55) 85%, #040201 100%);
 }
 
 .tablero-luz {
@@ -34,7 +36,8 @@
   width: 55%; height: 50%;
   background: radial-gradient(ellipse at 50% 0%,
     rgba(255,235,160,0.10) 0%, transparent 70%);
-  pointer-events: none; z-index: 1;
+  pointer-events: none;
+  z-index: calc(var(--z-vignette) + 1);
 }
 
 // ── Loading ───────────────────────────────────────────────────────
@@ -53,7 +56,7 @@
 .info-barra {
   position: absolute;
   top: 12px; left: 96px; right: 150px;
-  z-index: 8;
+  z-index: calc(var(--z-vignette) + 2);
   display: flex; align-items: flex-start;
   gap: 12px; padding: 7px 14px;
   background: rgba(10,6,2,0.6);
@@ -145,7 +148,7 @@
 // ── Sobre del objetivo ────────────────────────────────────────────
 .sobre-objetivo {
   position: absolute; top: 12px; left: 12px;
-  z-index: 8; cursor: pointer; width: 72px;
+  z-index: calc(var(--z-vignette) + 2); cursor: pointer; width: 72px;
   filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
 }
 
@@ -185,7 +188,7 @@
 
 .objetivo-modal {
   position: absolute; top: 90px; left: 12px;
-  width: 210px; z-index: 15;
+  width: 210px; z-index: calc(var(--z-vignette) + 3);
   background: var(--color-claro);
   background-image: repeating-linear-gradient(44deg,
     rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
@@ -213,7 +216,7 @@
 .mapa-zona {
   position: absolute;
   top: 60px; bottom: 8px;
-  left: 202px; right: 136px;
+  left: 202px; right: 148px;
   z-index: 2;
   border: 1.5px solid rgba(80,55,20,0.5);
   background: #C8BC8C;
@@ -235,13 +238,12 @@
 .mapa-svg-wrap {
   width: 100%; height: 100%;
   transform-origin: top left;
-  will-change: transform;
 }
 
 // ── Controles de zoom ─────────────────────────────────────────────
 .zoom-controls {
   position: absolute; bottom: 10px; right: 10px;
-  display: flex; flex-direction: column; gap: 3px; z-index: 6;
+  display: flex; flex-direction: column; gap: 3px; z-index: calc(var(--z-vignette) + 2);
 
   button {
     width: 26px; height: 26px;
@@ -273,7 +275,7 @@
     transparent 1px, transparent 7px);
   border-radius: 1px;
   box-shadow: 2px 2px 8px rgba(0,0,0,0.55), -1px -1px 0 rgba(0,0,0,0.2);
-  width: 166px; z-index: 10; padding: 0;
+  width: 166px; z-index: calc(var(--z-vignette) + 5); padding: 0;
   animation: popIn 0.2s cubic-bezier(0.2,0.8,0.3,1);
 }
 
@@ -401,7 +403,7 @@
 // ── Resultado de ataque ───────────────────────────────────────────
 .ataque-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  z-index: 30; display: flex; align-items: center; justify-content: center;
+  z-index: calc(var(--z-vignette) + 10); display: flex; align-items: center; justify-content: center;
 }
 
 .ataque-modal {
@@ -462,7 +464,7 @@
 // ── Viga + Reloj ──────────────────────────────────────────────────
 .viga-container {
   position: absolute; top: 0; right: 0;
-  width: 150px; height: 160px; z-index: 6; pointer-events: none;
+  width: 150px; height: 160px; z-index: calc(var(--z-vignette) + 2); pointer-events: none;
 }
 
 .viga-diagonal {
@@ -480,18 +482,35 @@
   box-shadow: 1px 0 6px rgba(0,0,0,0.35);
 }
 
-.reloj-svg {
+.reloj-container {
   position: absolute; top: 12px; right: 8px;
-  width: 90px; height: 90px; z-index: 7;
-  filter: drop-shadow(1px 2px 6px rgba(0,0,0,0.5));
+  width: 92px; height: 92px;
+  z-index: calc(var(--z-vignette) + 2);
+  filter: drop-shadow(1px 2px 8px rgba(0,0,0,0.6));
+}
+
+.reloj-face {
+  display: block; width: 100%; height: 100%;
+}
+
+.reloj-agujas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  overflow: visible;
 }
 
 // ── Panel jugadores (derecha) ─────────────────────────────────────
-.panel-jugadores {
+.panel-derecho {
   position: absolute;
   top: 110px; right: 6px; bottom: 8px;
-  width: 122px; z-index: 6;
+  width: 134px; z-index: calc(var(--z-vignette) + 2);
   display: flex; flex-direction: column; gap: 5px;
+  overflow: hidden;
+}
+
+.panel-jugadores {
+  display: flex; flex-direction: column; gap: 5px;
+  flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -541,24 +560,22 @@
 .panel-izquierdo {
   position: absolute;
   top: 60px; left: 8px; bottom: 8px;
-  width: 188px; z-index: 6;
+  width: 188px; z-index: calc(var(--z-vignette) + 2);
   display: flex; flex-direction: column; gap: 7px;
 }
 
 // Historial
 .historial-panel {
-  background: rgba(10,6,2,0.6);
-  border: 0.5px solid rgba(198,156,109,0.12);
-  border-radius: 1px; padding: 8px;
+  padding: 8px;
   flex: 1; overflow: hidden;
   display: flex; flex-direction: column;
 }
 
 .historial-titulo {
   font-family: var(--font-heading); font-size: 7px;
-  letter-spacing: 0.14em; color: rgba(198,156,109,0.45);
+  letter-spacing: 0.14em; color: rgba(239,232,206,0.55);
   text-transform: uppercase;
-  border-bottom: 0.5px solid rgba(198,156,109,0.1);
+  border-bottom: 0.5px solid rgba(198,156,109,0.15);
   padding-bottom: 4px; margin-bottom: 6px;
 }
 
@@ -581,9 +598,7 @@
 
 // Tarjetas
 .tarjetas-panel {
-  background: rgba(10,6,2,0.6);
-  border: 0.5px solid rgba(198,156,109,0.12);
-  border-radius: 1px; padding: 8px; flex-shrink: 0;
+  padding: 8px; flex-shrink: 0;
 }
 
 .tarjetas-titulo { @extend .historial-titulo; border-bottom: none; padding-bottom: 0; margin-bottom: 4px; }
@@ -624,9 +639,7 @@
 
 // Chat
 .chat-panel {
-  background: rgba(10,6,2,0.6);
-  border: 0.5px solid rgba(198,156,109,0.12);
-  border-radius: 1px; padding: 8px; flex-shrink: 0;
+  padding: 8px; flex-shrink: 0;
   height: 120px; display: flex; flex-direction: column;
 }
 
@@ -673,7 +686,7 @@
 // ── Modal de canje ────────────────────────────────────────────────
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-  z-index: 25; display: flex; align-items: center; justify-content: center;
+  z-index: calc(var(--z-vignette) + 10); display: flex; align-items: center; justify-content: center;
 }
 
 .canje-modal {

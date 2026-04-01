@@ -147,3 +147,9 @@ typings/
 libpeerconnection.log
 testem.log
 
+
+# Playwright — estado de auth y screenshots (generados, no versionar)
+e2e/.auth/*.json
+e2e/.auth/*.txt
+e2e/screenshots/
+playwright-report/

@@ -114,33 +114,26 @@ public class JugadorServiceImpl implements JugadorService {
                 .orElse(null);
     }
 
-    // public Jugador eliminarJugador(Long idJugador, Long idUsuarioCreador) {
-    // JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
-    // .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-    //
-    // SalaEntity sala = jugador.getSala();
-    // if (!sala.getCreador().getIdUsuario().equals(idUsuarioCreador)) {
-    // throw new IllegalArgumentException("Solo el creador puede eliminar
-    // jugadores");
-    // }
-    //
-    // jugador.setEstadoJugador(EstadoJugador.ELIMINADO);
-    // jugadorRepository.save(jugador);
-    //
-    // PartidaEntity partidaEntity = jugador.getPartida();
-    //
-    // if (partidaEntity != null) {
-    // Partida partida = modelMapper.map(partidaEntity, Partida.class);
-    // partidaService.verificarCondicionVictoria(partida);
-    // estadisticaService.registrarEvento(
-    // "Jugador eliminado por el creador",
-    // modelMapper.map(jugador, Jugador.class),
-    // partida
-    // );
-    // }
-    //
-    // return modelMapper.map(jugador, Jugador.class);
-    // }
+    @Override
+    @Transactional
+    public void eliminarJugadorDeSala(Long idJugador, Usuario solicitante) {
+        JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado"));
+
+        Long idCreador = jugador.getSala().getCreador().getIdUsuario();
+        if (!idCreador.equals(solicitante.getIdUsuario())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el anfitrión puede retirar jugadores.");
+        }
+
+        if (jugador.getTipoJugador() != TipoJugador.BOT) {
+            Long idCreadorJugador = jugador.getUsuario() != null ? jugador.getUsuario().getIdUsuario() : null;
+            if (idCreadorJugador != null && idCreadorJugador.equals(idCreador)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El anfitrión no puede retirarse a sí mismo.");
+            }
+        }
+
+        jugadorRepository.deleteById(idJugador);
+    }
 
     @Override
     @Transactional

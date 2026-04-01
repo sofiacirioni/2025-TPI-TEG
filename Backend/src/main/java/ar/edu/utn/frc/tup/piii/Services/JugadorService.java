@@ -8,7 +8,7 @@ import java.util.List;
 public interface JugadorService {
     Jugador crearJugador(Jugador jugador, Usuario usuario, Sala sala);
 
-    // Jugador eliminarJugador(Long idJugadorAEliminar, Long idUsuarioCreador);
+    void eliminarJugadorDeSala(Long idJugador, Usuario solicitante);
 
     Jugador crearBot(Sala sala, Usuario usuarioActual);
 

@@ -122,6 +122,7 @@ export class MapaSvgComponent implements OnChanges, OnInit {
         color: this.getColorPais(estadoPais, continente),
         colorSolido: this.getColorSolido(estadoPais),
         colorBorde: CONTINENT_BORDER_COLORS[continente] ?? 'rgba(67,42,30,0.35)',
+        svgToken: this.getSvgToken(estadoPais),
         tropas: estadoPais.cantidadTropas,
         borde: 1,
         opacidad: 1,
@@ -156,6 +157,21 @@ export class MapaSvgComponent implements OnChanges, OnInit {
       case 'AMARILLO': return 'rgba(107,76,0,0.4)';
       case 'VIOLETA':  return 'rgba(107,36,144,0.4)';
       default:         return CONTINENT_NEUTRAL_COLORS[cont] ?? 'rgba(239,232,206,0.18)';
+    }
+  }
+
+  /** URL del SVG del jugador dueño del país, vacío si neutral. */
+  getSvgToken(estadoPais: EstadoPaisDto): string {
+    const jugador = this.jugadores.find(j => j.idJugador === estadoPais.idJugador);
+    if (!jugador) return '';
+    switch (jugador.color.toUpperCase()) {
+      case 'ROJO':     return '/assets/vectors/red-player.svg';
+      case 'AZUL':     return '/assets/vectors/blue-player.svg';
+      case 'VERDE':    return '/assets/vectors/green-player.svg';
+      case 'NARANJA':  return '/assets/vectors/orange-player.svg';
+      case 'AMARILLO': return '/assets/vectors/gold-player.svg';
+      case 'VIOLETA':  return '/assets/vectors/purple-player.svg';
+      default:         return '';
     }
   }
 

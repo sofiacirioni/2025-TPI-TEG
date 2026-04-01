@@ -208,55 +208,72 @@
     <div class="viga-vertical"></div>
   </div>
 
-  <svg class="reloj-svg" viewBox="0 0 88 88" aria-label="Reloj">
-    <!-- Marco exterior -->
-    <circle cx="44" cy="44" r="42" fill="#1C1008" stroke="#5C4A20" stroke-width="2"/>
-    <!-- Esfera -->
-    <circle cx="44" cy="44" r="36" fill="#F2EDD8" stroke="#8B7040" stroke-width="0.5"/>
-    <!-- Marcas horarias -->
-    @for (tick of clockTicks; track $index) {
-      <line
-        [attr.x1]="tick.x1" [attr.y1]="tick.y1"
-        [attr.x2]="tick.x2" [attr.y2]="tick.y2"
-        stroke="#8B7040" stroke-width="1.5"
-      />
-    }
-    <!-- Aguja de horas -->
-    <line x1="44" y1="44" x2="44" y2="28"
-          stroke="#432A1E" stroke-width="2.5" stroke-linecap="round"
-          [attr.transform]="'rotate(' + horasDeg + ', 44, 44)'"/>
-    <!-- Aguja de minutos -->
-    <line x1="44" y1="44" x2="44" y2="18"
-          stroke="#432A1E" stroke-width="1.5" stroke-linecap="round"
-          [attr.transform]="'rotate(' + minutosDeg + ', 44, 44)'"/>
-    <!-- Aguja de segundos -->
-    <line x1="44" y1="44" x2="44" y2="14"
-          stroke="#A01515" stroke-width="0.8" stroke-linecap="round"
-          [attr.transform]="'rotate(' + segundosDeg + ', 44, 44)'"/>
-    <!-- Centro -->
-    <circle cx="44" cy="44" r="2" fill="#432A1E"/>
-  </svg>
+  <div class="reloj-container" aria-label="Reloj de pared">
+    <!-- Cara decorativa del reloj vintage -->
+    <img class="reloj-face" src="/assets/vectors/vintage-clock.svg" alt="" aria-hidden="true" />
+    <!-- Agujas animadas superpuestas. Centro del reloj vintage = 50% 50% del elemento -->
+    <svg class="reloj-agujas" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Aguja de horas -->
+      <line x1="50" y1="50" x2="50" y2="26"
+            stroke="#3c231e" stroke-width="3.5" stroke-linecap="round"
+            [attr.transform]="'rotate(' + horasDeg + ', 50, 50)'"/>
+      <!-- Aguja de minutos -->
+      <line x1="50" y1="50" x2="50" y2="17"
+            stroke="#3c231e" stroke-width="2.2" stroke-linecap="round"
+            [attr.transform]="'rotate(' + minutosDeg + ', 50, 50)'"/>
+      <!-- Aguja de segundos (con contrapeso) -->
+      <line x1="50" y1="57" x2="50" y2="13"
+            stroke="#A01515" stroke-width="0.9" stroke-linecap="round"
+            [attr.transform]="'rotate(' + segundosDeg + ', 50, 50)'"/>
+      <!-- Pin central -->
+      <circle cx="50" cy="50" r="2.2" fill="#3c231e"/>
+    </svg>
+  </div>
 
-  <!-- ══ PANEL DERECHO: FICHAS DE JUGADORES ═══════════════════════ -->
-  <div class="panel-jugadores">
-    @for (jugador of partida.jugadores ?? []; track jugador.idJugador; let i = $index) {
-      <div class="ficha-jugador"
-           [style.border-left-color]="getColorSolido(jugador.color)"
-           [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
-        <div class="ficha-avatar">
-          <img [src]="getPlayerSvg(jugador.color)" [alt]="jugador.color" />
-        </div>
-        <div class="ficha-info">
-          <div class="ficha-nombre">{{ jugador.nombre }}</div>
-          <div class="ficha-stats">
-            {{ countriasDeJugador(jugador.idJugador) }} países · {{ jugador.ejercito }} ej.
+  <!-- ══ PANEL DERECHO: JUGADORES + CHAT ═════════════════════════ -->
+  <div class="panel-derecho">
+    <div class="panel-jugadores">
+      @for (jugador of partida.jugadores ?? []; track jugador.idJugador; let i = $index) {
+        <div class="ficha-jugador"
+             [style.border-left-color]="getColorSolido(jugador.color)"
+             [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
+          <div class="ficha-avatar">
+            <img [src]="getPlayerSvg(jugador.color)" [alt]="jugador.color" />
           </div>
-          @if (esEsBot(jugador)) {
-            <div class="ficha-bot">BOT</div>
-          }
+          <div class="ficha-info">
+            <div class="ficha-nombre">{{ jugador.nombre }}</div>
+            <div class="ficha-stats">
+              {{ countriasDeJugador(jugador.idJugador) }} países · {{ jugador.ejercito }} ej.
+            </div>
+            @if (esEsBot(jugador)) {
+              <div class="ficha-bot">BOT</div>
+            }
+          </div>
         </div>
+      }
+    </div>
+
+    <!-- Chat grupal (derecha) -->
+    <div class="chat-panel">
+      <div class="chat-titulo">CONVERSACIONES</div>
+      <div class="chat-mensajes">
+        @for (msg of chatMensajes; track $index) {
+          <div class="chat-msg">
+            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
+            {{ msg.texto }}
+          </div>
+        }
+        @if (chatMensajes.length === 0) {
+          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
+        }
       </div>
-    }
+      <div class="chat-input-row">
+        <input class="chat-input" type="text" placeholder="Escribir..."
+               [(ngModel)]="chatInput"
+               (keyup.enter)="enviarChat()" />
+        <button class="chat-send" (click)="enviarChat()">▶</button>
+      </div>
+    </div>
   </div>
 
   <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
@@ -293,27 +310,6 @@
       }
     </div>
 
-    <!-- Chat grupal -->
-    <div class="chat-panel">
-      <div class="chat-titulo">CONVERSACIONES</div>
-      <div class="chat-mensajes">
-        @for (msg of chatMensajes; track $index) {
-          <div class="chat-msg">
-            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
-            {{ msg.texto }}
-          </div>
-        }
-        @if (chatMensajes.length === 0) {
-          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
-        }
-      </div>
-      <div class="chat-input-row">
-        <input class="chat-input" type="text" placeholder="Escribir..."
-               [(ngModel)]="chatInput"
-               (keyup.enter)="enviarChat()" />
-        <button class="chat-send" (click)="enviarChat()">▶</button>
-      </div>
-    </div>
 
   </div>
 

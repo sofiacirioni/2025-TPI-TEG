@@ -106,7 +106,7 @@
                       }
                     </td>
                     <td>
-                      @if (esAnfitrion && jugador.idUsuario !== sala.creador?.idUsuario) {
+                      @if (esAnfitrion && (jugador.esBot || jugador.idUsuario !== sala.creador?.idUsuario)) {
                         <button class="btn-eliminar"
                                 (click)="eliminarJugador(jugador.id)">
                           ✕ Retirar
