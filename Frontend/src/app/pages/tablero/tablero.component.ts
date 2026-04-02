@@ -98,8 +98,9 @@ export class TableroComponent implements OnInit, OnDestroy {
   @ViewChild('relojObj') private relojObj?: ElementRef<HTMLObjectElement>;
   private svgDoc: Document | null = null;
   // Ángulos base de las agujas en el SVG original (medidos via getBBox)
-  private readonly MINUTE_HAND_BASE_DEG = 135;
-  private readonly HOUR_HAND_BASE_DEG   = 100;
+  private readonly MINUTE_HAND_BASE_DEG  = 135;
+  private readonly HOUR_HAND_BASE_DEG    = 100;
+  private readonly SECOND_HAND_BASE_DEG  = 0;
 
   // ── Historial de operaciones ───────────────────────────────
   historial: HistorialItem[] = [];
@@ -149,7 +150,8 @@ export class TableroComponent implements OnInit, OnDestroy {
     const h = this.horaActual.getHours() % 12;
     return (h + this.horaActual.getMinutes() / 60) * 30;
   }
-  get minutosDeg(): number { return this.horaActual.getMinutes() * 6; }
+  get minutosDeg(): number  { return this.horaActual.getMinutes() * 6; }
+  get segundosDeg(): number { return this.horaActual.getSeconds() * 6; }
 
   onRelojLoaded(): void {
     const obj = this.relojObj?.nativeElement;
@@ -164,6 +166,7 @@ export class TableroComponent implements OnInit, OnDestroy {
     const cx = '576.99', cy = '576.99';
     const minuteHand = this.svgDoc.getElementById('aguja-minutos');
     const hourHand   = this.svgDoc.getElementById('aguja-horas');
+    const secondHand = this.svgDoc.getElementById('aguja-segundos');
     if (minuteHand) {
       minuteHand.setAttribute('transform',
         `rotate(${this.minutosDeg - this.MINUTE_HAND_BASE_DEG}, ${cx}, ${cy})`);
@@ -171,6 +174,10 @@ export class TableroComponent implements OnInit, OnDestroy {
     if (hourHand) {
       hourHand.setAttribute('transform',
         `rotate(${this.horasDeg - this.HOUR_HAND_BASE_DEG}, ${cx}, ${cy})`);
+    }
+    if (secondHand) {
+      secondHand.setAttribute('transform',
+        `rotate(${this.segundosDeg - this.SECOND_HAND_BASE_DEG}, ${cx}, ${cy})`);
     }
   }
 
