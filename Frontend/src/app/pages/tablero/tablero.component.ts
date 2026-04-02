@@ -97,9 +97,11 @@ export class TableroComponent implements OnInit, OnDestroy {
   private clockInterval: ReturnType<typeof setInterval> | null = null;
   @ViewChild('relojObj') private relojObj?: ElementRef<HTMLObjectElement>;
   private svgDoc: Document | null = null;
-  // Ángulos base de las agujas en el SVG original (medidos via getBBox)
-  private readonly MINUTE_HAND_BASE_DEG  = 135;
-  private readonly HOUR_HAND_BASE_DEG    = 100;
+  // Ángulos base de las agujas en el SVG original (medidos via getBBox).
+  // Nota: el grupo id="aguja-horas" en el SVG es visualmente la aguja LARGA (minutos),
+  // y id="aguja-minutos" es la aguja CORTA (horas). Los IDs quedaron invertidos al agregarlos.
+  private readonly MINUTE_HAND_BASE_DEG  = 100;  // base de id="aguja-horas" (mano larga)
+  private readonly HOUR_HAND_BASE_DEG    = 135;  // base de id="aguja-minutos" (mano corta)
   private readonly SECOND_HAND_BASE_DEG  = 0;
 
   // ── Historial de operaciones ───────────────────────────────
@@ -164,8 +166,8 @@ export class TableroComponent implements OnInit, OnDestroy {
   private updateClockHands(): void {
     if (!this.svgDoc) return;
     const cx = '576.99', cy = '576.99';
-    const minuteHand = this.svgDoc.getElementById('aguja-minutos');
-    const hourHand   = this.svgDoc.getElementById('aguja-horas');
+    const minuteHand = this.svgDoc.getElementById('aguja-horas');   // grupo largo = minutos
+    const hourHand   = this.svgDoc.getElementById('aguja-minutos'); // grupo corto = horas
     const secondHand = this.svgDoc.getElementById('aguja-segundos');
     if (minuteHand) {
       minuteHand.setAttribute('transform',
@@ -210,7 +212,7 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.clockInterval = setInterval(() => { this.horaActual = new Date(); this.updateClockHands(); }, 1000);
 
     this.tableroServicio.partidaObservable.subscribe({
-      next: (result: PartidaDto) => {
+      next: (result: PartidaDto | null) => {
         if (!result) return;
 
         if (result.estado === EstadoPartida.TERMINADA) {
