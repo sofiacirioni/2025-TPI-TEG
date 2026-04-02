@@ -209,25 +209,13 @@
   </div>
 
   <div class="reloj-container" aria-label="Reloj de pared">
-    <!-- Cara decorativa del reloj vintage -->
-    <img class="reloj-face" src="/assets/vectors/vintage-clock.svg" alt="" aria-hidden="true" />
-    <!-- Agujas animadas superpuestas. Centro del reloj vintage = 50% 50% del elemento -->
-    <svg class="reloj-agujas" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <!-- Aguja de horas -->
-      <line x1="50" y1="50" x2="50" y2="26"
-            stroke="#3c231e" stroke-width="3.5" stroke-linecap="round"
-            [attr.transform]="'rotate(' + horasDeg + ', 50, 50)'"/>
-      <!-- Aguja de minutos -->
-      <line x1="50" y1="50" x2="50" y2="17"
-            stroke="#3c231e" stroke-width="2.2" stroke-linecap="round"
-            [attr.transform]="'rotate(' + minutosDeg + ', 50, 50)'"/>
-      <!-- Aguja de segundos (con contrapeso) -->
-      <line x1="50" y1="57" x2="50" y2="13"
-            stroke="#A01515" stroke-width="0.9" stroke-linecap="round"
-            [attr.transform]="'rotate(' + segundosDeg + ', 50, 50)'"/>
-      <!-- Pin central -->
-      <circle cx="50" cy="50" r="2.2" fill="#3c231e"/>
-    </svg>
+    <!-- Reloj vintage con agujas animadas via DOM (contentDocument) -->
+    <object #relojObj class="reloj-face"
+      type="image/svg+xml"
+      data="/assets/vectors/vintage-clock.svg"
+      aria-hidden="true"
+      (load)="onRelojLoaded()">
+    </object>
   </div>
 
   <!-- ══ PANEL DERECHO: JUGADORES + CHAT ═════════════════════════ -->

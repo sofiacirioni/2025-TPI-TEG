@@ -491,12 +491,7 @@
 
 .reloj-face {
   display: block; width: 100%; height: 100%;
-}
-
-.reloj-agujas {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  overflow: visible;
+  border: none;
 }
 
 // ── Panel jugadores (derecha) ─────────────────────────────────────

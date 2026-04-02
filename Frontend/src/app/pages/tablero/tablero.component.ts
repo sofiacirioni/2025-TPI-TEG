@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -95,17 +95,11 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Reloj decorativo ───────────────────────────────────────
   horaActual = new Date();
   private clockInterval: ReturnType<typeof setInterval> | null = null;
-
-  // Marcas horarias precomputadas (12 marcas cada 30°)
-  readonly clockTicks = Array.from({ length: 12 }, (_, i) => {
-    const angle = i * 30 * Math.PI / 180;
-    return {
-      x1: 44 + 30 * Math.sin(angle),
-      y1: 44 - 30 * Math.cos(angle),
-      x2: 44 + 34 * Math.sin(angle),
-      y2: 44 - 34 * Math.cos(angle),
-    };
-  });
+  @ViewChild('relojObj') private relojObj?: ElementRef<HTMLObjectElement>;
+  private svgDoc: Document | null = null;
+  // Ángulos base de las agujas en el SVG original (medidos via getBBox)
+  private readonly MINUTE_HAND_BASE_DEG = 135;
+  private readonly HOUR_HAND_BASE_DEG   = 100;
 
   // ── Historial de operaciones ───────────────────────────────
   historial: HistorialItem[] = [];
@@ -156,7 +150,29 @@ export class TableroComponent implements OnInit, OnDestroy {
     return (h + this.horaActual.getMinutes() / 60) * 30;
   }
   get minutosDeg(): number { return this.horaActual.getMinutes() * 6; }
-  get segundosDeg(): number { return this.horaActual.getSeconds() * 6; }
+
+  onRelojLoaded(): void {
+    const obj = this.relojObj?.nativeElement;
+    if (obj) {
+      this.svgDoc = (obj as HTMLObjectElement).contentDocument;
+      this.updateClockHands();
+    }
+  }
+
+  private updateClockHands(): void {
+    if (!this.svgDoc) return;
+    const cx = '576.99', cy = '576.99';
+    const minuteHand = this.svgDoc.getElementById('aguja-minutos');
+    const hourHand   = this.svgDoc.getElementById('aguja-horas');
+    if (minuteHand) {
+      minuteHand.setAttribute('transform',
+        `rotate(${this.minutosDeg - this.MINUTE_HAND_BASE_DEG}, ${cx}, ${cy})`);
+    }
+    if (hourHand) {
+      hourHand.setAttribute('transform',
+        `rotate(${this.horasDeg - this.HOUR_HAND_BASE_DEG}, ${cx}, ${cy})`);
+    }
+  }
 
   get mapTransform(): string {
     return `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
@@ -184,7 +200,7 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.url = this.route.snapshot.params['url'];
     this.tableroServicio.startPolling(this.url);
 
-    this.clockInterval = setInterval(() => { this.horaActual = new Date(); }, 1000);
+    this.clockInterval = setInterval(() => { this.horaActual = new Date(); this.updateClockHands(); }, 1000);
 
     this.tableroServicio.partidaObservable.subscribe({
       next: (result: PartidaDto) => {

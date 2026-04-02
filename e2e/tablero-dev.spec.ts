@@ -63,8 +63,8 @@ test.describe('Visual — layout del tablero', () => {
 
   test('el reloj vintage es visible en la esquina superior derecha', async ({ page }) => {
     await expect(page.locator('.reloj-container')).toBeVisible();
+    // .reloj-face es ahora <object> con el SVG inlineable (agujas animadas via DOM)
     await expect(page.locator('.reloj-face')).toBeVisible();
-    await expect(page.locator('.reloj-agujas')).toBeVisible();
   });
 
   test('el sobre del objetivo secreto es visible (top-left)', async ({ page }) => {
