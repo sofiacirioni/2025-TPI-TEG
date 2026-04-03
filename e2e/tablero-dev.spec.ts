@@ -105,7 +105,7 @@ test.describe('Visual — layout del tablero', () => {
     const bg = await page.locator('.tablero-container').evaluate(e =>
       window.getComputedStyle(e).backgroundImage
     );
-    expect(bg).toContain('wall-scene');
+    expect(bg).toContain('map-scene-wall');
   });
 
 });
@@ -144,9 +144,9 @@ test.describe('Mapa SVG — renderizado e interacción', () => {
   });
 
   test('los controles de zoom están presentes', async ({ page }) => {
-    await expect(page.locator('.zoom-controls')).toBeVisible();
-    await expect(page.locator('.zoom-controls button').nth(0)).toBeVisible();
-    await expect(page.locator('.zoom-controls button').nth(1)).toBeVisible();
+    await expect(page.locator('.mapa-controles')).toBeVisible();
+    await expect(page.locator('.mapa-controles button').nth(0)).toBeVisible();
+    await expect(page.locator('.mapa-controles button').nth(1)).toBeVisible();
   });
 
 });

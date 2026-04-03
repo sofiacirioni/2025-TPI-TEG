@@ -2,6 +2,7 @@
 //  TABLERO COMPONENT — Design System TEG Online
 //  Cuarto de operaciones militares, s. XX
 // ══════════════════════════════════════════════════════════════════
+@import '../../../styles/tokens';
 
 :host {
   display: block;
@@ -14,7 +15,7 @@
 .tablero-container {
   width: 100%;
   height: 100%;
-  background-image: url('/assets/images/wall-scene.webp');
+  background-image: url('/assets/images/map-scene-wall.webp');
   background-size: cover;
   background-position: center;
   position: relative;
@@ -55,14 +56,12 @@
 // ── Barra superior de estado ─────────────────────────────────────
 .info-barra {
   position: absolute;
-  top: 12px; left: 96px; right: 150px;
+  top: 12px; left: 96px; right: 218px;
   z-index: calc(var(--z-vignette) + 2);
-  display: flex; align-items: flex-start;
-  gap: 12px; padding: 7px 14px;
-  background: rgba(10,6,2,0.6);
-  border: 0.5px solid rgba(198,156,109,0.12);
-  border-radius: 1px;
-  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  gap: $space-8; padding: $space-2 $space-6;
+  background: transparent;
+  border: none;
 }
 
 .info-item {
@@ -70,24 +69,24 @@
 }
 
 .info-lbl {
-  font-family: var(--font-heading); font-size: 7px;
-  letter-spacing: 0.14em; color: rgba(198,156,109,0.45);
+  font-family: var(--font-heading); font-size: $text-caption;
+  letter-spacing: 0.18em; color: rgba(198,156,109,0.55);
   text-transform: uppercase;
 }
 
 .info-val {
-  font-family: var(--font-heading); font-size: 11px;
-  color: var(--color-claro); letter-spacing: 0.06em;
+  font-family: var(--font-body); font-size: $text-sm;
+  color: var(--color-claro); letter-spacing: 0.04em; font-weight: 600;
 }
 
 .info-val-big {
   font-family: var(--font-body); font-weight: 700;
-  font-size: 20px; color: var(--color-claro); line-height: 1;
+  font-size: $text-lead; color: var(--color-claro); line-height: 1;
 }
 
 .info-sub {
-  font-family: var(--font-body); font-size: 7px;
-  color: rgba(198,156,109,0.4);
+  font-family: var(--font-body); font-size: $text-caption;
+  color: rgba(198,156,109,0.45);
 }
 
 .info-timer {
@@ -148,7 +147,7 @@
 // ── Sobre del objetivo ────────────────────────────────────────────
 .sobre-objetivo {
   position: absolute; top: 12px; left: 12px;
-  z-index: calc(var(--z-vignette) + 2); cursor: pointer; width: 72px;
+  z-index: calc(var(--z-vignette) + 3); cursor: pointer; width: 90px;
   filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
 }
 
@@ -156,13 +155,14 @@
   background: #EDE5B0;
   border: 0.5px solid rgba(100,80,20,0.35);
   border-radius: 1px;
-  padding: 8px 6px 6px;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 8px 8px;
+  min-height: 100px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
   position: relative;
 }
 
 .sobre-solapa {
-  position: absolute; top: 0; left: 0; right: 0; height: 22px;
+  position: absolute; top: 0; left: 0; right: 0; height: 30px;
   background: #D4C878;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   transition: transform 0.3s;
@@ -174,15 +174,15 @@
 }
 
 .sobre-sello {
-  font-family: var(--font-heading); font-size: 7px;
+  font-family: var(--font-heading); font-size: 9px;
   letter-spacing: 0.1em; color: rgba(160,21,21,0.7);
   border: 0.5px solid rgba(160,21,21,0.45);
-  padding: 1px 4px; border-radius: 1px;
-  transform: rotate(-5deg); margin-top: 16px;
+  padding: 2px 5px; border-radius: 1px;
+  transform: rotate(-5deg); margin-top: 28px;
 }
 
 .sobre-label {
-  font-family: var(--font-heading); font-size: 5.5px;
+  font-family: var(--font-heading); font-size: 7px;
   letter-spacing: 0.05em; color: rgba(100,80,20,0.5);
 }
 
@@ -215,11 +215,11 @@
 // ── Mapa central ─────────────────────────────────────────────────
 .mapa-zona {
   position: absolute;
-  top: 60px; bottom: 8px;
-  left: 202px; right: 148px;
+  top: 80px; bottom: 48px;
+  left: 232px; right: 218px;
   z-index: 2;
   border: 1.5px solid rgba(80,55,20,0.5);
-  background: #C8BC8C;
+  background: var(--color-claro);
   overflow: hidden;
   box-shadow: inset 0 0 40px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.5);
   border-radius: 1px;
@@ -240,85 +240,88 @@
   transform-origin: top left;
 }
 
-// ── Controles de zoom ─────────────────────────────────────────────
-.zoom-controls {
-  position: absolute; bottom: 10px; right: 10px;
-  display: flex; flex-direction: column; gap: 3px; z-index: calc(var(--z-vignette) + 2);
-
-  button {
-    width: 26px; height: 26px;
-    background: rgba(20,12,4,0.75);
-    border: 0.5px solid rgba(198,156,109,0.3);
-    border-radius: 2px;
-    color: rgba(198,156,109,0.85); font-size: 14px;
-    cursor: pointer; font-family: var(--font-heading);
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s;
-
-    &:hover { background: rgba(20,12,4,0.95); }
-  }
+// ── Controles de zoom (fuera del mapa, derecha, alineados al fondo) ─
+.mapa-controles {
+  position: absolute;
+  right: 172px; bottom: 48px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: $space-2; z-index: calc(var(--z-vignette) + 2);
 }
 
-.zoom-indicator {
-  position: absolute; bottom: 4px; left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-body); font-size: 8px;
-  color: rgba(198,156,109,0.35); pointer-events: none; z-index: 6;
+// Override de tamaño sobre btn-teg-dark (estilo visual heredado del sistema)
+.ctrl-btn {
+  padding: 5px 10px;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  min-width: 40px;
+  display: flex; align-items: center; justify-content: center;
 }
 
-// ── Modal de país (tachuela) ──────────────────────────────────────
+// ── Modal de país ─────────────────────────────────────────────────
+// Estructura: marco exterior (color del jugador) + tira de nombre + papel interior
+
 .modal-pais {
   position: absolute;
-  background: var(--color-claro);
-  background-image: repeating-linear-gradient(44deg,
-    rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
-    transparent 1px, transparent 7px);
-  border-radius: 1px;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.55), -1px -1px 0 rgba(0,0,0,0.2);
-  width: 166px; z-index: calc(var(--z-vignette) + 5); padding: 0;
+  // background-color se setea via [style.background-color] con el color del jugador
+  width: 210px;
+  z-index: calc(var(--z-vignette) + 5);
+  padding: 8px 8px 8px;
+  border-radius: 2px;
+  box-shadow: 4px 4px 20px rgba(0,0,0,0.7), -1px -1px 0 rgba(0,0,0,0.25);
   animation: popIn 0.2s cubic-bezier(0.2,0.8,0.3,1);
 }
 
-.tachuela {
-  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
-  width: 12px; height: 12px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #C0392B, #7B241C);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 11;
+// Papel exterior que contiene todo — overflow:hidden recorta la strip a sus esquinas
+.modal-papel {
+  background: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
+    transparent 1px, transparent 7px
+  );
+  border-radius: 1px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
 }
 
-.modal-head {
-  padding: 10px 10px 6px;
-  border-bottom: 0.5px solid rgba(67,42,30,0.15);
+// Tira del nombre: ocupa el ancho completo del papel (sin padding lateral)
+.modal-nombre-strip {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 32px;
+  background: darken($color-claro, 22%); // ~#BFB07A — oliva cálido oscurecido del papel
 }
 
 .modal-nom {
-  font-family: var(--font-heading); font-size: 11px;
-  letter-spacing: 0.08em; color: rgba(67,42,30,0.9);
+  font-family: var(--font-heading);
+  font-size: 14px; letter-spacing: 0.08em;
+  color: var(--color-oscuro); // texto oscuro sobre fondo claro
+  text-align: center; text-transform: uppercase;
+}
+
+// Chinchetas a los costados de la tira del nombre
+.chincheta {
+  position: absolute;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #C0392B, #7B241C);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  top: 50%; transform: translateY(-50%);
+
+  &.chincheta-izq { left: 8px; }
+  &.chincheta-der { right: 8px; }
+}
+
+// Cuerpo del modal con padding (debajo de la strip)
+.modal-cuerpo {
+  padding: 10px 12px 8px;
+  display: flex; flex-direction: column; gap: 6px;
 }
 
 .modal-cont {
   font-family: var(--font-body); font-size: 8px;
-  color: rgba(67,42,30,0.45); margin-top: 1px;
-}
-
-.modal-body-pais {
-  padding: 8px 10px 8px;
-  display: flex; flex-direction: column; gap: 5px;
-}
-
-.modal-row {
-  display: flex; justify-content: space-between; align-items: center;
-}
-
-.modal-lbl {
-  font-family: var(--font-heading); font-size: 7px;
-  letter-spacing: 0.1em; color: rgba(67,42,30,0.45);
-  text-transform: uppercase;
-}
-
-.modal-val {
-  font-family: var(--font-body); font-weight: 700;
-  font-size: 13px; color: rgba(67,42,30,0.85);
+  color: rgba(67,42,30,0.5); text-align: center;
+  letter-spacing: 0.05em;
 }
 
 .modal-owner {
@@ -334,10 +337,27 @@
   color: rgba(67,42,30,0.65);
 }
 
-.modal-accion-group {
-  display: flex; flex-direction: column; gap: 4px;
+.modal-row {
+  display: flex; justify-content: space-between; align-items: center;
   border-top: 0.5px solid rgba(67,42,30,0.1);
-  padding-top: 5px; margin-top: 2px;
+  padding-top: 5px;
+}
+
+.modal-lbl {
+  font-family: var(--font-heading); font-size: 7px;
+  letter-spacing: 0.1em; color: rgba(67,42,30,0.45);
+  text-transform: uppercase;
+}
+
+.modal-val {
+  font-family: var(--font-body); font-weight: 700;
+  font-size: 14px; color: var(--color-oscuro);
+}
+
+.modal-accion-group {
+  display: flex; flex-direction: column; gap: $space-1;
+  border-top: 0.5px solid rgba(67,42,30,0.1);
+  padding-top: $space-2;
 }
 
 .modal-input-lbl {
@@ -362,7 +382,17 @@
   cursor: pointer;
 }
 
-// Botones de modal
+// Override de tamaño para btn-teg-* dentro del modal de país
+.btn-modal-accion {
+  padding: 6px 12px 4px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  width: 100%;
+  text-align: center;
+  margin-top: $space-1;
+}
+
+// Botones de modal de ataque y canje (clases legacy usadas en otros modales)
 .btn-modal {
   font-family: var(--font-heading); font-size: 8px;
   letter-spacing: 0.12em; padding: 5px 10px;
@@ -373,21 +403,18 @@
 .btn-atacar {
   background: rgba(160,21,21,0.15); color: var(--color-sello);
   border-color: rgba(160,21,21,0.45);
-
   &:hover { background: rgba(160,21,21,0.3); }
 }
 
 .btn-colocar {
   background: rgba(30,122,80,0.15); color: #1E7A50;
   border-color: rgba(30,122,80,0.45);
-
   &:hover { background: rgba(30,122,80,0.3); }
 }
 
 .btn-reagrupar {
   background: rgba(26,64,128,0.15); color: #1A4080;
   border-color: rgba(26,64,128,0.45);
-
   &:hover { background: rgba(26,64,128,0.3); }
 }
 
@@ -396,7 +423,6 @@
   font-family: var(--font-body); font-size: 8px;
   color: rgba(67,42,30,0.35); align-self: flex-end;
   padding: 2px 0; transition: color 0.15s;
-
   &:hover { color: var(--color-sello); }
 }
 
@@ -464,12 +490,12 @@
 // ── Viga + Reloj ──────────────────────────────────────────────────
 .viga-container {
   position: absolute; top: 0; right: 0;
-  width: 150px; height: 160px; z-index: calc(var(--z-vignette) + 2); pointer-events: none;
+  width: 178px; height: 160px; z-index: calc(var(--z-vignette) + 2); pointer-events: none;
 }
 
 .viga-diagonal {
   position: absolute; top: 0; right: 0;
-  width: 150px; height: 4px;
+  width: 178px; height: 4px;
   background: linear-gradient(180deg, #2A1A08, #1C1008);
   transform-origin: right top; transform: rotate(18deg);
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
@@ -497,17 +523,18 @@
 // ── Panel jugadores (derecha) ─────────────────────────────────────
 .panel-derecho {
   position: absolute;
-  top: 110px; right: 6px; bottom: 8px;
-  width: 134px; z-index: calc(var(--z-vignette) + 2);
+  top: 130px; right: 6px; bottom: 8px;
+  width: 160px; z-index: calc(var(--z-vignette) + 2);
   display: flex; flex-direction: column; gap: 5px;
   overflow: hidden;
 }
 
 .panel-jugadores {
-  display: flex; flex-direction: column; gap: 5px;
+  display: flex; flex-direction: column; gap: $space-2;
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
+  margin-top: $space-2;
 }
 
 .ficha-jugador {
@@ -516,7 +543,7 @@
     rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
     transparent 1px, transparent 6px);
   border-radius: 1px;
-  padding: 5px 7px;
+  padding: $space-2 $space-3;
   box-shadow: 1px 1px 4px rgba(0,0,0,0.45);
   border-left: 3px solid transparent;
   display: flex; align-items: center; gap: 6px;
@@ -554,15 +581,15 @@
 // ── Panel izquierdo ───────────────────────────────────────────────
 .panel-izquierdo {
   position: absolute;
-  top: 60px; left: 8px; bottom: 8px;
-  width: 188px; z-index: calc(var(--z-vignette) + 2);
-  display: flex; flex-direction: column; gap: 7px;
+  top: 120px; left: 8px; bottom: 8px;
+  width: 220px; z-index: calc(var(--z-vignette) + 2);
+  display: flex; flex-direction: column; gap: 16px;
 }
 
 // Historial
 .historial-panel {
-  padding: 8px;
-  flex: 1; overflow: hidden;
+  padding: $space-2;
+  flex: 0 0 auto;
   display: flex; flex-direction: column;
 }
 
@@ -575,10 +602,9 @@
 }
 
 .historial-lista {
-  flex: 1; overflow-y: auto; display: flex;
+  display: flex;
   flex-direction: column; gap: 3px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(198,156,109,0.15) transparent;
+  overflow: hidden;
 }
 
 .hist-item {
@@ -593,7 +619,7 @@
 
 // Tarjetas
 .tarjetas-panel {
-  padding: 8px; flex-shrink: 0;
+  padding: $space-2; flex: 1; overflow: hidden;
 }
 
 .tarjetas-titulo { @extend .historial-titulo; border-bottom: none; padding-bottom: 0; margin-bottom: 4px; }

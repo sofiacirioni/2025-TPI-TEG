@@ -83,86 +83,109 @@
       </app-mapa-svg>
     </div>
 
-    <!-- Controles de zoom -->
-    <div class="zoom-controls">
-      <button (click)="zoomIn()" title="Acercar">+</button>
-      <button (click)="zoomOut()" title="Alejar">−</button>
-      <button (click)="resetZoom()" title="Restablecer">R</button>
-    </div>
-    <div class="zoom-indicator">{{ scale * 100 | number:'1.0-0' }}%</div>
-
-    <!-- ── Modal de país (tachuela) ──────────────────────────── -->
+    <!-- ── Modal de país ──────────────────────────────────── -->
     @if (paisModalSeleccionado) {
-      <div class="modal-pais" [style.left.px]="modalX" [style.top.px]="modalY">
-        <div class="tachuela"></div>
-        <div class="modal-head">
-          <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre }}</div>
-          <div class="modal-cont">{{ paisModalSeleccionado.pais.continente?.nombre }}</div>
-        </div>
-        <div class="modal-body-pais">
-          <div class="modal-row">
-            <span class="modal-lbl">Ejércitos</span>
-            <span class="modal-val">{{ paisModalSeleccionado.cantidadTropas }}</span>
+      <div class="modal-pais"
+           [style.left.px]="modalX"
+           [style.top.px]="modalY"
+           [style.background-color]="getColorSolidoPaisModal()">
+
+        <!-- Papel interior: la strip del nombre va ADENTRO del papel -->
+        <div class="modal-papel">
+
+          <!-- Tira del nombre con chinchetas: full-width, recortada por overflow:hidden del papel -->
+          <div class="modal-nombre-strip">
+            <div class="chincheta chincheta-izq"></div>
+            <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre }}</div>
+            <div class="chincheta chincheta-der"></div>
           </div>
-          <div class="modal-owner">
-            <div class="owner-dot" [style.background]="getColorSolidoPaisModal()"></div>
-            <span class="owner-nom">{{ getNombreJugadorPais(paisModalSeleccionado.idJugador) }}</span>
+
+          <!-- Cuerpo del modal con padding -->
+          <div class="modal-cuerpo">
+            <div class="modal-cont">— {{ paisModalSeleccionado.pais.continente?.nombre }} —</div>
+            <div class="modal-owner">
+              <div class="owner-dot" [style.background]="getColorSolidoPaisModal()"></div>
+              <span class="owner-nom">{{ getNombreJugadorPais(paisModalSeleccionado.idJugador) }}</span>
+            </div>
+            <div class="modal-row">
+              <span class="modal-lbl">Tropas</span>
+              <span class="modal-val">{{ paisModalSeleccionado.cantidadTropas }}</span>
+            </div>
+
+            @if (estaJugandoModal) {
+              <!-- COLOCACION -->
+              @if (puedoDefenderDesdeModal) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Tropas a colocar</label>
+                  <input class="modal-input" type="number" min="0" [max]="ejercitosDisponibles"
+                         [(ngModel)]="inputTropasModal" />
+                  <button class="btn-teg-primary btn-modal-accion" (click)="defenderDesdeModal()">
+                    · COLOCAR ·
+                  </button>
+                </div>
+              }
+
+              <!-- ATACAR -->
+              @if (puedoAtacarDesdeModal && paisesEnemigos.length > 0) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Atacar hacia</label>
+                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                    <option [value]="-1" disabled>Seleccioná país</option>
+                    @for (p of paisesEnemigos; track p.pais.idPais) {
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                    }
+                  </select>
+                  <button class="btn-teg-danger btn-modal-accion" (click)="atacarDesdeModal()">
+                    · ATACAR ·
+                  </button>
+                </div>
+              }
+
+              <!-- MOVER_TROPAS -->
+              @if (puedoReagruparDesdeModal && paisesAliados.length > 0) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Reagrupar hacia</label>
+                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                    <option [value]="-1" disabled>Seleccioná país</option>
+                    @for (p of paisesAliados; track p.pais.idPais) {
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                    }
+                  </select>
+                  <label class="modal-input-lbl">Tropas</label>
+                  <input class="modal-input" type="number" min="0"
+                         [max]="paisModalSeleccionado.cantidadTropas - 1"
+                         [(ngModel)]="inputTropasModal" />
+                  <button class="btn-teg-primary btn-modal-accion" (click)="reagruparDesdeModal()">
+                    · REAGRUPAR ·
+                  </button>
+                </div>
+              }
+            }
+
+            <button class="btn-modal-cerrar" (click)="cerrarModalPais()">✕ cerrar</button>
           </div>
-
-          @if (estaJugandoModal) {
-            <!-- COLOCACION: agregar ejércitos -->
-            @if (puedoDefenderDesdeModal) {
-              <div class="modal-accion-group">
-                <label class="modal-input-lbl">Tropas a colocar</label>
-                <input class="modal-input" type="number" min="0" [max]="ejercitosDisponibles"
-                       [(ngModel)]="inputTropasModal" />
-                <button class="btn-modal btn-colocar" (click)="defenderDesdeModal()">
-                  · COLOCAR ·
-                </button>
-              </div>
-            }
-
-            <!-- ATACAR: seleccionar país enemigo -->
-            @if (puedoAtacarDesdeModal && paisesEnemigos.length > 0) {
-              <div class="modal-accion-group">
-                <label class="modal-input-lbl">Atacar hacia</label>
-                <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
-                  <option [value]="-1" disabled>Seleccioná país</option>
-                  @for (p of paisesEnemigos; track p.pais.idPais) {
-                    <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
-                  }
-                </select>
-                <button class="btn-modal btn-atacar" (click)="atacarDesdeModal()">
-                  · ATACAR ·
-                </button>
-              </div>
-            }
-
-            <!-- MOVER_TROPAS: reagrupar hacia aliado -->
-            @if (puedoReagruparDesdeModal && paisesAliados.length > 0) {
-              <div class="modal-accion-group">
-                <label class="modal-input-lbl">Reagrupar hacia</label>
-                <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
-                  <option [value]="-1" disabled>Seleccioná país</option>
-                  @for (p of paisesAliados; track p.pais.idPais) {
-                    <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
-                  }
-                </select>
-                <label class="modal-input-lbl">Tropas</label>
-                <input class="modal-input" type="number" min="0"
-                       [max]="paisModalSeleccionado.cantidadTropas - 1"
-                       [(ngModel)]="inputTropasModal" />
-                <button class="btn-modal btn-reagrupar" (click)="reagruparDesdeModal()">
-                  · REAGRUPAR ·
-                </button>
-              </div>
-            }
-          }
-
-          <button class="btn-modal-cerrar" (click)="cerrarModalPais()">✕ cerrar</button>
         </div>
       </div>
     }
+
+  </div>
+
+  <!-- ══ Controles de zoom (derecha del mapa, fuera del contenedor) ══ -->
+  <div class="mapa-controles">
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">+</button>
+    <button class="btn-teg-dark ctrl-btn" (click)="resetZoom()" title="Restablecer vista">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 8C2 4.686 4.686 2 8 2c1.8 0 3.42.756 4.586 1.97"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M14 8C14 11.314 11.314 14 8 14c-1.8 0-3.42-.756-4.586-1.97"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12 2l1 2-2 .5" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 14l-1-2 2-.5" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomOut()" title="Alejar">−</button>
   </div>
 
   <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
@@ -271,7 +294,7 @@
     <div class="historial-panel">
       <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
       <div class="historial-lista">
-        @for (item of historial; track $index) {
+        @for (item of historial.slice(0, 3); track $index) {
           <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
             {{ item.texto }}
           </div>

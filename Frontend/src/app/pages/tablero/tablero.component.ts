@@ -479,11 +479,21 @@ export class TableroComponent implements OnInit, OnDestroy {
   cerrarResultadoAtaque() { this.showAtaqueResultado = false; }
 
   // ── Zoom / Pan ─────────────────────────────────────────────
+  private clampTranslate(): void {
+    const el = document.querySelector('.mapa-zona') as HTMLElement;
+    if (!el) return;
+    // Con transform-origin: top left, el rango válido de translate es:
+    // X: [-(scale-1)*width, 0]   Y: [-(scale-1)*height, 0]
+    this.translateX = Math.max(-(this.scale - 1) * el.clientWidth,  Math.min(0, this.translateX));
+    this.translateY = Math.max(-(this.scale - 1) * el.clientHeight, Math.min(0, this.translateY));
+  }
+
   onWheel(event: WheelEvent) {
     event.preventDefault();
     const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    this.scale = Math.min(Math.max(this.scale * delta, 1), 4);
+    this.scale = Math.min(Math.max(this.scale * delta, 1), 3);
     if (this.scale === 1) { this.translateX = 0; this.translateY = 0; }
+    else { this.clampTranslate(); }
   }
 
   onMouseDownMapa(event: MouseEvent) {
@@ -497,16 +507,21 @@ export class TableroComponent implements OnInit, OnDestroy {
     if (!this.isDragging) return;
     this.translateX += event.clientX - this.lastMouseX;
     this.translateY += event.clientY - this.lastMouseY;
+    this.clampTranslate();
     this.lastMouseX = event.clientX;
     this.lastMouseY = event.clientY;
   }
 
   onMouseUpMapa() { this.isDragging = false; }
 
-  zoomIn() { this.scale = Math.min(this.scale * 1.25, 4); }
+  zoomIn() {
+    this.scale = Math.min(this.scale * 1.25, 3);
+    this.clampTranslate();
+  }
   zoomOut() {
     this.scale = Math.max(this.scale / 1.25, 1);
     if (this.scale === 1) { this.translateX = 0; this.translateY = 0; }
+    else { this.clampTranslate(); }
   }
   resetZoom() { this.scale = 1; this.translateX = 0; this.translateY = 0; }
 
