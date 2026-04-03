@@ -263,16 +263,45 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - **Opción activa en rojo**: `var(--color-sello)` en texto, código y radio button (inner dot vía `::after`)
 - **Placeholder**: font-size 10px (igual al label), `text-transform: none` para no heredar uppercase del input
 
+### Tablero — refactor visual del mapa, zoom/pan y modales (sesión 2026-04-03)
+
+#### Mapa SVG — correcciones visuales
+- **SVG letterboxing eliminado**: añadido `preserveAspectRatio="xMidYMid slice"` al `<svg>` del mapa — equivalente a `background-size: cover`, elimina las barras laterales cuando la relación de aspecto del contenedor no coincide con el viewBox 1920×1080.
+- **Colores de trazo corregidos**: strokes del SVG cambiados de `rgba(0,0,0,...)` a `rgba(67,42,30,...)` (`--color-oscuro`). Sombras de fichas mantienen negro puro (son drop-shadows decorativas).
+
+#### Controles de zoom — reubicación fuera del mapa
+- **`.mapa-controles` fuera de `.mapa-zona`**: posicionados absolutamente (`right: 172px, bottom: 48px`) en el hueco entre el mapa y el panel derecho, sin interferir con el área interactiva.
+- **Estilo `btn-teg-dark`** con override local `.ctrl-btn` para tamaño reducido (padding 5px 10px).
+
+#### Zoom/pan — bounds y restricciones
+- **`clampTranslate()`**: limita `translateX/Y` al rango `[-(scale-1)*containerSize, 0]` — impide espacios vacíos al arrastrar.
+- **Pan solo activo cuando `scale > 1`**: arrastar con zoom = 1 no hace nada.
+- **`transform-origin: top left`** explícito para cálculos correctos de bounds.
+
+#### Layout — ajustes de espacio
+- **`.mapa-zona`** reducido: `top: 80px`, `bottom: 48px`, `right: 218px` — más margen para paneles y barra superior.
+- **`.panel-izquierdo` bajado a `top: 120px`**: elimina solapamiento del historial sobre el sobre del objetivo.
+- **`.sobre-objetivo` subido a `z: calc(var(--z-vignette) + 3)`**: resuelve conflicto de z-index con el panel izquierdo.
+
+#### Modal de país — rediseño tipo ficha de campo
+Estructura de 3 capas:
+1. **Frame exterior** (`modal-pais`): padding 8px con `background-color` del color sólido del dueño.
+2. **Papel interior** (`modal-papel`): `var(--color-claro)` con textura diagonal sutil, `overflow: hidden` para clippear el strip.
+3. **Strip de título** (`modal-nombre-strip`): `darken($color-claro, 22%)` (~#BFB07A) con chinchetas rojas en los extremos, texto `var(--color-oscuro)` en `var(--font-heading)` uppercase.
+- Botones: `btn-teg-primary` (colocar/mover) y `btn-teg-danger` (atacar) con override `.btn-modal-accion`.
+- Tests Playwright: 20/20 pasando.
+
 ---
 
 ## Equipo
 
 Proyecto académico — TPI 2025 — UTN regional Córdoba, desarrollo en equipo.
+
 ### Integrantes:
 - Abril Melina
 - Arguello Juarez Candela
 - Blanco M. Candelaria
 - Carignano Maximiliano
 - Chapeta Zoe Agostina
-- Cirioni Sofía (Refactorizacion front-end y diseño UI)
+- Cirioni Sofía (Refactorizacion front-end y diseño UI/UX)
 - Heredia Lara
