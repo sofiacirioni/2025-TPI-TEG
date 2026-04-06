@@ -170,22 +170,31 @@
 
   </div>
 
-  <!-- ══ Controles de zoom (derecha del mapa, fuera del contenedor) ══ -->
+  <!-- ══ Controles de zoom — esquina inferior derecha exterior del mapa ══ -->
   <div class="mapa-controles">
-    <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">+</button>
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
     <button class="btn-teg-dark ctrl-btn" (click)="resetZoom()" title="Restablecer vista">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <path d="M2 8C2 4.686 4.686 2 8 2c1.8 0 3.42.756 4.586 1.97"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         <path d="M14 8C14 11.314 11.314 14 8 14c-1.8 0-3.42-.756-4.586-1.97"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M12 2l1 2-2 .5" stroke="currentColor" stroke-width="1.5"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M12 2l1 2-2 .5" stroke="currentColor" stroke-width="1.6"
               stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M4 14l-1-2 2-.5" stroke="currentColor" stroke-width="1.5"
+        <path d="M4 14l-1-2 2-.5" stroke="currentColor" stroke-width="1.6"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <button class="btn-teg-dark ctrl-btn" (click)="zoomOut()" title="Alejar">−</button>
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomOut()" title="Alejar">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
   <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
