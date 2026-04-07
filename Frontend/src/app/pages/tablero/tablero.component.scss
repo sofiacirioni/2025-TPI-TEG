@@ -520,59 +520,62 @@
 }
 
 .panel-jugadores {
-  display: flex; flex-direction: column; gap: $space-2;
+  display: flex; flex-direction: column; gap: $space-6;
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
-  margin-top: $space-2;
+  padding: $space-2 $space-1;
 }
 
 .ficha-jugador {
-  display: flex; align-items: center; gap: 8px;
-  padding: $space-2;
+  display: flex; align-items: center; gap: 10px;
   transition: opacity 0.2s;
 
   &.activo .ficha-insignia {
-    filter: drop-shadow(0 0 4px rgba(255,220,80,0.5));
+    outline: 1px solid rgba(255,220,80,0.4);
+    outline-offset: 1px;
   }
 }
 
 .ficha-avatar-circle {
-  width: 42px; height: 42px; flex-shrink: 0;
+  width: 44px; height: 44px; flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(100,80,60,0.25);
-  border: 1px solid rgba(198,156,109,0.2);
+  background: rgba(100,80,60,0.3);
+  border: 1px solid rgba(198,156,109,0.25);
+}
 
-  img { width: 100%; height: 100%; object-fit: cover; }
+.ficha-avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
 }
 
 .ficha-info {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 3px;
+  display: flex; flex-direction: column; gap: 4px;
 }
 
 .ficha-nombre {
-  font-family: var(--font-heading); font-size: 8px;
-  letter-spacing: 0.06em; color: rgba(239,232,206,0.8);
+  font-family: var(--font-heading); font-size: $text-sm;
+  letter-spacing: 0.06em; color: rgba(239,232,206,0.9);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 5px;
 }
 
 .ficha-insignia {
   display: block; width: 100%; height: auto;
-  max-height: 28px; object-fit: contain;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.55));
 }
 
 .ficha-stats {
   font-family: var(--font-body); font-weight: 300;
-  font-size: 6px; color: rgba(198,156,109,0.45);
+  font-size: $text-caption; color: rgba(198,156,109,0.6);
 }
 
 .ficha-bot {
-  font-family: var(--font-heading); font-size: 5px;
-  color: rgba(198,156,109,0.4); letter-spacing: 0.06em;
+  font-family: var(--font-heading); font-size: 7px;
+  color: rgba(198,156,109,0.45); letter-spacing: 0.06em;
 }
 
 // ── Panel izquierdo ───────────────────────────────────────────────

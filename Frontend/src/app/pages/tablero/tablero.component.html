@@ -251,8 +251,14 @@
     <div class="panel-jugadores">
       @for (jugador of partida.jugadores ?? []; track jugador.idJugador) {
         <div class="ficha-jugador" [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
-          <div class="ficha-avatar-circle">
-            <img [src]="getPlayerSvg(jugador.color)" [alt]="jugador.color" />
+          <div class="ficha-avatar-circle"
+               [style.background-color]="getColorSolido(jugador.color)">
+            @if (!esEsBot(jugador) && jugador.url) {
+              <img class="ficha-avatar-img"
+                   [src]="jugador.url"
+                   [alt]="jugador.nombre"
+                   (error)="$event.target.style.display='none'" />
+            }
           </div>
           <div class="ficha-info">
             <div class="ficha-nombre">

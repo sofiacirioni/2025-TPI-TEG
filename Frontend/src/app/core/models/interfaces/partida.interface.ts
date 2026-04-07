@@ -65,6 +65,7 @@ export interface JugadorDto {
   objetivo: ObjetivoDto;
   ejercito: number;
   consquisto: boolean;
+  url?: string;
 }
 
 export interface ObjetivoDto {

@@ -581,13 +581,13 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   getInsigniaUrl(color: string): string {
     switch (color?.toUpperCase()) {
-      case 'ROJO':     return 'assets/vectors/tablero/insignias/red-insignia.svg';
-      case 'AZUL':     return 'assets/vectors/tablero/insignias/blue-insignia.svg';
-      case 'VERDE':    return 'assets/vectors/tablero/insignias/green-insignia.svg';
-      case 'NARANJA':  return 'assets/vectors/tablero/insignias/orange-insignia.svg';
-      case 'AMARILLO': return 'assets/vectors/tablero/insignias/gold-insignia.svg';
-      case 'VIOLETA':  return 'assets/vectors/tablero/insignias/purple-insignia.svg';
-      default:         return 'assets/vectors/tablero/insignias/red-insignia.svg';
+      case 'ROJO':     return 'assets/images/insignias/red-insignia.png';
+      case 'AZUL':     return 'assets/images/insignias/blue-insignia.png';
+      case 'VERDE':    return 'assets/images/insignias/green-insignia.png';
+      case 'NARANJA':  return 'assets/images/insignias/orange-insignia.png';
+      case 'AMARILLO': return 'assets/images/insignias/gold-insignia.png';
+      case 'VIOLETA':  return 'assets/images/insignias/purple-insignia.png';
+      default:         return 'assets/images/insignias/red-insignia.png';
     }
   }
 
