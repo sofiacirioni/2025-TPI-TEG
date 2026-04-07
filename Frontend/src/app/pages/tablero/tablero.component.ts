@@ -21,6 +21,8 @@ import {
 } from '../../core/models/interfaces/partida.interface';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { NombrePaisPipe } from '../../core/pipes/nombre-pais.pipe';
+import { FaseDisplayPipe } from '../../core/pipes/fase-display.pipe';
 
 interface ChatMensaje {
   actor: string;
@@ -36,7 +38,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, DecimalPipe],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, DecimalPipe, NombrePaisPipe, FaseDisplayPipe],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })

@@ -12,7 +12,7 @@
     <!-- Fase -->
     <div class="info-item">
       <span class="info-lbl">Fase</span>
-      <span class="info-val">{{ faseActual || '—' }}</span>
+      <span class="info-val">{{ faseActual | faseDisplay }}</span>
       <div class="fase-dots">
         <div class="fdot" [class.active]="faseActual === 'COLOCACION'"></div>
         <div class="fdot" [class.active]="faseActual === 'ATACAR'"></div>
@@ -96,13 +96,13 @@
           <!-- Tira del nombre con chinchetas: full-width, recortada por overflow:hidden del papel -->
           <div class="modal-nombre-strip">
             <div class="chincheta chincheta-izq"></div>
-            <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre }}</div>
+            <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre | nombrePais }}</div>
             <div class="chincheta chincheta-der"></div>
           </div>
 
           <!-- Cuerpo del modal con padding -->
           <div class="modal-cuerpo">
-            <div class="modal-cont">— {{ paisModalSeleccionado.pais.continente?.nombre }} —</div>
+            <div class="modal-cont">— {{ paisModalSeleccionado.pais.continente?.nombre | nombrePais }} —</div>
             <div class="modal-owner">
               <div class="owner-dot" [style.background]="getColorSolidoPaisModal()"></div>
               <span class="owner-nom">{{ getNombreJugadorPais(paisModalSeleccionado.idJugador) }}</span>
@@ -132,7 +132,7 @@
                   <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
                     <option [value]="-1" disabled>Seleccioná país</option>
                     @for (p of paisesEnemigos; track p.pais.idPais) {
-                      <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
                     }
                   </select>
                   <button class="btn-teg-danger btn-modal-accion" (click)="atacarDesdeModal()">
@@ -148,7 +148,7 @@
                   <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
                     <option [value]="-1" disabled>Seleccioná país</option>
                     @for (p of paisesAliados; track p.pais.idPais) {
-                      <option [value]="p.pais.idPais">{{ p.pais.nombre }}</option>
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
                     }
                   </select>
                   <label class="modal-input-lbl">Tropas</label>
@@ -351,7 +351,7 @@
             <strong>Opción {{ i + 1 }}</strong>
             <ul>
               @for (carta of combinacion; track carta.idEstadoTarjeta) {
-                <li>{{ carta.tarjeta?.simbolo }} — {{ carta.tarjeta?.pais.nombre }}</li>
+                <li>{{ carta.tarjeta?.simbolo }} — {{ carta.tarjeta?.pais.nombre | nombrePais }}</li>
               }
             </ul>
           </div>

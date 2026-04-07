@@ -6,12 +6,14 @@ import { AuthService, UsuarioDto } from 'src/app/core/services/auth.service';
 import { TableroServicio } from 'src/app/core/services/tablero.service';
 import { FaseTurno } from 'src/app/core/models/interfaces/partida.interface';
 import { CommonModule } from '@angular/common';
+import { NombrePaisPipe } from 'src/app/core/pipes/nombre-pais.pipe';
+import { FaseDisplayPipe } from 'src/app/core/pipes/fase-display.pipe';
 
 @Component({
   selector: 'app-acciones-pais',
   templateUrl: './acciones-pais.component.html',
   styleUrls: ['./acciones-pais.component.css'],
-  imports: [FormsModule, CommonModule]
+  imports: [FormsModule, CommonModule, NombrePaisPipe, FaseDisplayPipe]
 })
 export class AccionesPaisComponent implements OnInit {
 
