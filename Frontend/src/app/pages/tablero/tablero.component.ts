@@ -38,7 +38,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, DecimalPipe, NombrePaisPipe, FaseDisplayPipe],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })

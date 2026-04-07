@@ -80,13 +80,6 @@
     @if (p.cx > 0 && p.cy > 0 && p.tropas > 0) {
       <g pointer-events="none">
         @if (p.svgToken) {
-          <!-- Sombra bajo la ficha -->
-          <ellipse
-            [attr.cx]="p.cx + 2"
-            [attr.cy]="p.cy + 16"
-            rx="13" ry="4"
-            fill="rgba(0,0,0,0.4)"
-          />
           <!-- Símbolo SVG del jugador (28×28) -->
           <image
             [attr.href]="p.svgToken"

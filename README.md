@@ -267,7 +267,7 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 
 #### Mapa SVG — correcciones visuales
 - **SVG letterboxing eliminado**: añadido `preserveAspectRatio="xMidYMid slice"` al `<svg>` del mapa — equivalente a `background-size: cover`, elimina las barras laterales cuando la relación de aspecto del contenedor no coincide con el viewBox 1920×1080.
-- **Colores de trazo corregidos**: strokes del SVG cambiados de `rgba(0,0,0,...)` a `rgba(67,42,30,...)` (`--color-oscuro`). Sombras de fichas mantienen negro puro (son drop-shadows decorativas).
+- **Colores de trazo corregidos**: strokes del SVG cambiados de `rgba(0,0,0,...)` a `rgba(67,42,30,...)` (`--color-oscuro`).
 
 #### Controles de zoom — reubicación fuera del mapa
 - **`.mapa-controles` fuera de `.mapa-zona`**: posicionados absolutamente (`right: 172px, bottom: 48px`) en el hueco entre el mapa y el panel derecho, sin interferir con el área interactiva.
@@ -290,6 +290,23 @@ Estructura de 3 capas:
 3. **Strip de título** (`modal-nombre-strip`): `darken($color-claro, 22%)` (~#BFB07A) con chinchetas rojas en los extremos, texto `var(--color-oscuro)` en `var(--font-heading)` uppercase.
 - Botones: `btn-teg-primary` (colocar/mover) y `btn-teg-danger` (atacar) con override `.btn-modal-accion`.
 - Tests Playwright: 20/20 pasando.
+
+### Tablero — avatares, pipes de display y mapa (sesión 2026-04-07)
+
+#### Avatares de jugadores
+- **`JugadorDto.url`** reutilizado para transportar `usuario.imagen` desde el backend — mapeado manualmente en `PartidaServiceImpl.cargarPartida()` tras el modelMapper.
+- **`JugadorDto` interface** (frontend): añadido campo `url?: string`.
+- **Panel derecho**: el círculo de jugador muestra `background-color` sólido para todos, y renderiza `<img class="ficha-avatar-img">` con `object-fit: cover` cuando `!esBot && jugador.url` existe. Fallback via `(error)` que oculta la imagen rota.
+- **Bots**: solo muestran el color plano del jugador, sin intento de carga de imagen.
+- **Insignias**: rutas cambiadas de SVG a PNG (`assets/images/insignias/*.png`) para preservar efectos de textura/sombra exportados.
+
+#### Pipes de visualización
+- **`NombrePaisPipe`** (`core/pipes/nombre-pais.pipe.ts`): corrige ortografía de países y continentes al mostrarse en UI sin tocar la BD. Correcciones: `Yukon→Yukón`, `Oregon→Oregón`, `Mexico→México`, `Canada→Canadá`, `Peru→Perú`, `Gran Bretana→Gran Bretaña`, `Espana→España`, `Etiopia→Etiopía`, `Sudafrica→Sudáfrica`, `Turquia→Turquía`, `Japon→Japón`, `Iran→Irán`, continentes: `Africa→África`, `Oceania→Oceanía`, `America del Norte/Sur`.
+- **`FaseDisplayPipe`** (`core/pipes/fase-display.pipe.ts`): convierte fases de BD a display legible en mayúsculas con tildes: `COLOCACION→COLOCACIÓN`, `MOVER_TROPAS→MOVER TROPAS`. Fallback: reemplaza `_` por espacio.
+- Ambos pipes aplicados en `tablero.component.html` y `acciones-pais.component.html`.
+
+#### Mapa — fichas
+- **Sombra de ficha eliminada**: removida la `<ellipse>` decorativa (`fill: rgba(0,0,0,0.4)`) que proyectaba sombra oval bajo cada token en `mapa-svg.component.html` — mejora legibilidad sobre países con colores similares.
 
 ---
 
