@@ -165,12 +165,12 @@ export class MapaSvgComponent implements OnChanges, OnInit {
     const jugador = this.jugadores.find(j => j.idJugador === estadoPais.idJugador);
     if (!jugador) return '';
     switch (jugador.color.toUpperCase()) {
-      case 'ROJO':     return '/assets/vectors/red-player.svg';
-      case 'AZUL':     return '/assets/vectors/blue-player.svg';
-      case 'VERDE':    return '/assets/vectors/green-player.svg';
-      case 'NARANJA':  return '/assets/vectors/orange-player.svg';
-      case 'AMARILLO': return '/assets/vectors/gold-player.svg';
-      case 'VIOLETA':  return '/assets/vectors/purple-player.svg';
+      case 'ROJO':     return '/assets/vectors/tablero/fichas/red-player.svg';
+      case 'AZUL':     return '/assets/vectors/tablero/fichas/blue-player.svg';
+      case 'VERDE':    return '/assets/vectors/tablero/fichas/green-player.svg';
+      case 'NARANJA':  return '/assets/vectors/tablero/fichas/orange-player.svg';
+      case 'AMARILLO': return '/assets/vectors/tablero/fichas/gold-player.svg';
+      case 'VIOLETA':  return '/assets/vectors/tablero/fichas/purple-player.svg';
       default:         return '';
     }
   }

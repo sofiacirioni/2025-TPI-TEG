@@ -168,9 +168,10 @@
       </div>
     }
 
+
   </div>
 
-  <!-- ══ Controles de zoom — esquina inferior derecha exterior del mapa ══ -->
+  <!-- ── Controles de zoom — borde inferior derecho del mapa ── -->
   <div class="mapa-controles">
     <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -234,17 +235,12 @@
     </div>
   }
 
-  <!-- ══ VIGA + RELOJ (top-right) ═════════════════════════════════ -->
-  <div class="viga-container" aria-hidden="true">
-    <div class="viga-diagonal"></div>
-    <div class="viga-vertical"></div>
-  </div>
-
+  <!-- ══ RELOJ (top-right) ════════════════════════════════════════ -->
   <div class="reloj-container" aria-label="Reloj de pared">
     <!-- Reloj vintage con agujas animadas via DOM (contentDocument) -->
     <object #relojObj class="reloj-face"
       type="image/svg+xml"
-      data="/assets/vectors/vintage-clock.svg"
+      data="/assets/vectors/tablero/vintage-clock.svg"
       aria-hidden="true"
       (load)="onRelojLoaded()">
     </object>
@@ -253,21 +249,20 @@
   <!-- ══ PANEL DERECHO: JUGADORES + CHAT ═════════════════════════ -->
   <div class="panel-derecho">
     <div class="panel-jugadores">
-      @for (jugador of partida.jugadores ?? []; track jugador.idJugador; let i = $index) {
-        <div class="ficha-jugador"
-             [style.border-left-color]="getColorSolido(jugador.color)"
-             [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
-          <div class="ficha-avatar">
+      @for (jugador of partida.jugadores ?? []; track jugador.idJugador) {
+        <div class="ficha-jugador" [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
+          <div class="ficha-avatar-circle">
             <img [src]="getPlayerSvg(jugador.color)" [alt]="jugador.color" />
           </div>
           <div class="ficha-info">
-            <div class="ficha-nombre">{{ jugador.nombre }}</div>
+            <div class="ficha-nombre">
+              {{ jugador.nombre }}
+              @if (esEsBot(jugador)) { <span class="ficha-bot">BOT</span> }
+            </div>
+            <img class="ficha-insignia" [src]="getInsigniaUrl(jugador.color)" [alt]="jugador.color" />
             <div class="ficha-stats">
               {{ countriasDeJugador(jugador.idJugador) }} países · {{ jugador.ejercito }} ej.
             </div>
-            @if (esEsBot(jugador)) {
-              <div class="ficha-bot">BOT</div>
-            }
           </div>
         </div>
       }
@@ -294,6 +289,7 @@
         <button class="chat-send" (click)="enviarChat()">▶</button>
       </div>
     </div>
+
   </div>
 
   <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->

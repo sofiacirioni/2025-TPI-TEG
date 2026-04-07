@@ -12,6 +12,14 @@
   <rect width="1920" height="1080" style="fill:var(--color-claro)"/>
 
   <!--
+    Corrección de centrado: el artwork del mapa tiene ~30 unidades SVG más de
+    espacio vacío en el lado derecho que en el izquierdo. Se desplaza todo el
+    contenido (capas 2–4) 30 unidades a la derecha para centrar visualmente.
+    La CAPA 1 (rect de fondo) queda fuera del grupo para cubrir todo el viewBox.
+  -->
+  <g transform="translate(30, 0)">
+
+  <!--
     CAPA 2: Rellenos RGBA dinámicos por jugador (~0.4 opacidad).
     Países sin dueño reciben un tinte sutil del continente para distinguir regiones.
     Estos paths capturan los eventos de click y hover.
@@ -131,4 +139,6 @@
       </g>
     }
   }
+
+  </g><!-- /translate(30,0) -->
 </svg>

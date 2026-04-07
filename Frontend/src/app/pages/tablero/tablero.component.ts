@@ -569,13 +569,25 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   getPlayerSvg(color: string): string {
     switch (color?.toUpperCase()) {
-      case 'ROJO':     return 'assets/vectors/red-player.svg';
-      case 'AZUL':     return 'assets/vectors/blue-player.svg';
-      case 'VERDE':    return 'assets/vectors/green-player.svg';
-      case 'NARANJA':  return 'assets/vectors/orange-player.svg';
-      case 'AMARILLO': return 'assets/vectors/gold-player.svg';
-      case 'VIOLETA':  return 'assets/vectors/purple-player.svg';
-      default:         return 'assets/vectors/red-player.svg';
+      case 'ROJO':     return 'assets/vectors/tablero/fichas/red-player.svg';
+      case 'AZUL':     return 'assets/vectors/tablero/fichas/blue-player.svg';
+      case 'VERDE':    return 'assets/vectors/tablero/fichas/green-player.svg';
+      case 'NARANJA':  return 'assets/vectors/tablero/fichas/orange-player.svg';
+      case 'AMARILLO': return 'assets/vectors/tablero/fichas/gold-player.svg';
+      case 'VIOLETA':  return 'assets/vectors/tablero/fichas/purple-player.svg';
+      default:         return 'assets/vectors/tablero/fichas/red-player.svg';
+    }
+  }
+
+  getInsigniaUrl(color: string): string {
+    switch (color?.toUpperCase()) {
+      case 'ROJO':     return 'assets/vectors/tablero/insignias/red-insignia.svg';
+      case 'AZUL':     return 'assets/vectors/tablero/insignias/blue-insignia.svg';
+      case 'VERDE':    return 'assets/vectors/tablero/insignias/green-insignia.svg';
+      case 'NARANJA':  return 'assets/vectors/tablero/insignias/orange-insignia.svg';
+      case 'AMARILLO': return 'assets/vectors/tablero/insignias/gold-insignia.svg';
+      case 'VIOLETA':  return 'assets/vectors/tablero/insignias/purple-insignia.svg';
+      default:         return 'assets/vectors/tablero/insignias/red-insignia.svg';
     }
   }
 
