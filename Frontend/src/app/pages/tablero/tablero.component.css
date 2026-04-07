@@ -3,6 +3,10 @@
   min-height: 100vh;
   padding: 8px;
   box-sizing: border-box;
+  background-image: url('/assets/images/map-scene-wall.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 /* ─── Contenedor principal ─────────────────────────────── */
@@ -66,10 +70,22 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 3px double var(--border-color);
-  border-radius: 4px;
   overflow: hidden;
-  background: #5a9ab8;
+  /* Marco de papel sobre la mesa — efecto mapa físico */
+  background-color: #EFE8CE;
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 2px solid rgba(67, 42, 30, 0.55);
+  /* Borde interno doble para simular margen de documento */
+  outline: 4px solid rgba(67, 42, 30, 0.18);
+  outline-offset: -8px;
+  border-radius: 2px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    inset 0 0 40px rgba(50, 28, 8, 0.10);
 }
 
 .tablero-cartas {

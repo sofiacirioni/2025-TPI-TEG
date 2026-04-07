@@ -88,6 +88,16 @@ public class JugadorController {
         return ResponseEntity.ok(dto);
     }
 
+    @DeleteMapping("/{idJugador}")
+    public ResponseEntity<Void> eliminarJugador(
+            @PathVariable Long idJugador,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Usuario solicitante = usuarioService.obtenerByCorreo(userDetails.getUsername());
+        jugadorService.eliminarJugadorDeSala(idJugador, solicitante);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{idJugador}/votar-pausa")
     public ResponseEntity<String> votarPausa(@PathVariable Long idJugador) {
         jugadorService.votarPausa(idJugador);

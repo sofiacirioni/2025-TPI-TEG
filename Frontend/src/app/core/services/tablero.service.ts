@@ -1,10 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, interval, NEVER, Observable, startWith, Subscription, switchMap } from 'rxjs';
 import { AtaqueDto, AtaqueResponseDto, CanjeTarjetasDto, EstadoPaisDto, PartidaDto, TarjetaDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../models/interfaces/partida.interface';
 import { AuthService } from './auth.service';
-import { log } from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
-import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -55,7 +53,7 @@ export class TableroServicio {
     this.pollingSubscription = this._polling.pipe(
       switchMap(isOn =>
         isOn
-          ? interval(1000).pipe(startWith(0)) //
+          ? interval(3000).pipe(startWith(0))
           : NEVER
       ),
       switchMap(() => this.obtenerPartidaByUrl(url))

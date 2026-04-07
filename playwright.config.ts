@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const AUTH_STATE = 'e2e/.auth/tablero-state.json';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -10,7 +12,7 @@ export default defineConfig({
 
   use: {
     baseURL: 'http://localhost:4200',
-    headless: false,         // siempre headed para verificar cambios visualmente
+    headless: false,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -18,13 +20,22 @@ export default defineConfig({
   },
 
   projects: [
+    // Proyecto setup: corre tablero-dev.setup.ts, no usa storageState guardado
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    // Proyecto principal: depende de setup, usa el estado guardado
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: AUTH_STATE,
+      },
+      dependencies: ['setup'],
     },
   ],
 
-  // Levantar ambos servidores antes de los tests
   webServer: [
     {
       command: 'cd Frontend && npm start',

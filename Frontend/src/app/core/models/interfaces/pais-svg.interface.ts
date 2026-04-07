@@ -1,11 +1,15 @@
 export interface paisSVG {
   id: number;
   nombre: string;
-  color: string;
-  tropas: number
-  borde: number,
-  opacidad: number,
+  color: string;        // fill rgba con opacidad (ej: rgba(160,21,21,0.4))
+  colorSolido: string;  // color sólido hex para fichas y UI (ej: #A01515)
+  colorBorde: string;   // color de borde de continente para capa de stroke
+  svgToken: string;     // URL al SVG del jugador dueño, vacío si neutral
+  tropas: number;
+  borde: number;
+  opacidad: number;
   forma: string;
   cx: number;
   cy: number;
+  continente: string;
 }

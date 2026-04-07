@@ -29,6 +29,13 @@ export class ConfigPartidaService {
       { withCredentials: true }
     );
   }
+  eliminarJugador(idJugador: number) {
+    return this.http.delete(
+      `${environment.apiUrl}/jugador/${idJugador}`,
+      { withCredentials: true }
+    );
+  }
+
   crearPartida(idSala: number) {
     return this.http.post<any>(
       `${environment.apiUrl}/partida/crear/${idSala}`,

@@ -226,6 +226,29 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - **`pages/registrarse/registrarse.component.ts`**: import de `StampComponent` movido a ruta directa (evita ambigüedad del barrel)
 - Revisión Playwright confirmada: todos los checks DOM pasan, 0 errores de consola, 0 requests 404
 
+### ConfigPartida + TableroComponent — refactor UI completo (sesión 2026-03-31)
+
+#### ConfigPartida — correcciones
+- **JWT en WebSocket STOMP**: `socket.service.ts` ahora acepta `token?: string` en `conectar()` y lo pasa como `connectHeaders: { Authorization: 'Bearer <token>' }` antes de `activate()`. `config-partida.component.ts` obtiene el token vía `authService.getAccessToken()` y lo propaga.
+- **`.orden-firma` separación**: `margin-top` aumentado de `0.25rem` a `1rem` para garantizar separación visible de la firma respecto a los jugadores.
+
+#### TableroComponent — reescritura completa
+- **Layout fullscreen**: fondo de madera oscura, `mapa-zona` central al 100%, paneles flotantes absolutos — sin grid Bootstrap.
+- **Mapa SVG**: fills RGBA con opacidad 0.45 (efecto papel), fichas mejoradas (círculo sólido + texto Special Elite con sombra de refuerzo), fondo oceánico `#8AABBC`.
+- **Zoom y pan**: rueda del ratón (escala 0.5–3×), arrastre con mouse, botones `+ − R`, indicador `{{ scale * 100 | number:'1.0-0' }}%`.
+- **Modal de país inline** (reemplaza CDK Dialog): `.modal-pais` con tachuela decorativa, posicionado relativo al click sobre el mapa, acciones condicionales por fase (COLOCACION / ATACAR / MOVER_TROPAS).
+- **Info-barra superior**: fase + dots de progreso, turno + N°, ejércitos disponibles, timer countdown con parpadeo urgente al ≤30s.
+- **Sobre del objetivo**: componente envelope animado top-left, toggle con `.objetivo-modal`.
+- **Reloj SVG decorativo**: agujas de horas/minutos/segundos sincronizadas con la hora real del sistema; 12 marcas horarias precomputadas como `clockTicks` (evita `Math` en template Angular).
+- **Panel derecho — fichas de jugadores**: avatar SVG por color, nombre, países, ejércitos, indicador de turno activo.
+- **Panel izquierdo**: historial de operaciones tipificado (ataque/ok), tarjetas mini con símbolo, chat grupal local con input (UI preparada para futura integración WebSocket).
+- **Polling reducido**: `interval(1000)` → `interval(3000)` en `tablero.service.ts`.
+- **Sin `alert()`**: todos los avisos migrados a `NotificationService` (success/error/warning/info).
+- **Resultado de ataque**: overlay modal con dados en emoji, nombres de países origen/destino, estado CONQUISTA/REPELIDO.
+- **Modal de canje de tarjetas**: selección de combinación posible con confirmación.
+- **Limpieza de imports**: removido import corrupto `@angular-devkit/build-angular` de `tablero.service.ts`.
+- Revisión Playwright: 14/14 elementos presentes, timer countdown verificado, reloj 15 líneas, modal de país con tachuela, objetivo legible, zoom funcional, chat operativo, 0 errores 404, 1 solo error de consola esperado (`/auth/refresh` 401 en sesión nueva).
+
 ### SalaComponent — ajustes UX y perforaciones reales (sesión 2026-03-27)
 
 - **Perforaciones reales**: técnica migrada de `.tele-paper::before` a `.telegrama-wrap::before/after` — tiras con `background-color: transparent` + `radial-gradient(transparent 5px, #EDE5B0 5.5px)`; los agujeros muestran la imagen de mesa real a través del papel
@@ -240,16 +263,45 @@ El frontend usa un sistema de diseño propio basado en Bootstrap 5 + SCSS custom
 - **Opción activa en rojo**: `var(--color-sello)` en texto, código y radio button (inner dot vía `::after`)
 - **Placeholder**: font-size 10px (igual al label), `text-transform: none` para no heredar uppercase del input
 
+### Tablero — refactor visual del mapa, zoom/pan y modales (sesión 2026-04-03)
+
+#### Mapa SVG — correcciones visuales
+- **SVG letterboxing eliminado**: añadido `preserveAspectRatio="xMidYMid slice"` al `<svg>` del mapa — equivalente a `background-size: cover`, elimina las barras laterales cuando la relación de aspecto del contenedor no coincide con el viewBox 1920×1080.
+- **Colores de trazo corregidos**: strokes del SVG cambiados de `rgba(0,0,0,...)` a `rgba(67,42,30,...)` (`--color-oscuro`). Sombras de fichas mantienen negro puro (son drop-shadows decorativas).
+
+#### Controles de zoom — reubicación fuera del mapa
+- **`.mapa-controles` fuera de `.mapa-zona`**: posicionados absolutamente (`right: 172px, bottom: 48px`) en el hueco entre el mapa y el panel derecho, sin interferir con el área interactiva.
+- **Estilo `btn-teg-dark`** con override local `.ctrl-btn` para tamaño reducido (padding 5px 10px).
+
+#### Zoom/pan — bounds y restricciones
+- **`clampTranslate()`**: limita `translateX/Y` al rango `[-(scale-1)*containerSize, 0]` — impide espacios vacíos al arrastrar.
+- **Pan solo activo cuando `scale > 1`**: arrastar con zoom = 1 no hace nada.
+- **`transform-origin: top left`** explícito para cálculos correctos de bounds.
+
+#### Layout — ajustes de espacio
+- **`.mapa-zona`** reducido: `top: 80px`, `bottom: 48px`, `right: 218px` — más margen para paneles y barra superior.
+- **`.panel-izquierdo` bajado a `top: 120px`**: elimina solapamiento del historial sobre el sobre del objetivo.
+- **`.sobre-objetivo` subido a `z: calc(var(--z-vignette) + 3)`**: resuelve conflicto de z-index con el panel izquierdo.
+
+#### Modal de país — rediseño tipo ficha de campo
+Estructura de 3 capas:
+1. **Frame exterior** (`modal-pais`): padding 8px con `background-color` del color sólido del dueño.
+2. **Papel interior** (`modal-papel`): `var(--color-claro)` con textura diagonal sutil, `overflow: hidden` para clippear el strip.
+3. **Strip de título** (`modal-nombre-strip`): `darken($color-claro, 22%)` (~#BFB07A) con chinchetas rojas en los extremos, texto `var(--color-oscuro)` en `var(--font-heading)` uppercase.
+- Botones: `btn-teg-primary` (colocar/mover) y `btn-teg-danger` (atacar) con override `.btn-modal-accion`.
+- Tests Playwright: 20/20 pasando.
+
 ---
 
 ## Equipo
 
 Proyecto académico — TPI 2025 — UTN regional Córdoba, desarrollo en equipo.
+
 ### Integrantes:
 - Abril Melina
 - Arguello Juarez Candela
 - Blanco M. Candelaria
 - Carignano Maximiliano
 - Chapeta Zoe Agostina
-- Cirioni Sofía (Refactorizacion front-end y diseño UI)
+- Cirioni Sofía (Refactorizacion front-end y diseño UI/UX)
 - Heredia Lara
