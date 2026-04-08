@@ -402,17 +402,20 @@ export class TableroComponent implements OnInit, OnDestroy {
   cerrarModalPais() { this.paisModalSeleccionado = null; }
 
   private calcularLimitrofes() {
-    this.paisesAliados = [];
     this.paisesEnemigos = [];
-    const aliadosIds = new Set<number>();
     const enemigosIds = new Set<number>();
     for (const p of this.paisesLimitrofes) {
-      if (p.idJugador === this.paisModalSeleccionado?.idJugador) {
-        if (!aliadosIds.has(p.pais.idPais)) { aliadosIds.add(p.pais.idPais); this.paisesAliados.push(p); }
-      } else {
+      if (p.idJugador !== this.paisModalSeleccionado?.idJugador) {
         if (!enemigosIds.has(p.pais.idPais)) { enemigosIds.add(p.pais.idPais); this.paisesEnemigos.push(p); }
       }
     }
+
+    // Para reagrupar: todos los países propios del jugador (excepto el actual)
+    // El backend BFS validará si hay camino conectado a través del territorio propio
+    const idSeleccionado = this.paisModalSeleccionado?.pais.idPais;
+    const idJugador = this.jugadorUsuario?.idJugador;
+    this.paisesAliados = (this.partida?.estadoPaises ?? [])
+      .filter(ep => ep.idJugador === idJugador && ep.pais.idPais !== idSeleccionado);
   }
 
   atacarDesdeModal() {
@@ -430,8 +433,8 @@ export class TableroComponent implements OnInit, OnDestroy {
         this.paisDestinoNombreModal = this.paisesEnemigos.find(p => p.pais.idPais === dto.idPaisDestino)?.pais.nombre ?? '';
         this.showAtaqueResultado = true;
         this.agregarHistorial(
-          `${this.jugadorUsuario!.nombre} ${response.ataqueExitoso ? 'conquistó' : 'atacó'} ${this.paisDestinoNombreModal}`,
-          response.ataqueExitoso ? 'ataque' : 'normal'
+          `${this.jugadorUsuario!.nombre} ${response.conquista ? 'conquistó' : 'atacó'} ${this.paisDestinoNombreModal}`,
+          response.conquista ? 'ataque' : 'normal'
         );
         this.cerrarModalPais();
       },

@@ -45,6 +45,8 @@ public class TurnoServiceImpl implements TurnoService {
     private final JugadorRepository jugadorRepository;
     @Autowired
     private final ObjetivoService objetivoService;
+    @Autowired
+    private final LimiteRepository limiteRepository;
 
     @Override
     @Transactional
@@ -120,6 +122,7 @@ public class TurnoServiceImpl implements TurnoService {
         turnoE.setNroTurno(nroTurno);
         turnoE.setInicio(LocalDateTime.now());
         turnoE.setPartida(partida);
+        turnoE.setReagrupado(false);
 
         // Calcular fichas al inicio del turno
         if (partida.getHostilidad()) {
@@ -375,9 +378,69 @@ public class TurnoServiceImpl implements TurnoService {
             throw new IllegalArgumentException("Fase no correspondiente.");
         }
 
+        if (turnoActual.isReagrupado()) {
+            throw new IllegalArgumentException("Ya reagrupaste tropas en este turno. Solo se permite reagrupar una vez por turno.");
+        }
+
+        // Validar conectividad: origen y destino deben estar conectados a través de territorio propio
+        if (!esConectadoPorTerritorioPropio(moverFichas.getIdPaisOrigen(), moverFichas.getIdPaisDestino(),
+                moverFichas.getIdJugador(), partida.getIdPartida())) {
+            throw new IllegalArgumentException("Los países no están conectados a través de tu territorio.");
+        }
+
         var rta = estadoPaisService.agrupacionFichas(moverFichas);
 
+        if (rta) {
+            turnoActual.setReagrupado(true);
+            turnoRepository.save(turnoActual);
+        }
+
         return rta;
+    }
+
+    /**
+     * BFS: verifica si existe un camino entre origen y destino
+     * pasando únicamente por países del mismo jugador.
+     */
+    private boolean esConectadoPorTerritorioPropio(Long idOrigen, Long idDestino,
+            Long idJugador, Long idPartida) {
+        if (idOrigen.equals(idDestino)) return false;
+
+        Set<Long> visited = new HashSet<>();
+        Queue<Long> queue = new LinkedList<>();
+        queue.add(idOrigen);
+        visited.add(idOrigen);
+
+        while (!queue.isEmpty()) {
+            Long current = queue.poll();
+
+            // Obtener todos los países limítrofes del actual
+            List<LimiteEntity> limites = limiteRepository
+                    .findByPais1_IdPaisOrPais2_IdPais(current, current);
+            Set<Long> adjacentIds = limites.stream()
+                    .map(l -> l.getPais1().getIdPais().equals(current)
+                            ? l.getPais2().getIdPais()
+                            : l.getPais1().getIdPais())
+                    .collect(Collectors.toSet());
+
+            // Filtrar solo los que son del jugador en esta partida
+            List<EstadoPaisEntity> ownedAdjacent = estadoPaisRepository
+                    .findAllByPais_IdPaisInAndPartida_IdPartida(adjacentIds, idPartida)
+                    .stream()
+                    .filter(ep -> ep.getJugador() != null
+                            && ep.getJugador().getIdJugador().equals(idJugador))
+                    .collect(Collectors.toList());
+
+            for (EstadoPaisEntity adj : ownedAdjacent) {
+                Long adjId = adj.getPais().getIdPais();
+                if (adjId.equals(idDestino)) return true;
+                if (!visited.contains(adjId)) {
+                    visited.add(adjId);
+                    queue.add(adjId);
+                }
+            }
+        }
+        return false;
     }
 
     @Transactional
@@ -696,6 +759,7 @@ public class TurnoServiceImpl implements TurnoService {
             estadoPaisRepository.save(estadoPaisAtacante);
         }
 
+        response.setConquista(conquista);
         response.setAtaqueExitoso(conquista || perdidasDefensor > 0);
         return response;
     }

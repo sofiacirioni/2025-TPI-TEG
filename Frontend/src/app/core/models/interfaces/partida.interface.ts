@@ -103,6 +103,7 @@ export interface Continente {
 
 export interface AtaqueResponseDto {
   ataqueExitoso: boolean;
+  conquista: boolean;
   dadosAtaque: number[];
   dadosDefensor: number[];
 }

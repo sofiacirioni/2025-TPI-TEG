@@ -35,4 +35,7 @@ public class TurnoEntity {
     @Column
     private LocalDateTime inicio;
 
+    @Column(columnDefinition = "boolean default false")
+    private boolean reagrupado = false;
+
 }

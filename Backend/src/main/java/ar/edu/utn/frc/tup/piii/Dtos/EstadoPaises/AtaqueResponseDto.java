@@ -11,6 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 public class AtaqueResponseDto {
     boolean ataqueExitoso;
+    boolean conquista;
     List<Integer> dadosAtaque;
     List<Integer> dadosDefensor;
 }

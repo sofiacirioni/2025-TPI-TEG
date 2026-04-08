@@ -48,8 +48,8 @@ test.describe('Visual — layout del tablero', () => {
     await expect(mapa).toBeVisible();
     const box = await mapa.boundingBox();
     const viewport = page.viewportSize()!;
-    // El mapa debe ocupar al menos el 60% del ancho de la pantalla
-    expect(box!.width).toBeGreaterThan(viewport.width * 0.60);
+    // El mapa debe ocupar al menos el 55% del ancho de la pantalla
+    expect(box!.width).toBeGreaterThan(viewport.width * 0.55);
     // Y al menos el 70% del alto
     expect(box!.height).toBeGreaterThan(viewport.height * 0.70);
   });

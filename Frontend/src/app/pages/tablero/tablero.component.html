@@ -208,9 +208,13 @@
           <span class="ataque-flecha">→</span>
           <span class="ataque-hacia">{{ paisDestinoNombreModal }}</span>
         </div>
-        <div class="ataque-resultado" [class.exito]="ataqueResultado.ataqueExitoso"
+        <div class="ataque-resultado"
+             [class.exito]="ataqueResultado.ataqueExitoso"
+             [class.conquista]="ataqueResultado.conquista"
              [class.fallo]="!ataqueResultado.ataqueExitoso">
-          {{ ataqueResultado.ataqueExitoso ? '¡CONQUISTA!' : 'REPELIDO' }}
+          @if (ataqueResultado.conquista) { ¡CONQUISTA! }
+          @else if (ataqueResultado.ataqueExitoso) { ATAQUE EXITOSO }
+          @else { REPELIDO }
         </div>
         <div class="dados-fila">
           <div class="dados-grupo">

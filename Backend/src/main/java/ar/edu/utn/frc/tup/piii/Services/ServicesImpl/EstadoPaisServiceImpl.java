@@ -269,14 +269,9 @@ public class EstadoPaisServiceImpl implements EstadoPaisService {
                 .findByPais_IdPaisAndJugador_IdJugador(moverFichas.getIdPaisDestino(), moverFichas.getIdJugador())
                 .orElseThrow(() -> new RuntimeException("Destino no encontrado"));
 
-        // Validar que el origen tenga la cantidad de fichas
+        // Validar que el origen tenga la cantidad de fichas (debe quedar al menos 1)
         if ((estadoOrigen.getCantidadTropas() - moverFichas.getCantidadFichas()) <= 0) {
             throw new RuntimeException("Las fichas no son suficientes");
-        }
-
-        // Validar que sean limitrofe
-        if (!sonLimitrofes(estadoOrigen.getPais().getIdPais(), estadoDestino.getPais().getIdPais())) {
-            throw new RuntimeException("Los paises no son limitrofes");
         }
 
         estadoOrigen.setCantidadTropas(estadoOrigen.getCantidadTropas() - moverFichas.getCantidadFichas().intValue());
