@@ -246,7 +246,7 @@
     </object>
   </div>
 
-  <!-- ══ PANEL DERECHO: JUGADORES + CHAT ═════════════════════════ -->
+  <!-- ══ PANEL DERECHO: JUGADORES ════════════════════════════════ -->
   <div class="panel-derecho">
     <div class="panel-jugadores">
       @for (jugador of partida.jugadores ?? []; track jugador.idJugador) {
@@ -273,29 +273,6 @@
         </div>
       }
     </div>
-
-    <!-- Chat grupal (derecha) -->
-    <div class="chat-panel">
-      <div class="chat-titulo">CONVERSACIONES</div>
-      <div class="chat-mensajes">
-        @for (msg of chatMensajes; track $index) {
-          <div class="chat-msg">
-            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
-            {{ msg.texto }}
-          </div>
-        }
-        @if (chatMensajes.length === 0) {
-          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
-        }
-      </div>
-      <div class="chat-input-row">
-        <input class="chat-input" type="text" placeholder="Escribir..."
-               [(ngModel)]="chatInput"
-               (keyup.enter)="enviarChat()" />
-        <button class="chat-send" (click)="enviarChat()">▶</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
@@ -320,18 +297,42 @@
     <div class="tarjetas-panel">
       <div class="tarjetas-titulo">TARJETAS</div>
       <div class="tarjetas-contenido">
-        @for (t of cartasJugador.slice(0, 5); track t.idEstadoTarjeta) {
+        @for (t of cartasJugador; track t.idEstadoTarjeta) {
           <div class="tarjeta-mini" [class.canjeada]="t.canjeada" [title]="t.tarjeta?.pais?.nombre ?? ''">
-            {{ t.tarjeta?.simbolo?.charAt(0) ?? '?' }}
+            <span class="tarjeta-simbolo">{{ t.tarjeta?.simbolo?.charAt(0) ?? '?' }}</span>
+            <span class="tarjeta-pais">{{ t.tarjeta?.pais?.nombre | nombrePais }}</span>
           </div>
         }
-        <span class="tarjetas-count">{{ cartasJugador.length }}</span>
+        @if (cartasJugador.length === 0) {
+          <div class="tarjetas-empty">Sin tarjetas.</div>
+        }
       </div>
       @if (puedeCanjear && esMiTurno) {
         <button class="btn-canjear" (click)="abrirModalCanje()">· CANJEAR ·</button>
       }
     </div>
 
+    <!-- Conversaciones (esquina inferior) -->
+    <div class="chat-panel">
+      <div class="chat-titulo">CONVERSACIONES</div>
+      <div class="chat-mensajes">
+        @for (msg of chatMensajes; track $index) {
+          <div class="chat-msg">
+            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
+            {{ msg.texto }}
+          </div>
+        }
+        @if (chatMensajes.length === 0) {
+          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
+        }
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" type="text" placeholder="Escribir..."
+               [(ngModel)]="chatInput"
+               (keyup.enter)="enviarChat()" />
+        <button class="chat-send" (click)="enviarChat()">▶</button>
+      </div>
+    </div>
 
   </div>
 

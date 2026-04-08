@@ -250,32 +250,39 @@ public class TurnoServiceImpl implements TurnoService {
     @Transactional
     @Override
     public boolean validarAtaque(Pais origen, Pais destino, Jugador jugador) {
+        JugadorEntity jugadorEntity = jugadorRepository.findById(jugador.getIdJugador())
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
+        Long idPartida = jugadorEntity.getPartida().getIdPartida();
+
         Optional<EstadoPaisEntity> estadoOrigen = estadoPaisRepository
                 .findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
-        Optional<EstadoPaisEntity> estadoDestino = estadoPaisRepository.findById(destino.getIdPais());
-        EstadoPais eOrigen = modelMapper.map(estadoOrigen, EstadoPais.class);
-        EstadoPais eDestino = modelMapper.map(estadoDestino, EstadoPais.class);
+        Optional<EstadoPaisEntity> estadoDestino = estadoPaisRepository
+                .findByPais_IdPaisAndPartida_IdPartida(destino.getIdPais(), idPartida);
 
-        PaisEntity pais1 = modelMapper.map(origen, PaisEntity.class);
-        PaisEntity pais2 = modelMapper.map(destino, PaisEntity.class);
-
-        if (estadoOrigen.isPresent() && estadoDestino.isPresent()) {
+        // Ambos países deben existir
+        if (estadoOrigen.isEmpty() || estadoDestino.isEmpty()) {
             return false;
         }
 
-        if (eOrigen.getJugador().equals(eDestino.getJugador())) {
+        EstadoPaisEntity eOrigen = estadoOrigen.get();
+        EstadoPaisEntity eDestino = estadoDestino.get();
+
+        // No puede atacar su propio país
+        if (eDestino.getJugador() != null &&
+                eDestino.getJugador().getIdJugador().equals(jugador.getIdJugador())) {
             return false;
         }
 
-        if (!estadoPaisService.sonLimitrofes(pais1.getIdPais(), pais2.getIdPais())) {
+        // Los países deben ser limítrofes
+        if (!estadoPaisService.sonLimitrofes(eOrigen.getPais().getIdPais(), eDestino.getPais().getIdPais())) {
             return false;
         }
+
+        // Necesita al menos 2 tropas para atacar
         if (eOrigen.getCantidadTropas() < 2) {
             return false;
         }
-        if (eOrigen.getCantidadTropas() < eDestino.getCantidadTropas()) {
-            return false;
-        }
+
         return true;
     }
 
@@ -286,17 +293,22 @@ public class TurnoServiceImpl implements TurnoService {
                 .findByPaisIdPaisAndJugadorIdJugador(origen.getIdPais(), jugador.getIdJugador());
         Optional<EstadoPaisEntity> estadosDestino = estadoPaisRepository
                 .findByPaisIdPaisAndJugadorIdJugador(destino.getIdPais(), jugador.getIdJugador());
-        EstadoPais eOrigen = modelMapper.map(estadoOrigen, EstadoPais.class);
-        EstadoPais eDestino = modelMapper.map(estadosDestino, EstadoPais.class);
-        if (eOrigen == null || eDestino == null) {
+
+        // Ambos países deben pertenecer al jugador
+        if (estadoOrigen.isEmpty() || estadosDestino.isEmpty()) {
             return false;
         }
-        PaisEntity pais1 = modelMapper.map(origen, PaisEntity.class);
-        PaisEntity pais2 = modelMapper.map(destino, PaisEntity.class);
-        if (estadoPaisService.sonLimitrofes(pais1.getIdPais(), pais2.getIdPais())) {
+
+        EstadoPaisEntity eOrigen = estadoOrigen.get();
+        EstadoPaisEntity eDestino = estadosDestino.get();
+
+        // Los países deben ser limítrofes
+        if (!estadoPaisService.sonLimitrofes(eOrigen.getPais().getIdPais(), eDestino.getPais().getIdPais())) {
             return false;
         }
-        if (eOrigen.getCantidadTropas() < 2 && eDestino.getCantidadTropas() < 1) {
+
+        // El origen debe tener al menos 2 tropas (siempre deja 1 fija)
+        if (eOrigen.getCantidadTropas() < 2) {
             return false;
         }
 

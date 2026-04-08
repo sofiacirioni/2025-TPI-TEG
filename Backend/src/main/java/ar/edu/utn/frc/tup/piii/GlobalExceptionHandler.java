@@ -1,5 +1,6 @@
 package ar.edu.utn.frc.tup.piii;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,30 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(IllegalArgumentException.class)
         public ResponseEntity<?> manejarIllegalArgument(IllegalArgumentException ex) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                                Map.of(
+                                                "mensaje", ex.getMessage(),
+                                                "timestamp", generarTimestamp()));
+        }
+
+        @ExceptionHandler(IllegalStateException.class)
+        public ResponseEntity<?> manejarIllegalState(IllegalStateException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                                Map.of(
+                                                "mensaje", ex.getMessage(),
+                                                "timestamp", generarTimestamp()));
+        }
+
+        @ExceptionHandler(EntityNotFoundException.class)
+        public ResponseEntity<?> manejarEntityNotFound(EntityNotFoundException ex) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                                Map.of(
+                                                "mensaje", ex.getMessage(),
+                                                "timestamp", generarTimestamp()));
+        }
+
+        @ExceptionHandler(RuntimeException.class)
+        public ResponseEntity<?> manejarRuntime(RuntimeException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                                 Map.of(
                                                 "mensaje", ex.getMessage(),
                                                 "timestamp", generarTimestamp()));

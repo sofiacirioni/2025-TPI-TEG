@@ -16,13 +16,13 @@ import { SlideInDirective } from '../../shared/directives/index';
 export class FormUsuarioComponent {
 
   imagen: string[] = [
-    'assets/images/members/AgosCh.png',
-    'assets/images/members/CandeArguello.png',
-    'assets/images/members/CandeBlanco.png',
-    'assets/images/members/LaraHeredia.png',
-    'assets/images/members/MeliAbril.png',
-    'assets/images/members/SofiCirioni.png',
-    'assets/images/members/Maxi.png'
+    'assets/images/avatars/AgosCh.png',
+    'assets/images/avatars/CandeArguello.png',
+    'assets/images/avatars/CandeBlanco.png',
+    'assets/images/avatars/LaraHeredia.png',
+    'assets/images/avatars/MeliAbril.png',
+    'assets/images/avatars/SofiCirioni.png',
+    'assets/images/avatars/Maxi.png'
   ];
 
   mostrarGaleria      = false;

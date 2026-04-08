@@ -595,10 +595,10 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   getAvatarJugador(idJugador: number): string {
     const avatares = [
-      'assets/miembros/AgosCh.png', 'assets/miembros/CandeArguello.png',
-      'assets/miembros/CandeBlanco.jpeg', 'assets/miembros/LaraHeredia.png',
-      'assets/miembros/MeliAbril.png', 'assets/miembros/SofiCirioni.png',
-      'assets/miembros/Maxi.png'
+      'assets/images/avatars/AgosCh.png', 'assets/images/avatars/CandeArguello.png',
+      'assets/images/avatars/CandeBlanco.png', 'assets/images/avatars/LaraHeredia.png',
+      'assets/images/avatars/MeliAbril.png', 'assets/images/avatars/SofiCirioni.png',
+      'assets/images/avatars/Maxi.png'
     ];
     return avatares[idJugador % avatares.length];
   }
