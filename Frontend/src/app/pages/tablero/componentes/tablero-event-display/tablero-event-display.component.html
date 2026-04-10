@@ -1,0 +1,174 @@
+@if (visible && currentEvent) {
+  <div class="ted-wrapper" [class.dismissing]="dismissing" [attr.aria-live]="'polite'">
+
+    <!-- ════════════════════════════════════════════════════════
+         MODO COMBATE: selección de dados (ATAQUE_INICIADO)
+         ════════════════════════════════════════════════════════ -->
+    @if (currentEvent.tipo === 'ATAQUE_INICIADO' && currentEvent.diceSelection) {
+      <div class="ted-vignette"></div>
+      <div class="ted-combat-panel" role="dialog" aria-modal="true" aria-labelledby="ted-combat-title">
+
+        <!-- Header -->
+        <div class="ted-combat-header">
+          <span class="ted-combat-icon">⚔</span>
+          <span id="ted-combat-title" class="ted-combat-title">ELECCIÓN DE DADOS</span>
+          <span class="ted-combat-icon">⚔</span>
+        </div>
+
+        <!-- Frente a frente -->
+        <div class="ted-combatants">
+          <div class="ted-country atk" [style.color]="currentEvent.colorJugador">
+            <span class="ted-country-lbl">ATACA</span>
+            <span class="ted-country-name">{{ currentEvent.paisOrigen }}</span>
+            <span class="ted-player-name">{{ currentEvent.jugadorActivo }}</span>
+          </div>
+          <div class="ted-vs">VS</div>
+          <div class="ted-country def">
+            <span class="ted-country-lbl">DEFIENDE</span>
+            <span class="ted-country-name">{{ currentEvent.paisDestino }}</span>
+          </div>
+        </div>
+
+        <!-- Selector de dados -->
+        <div class="ted-dice-selector">
+          <span class="ted-dice-lbl">DADOS A USAR</span>
+          <div class="ted-dice-btns" role="group" aria-label="Cantidad de dados">
+            @for (n of range(maxDados); track n) {
+              <button class="ted-dice-btn"
+                      [class.selected]="dadosSeleccionados === n"
+                      (click)="seleccionarDados(n)"
+                      [attr.aria-pressed]="dadosSeleccionados === n">
+                {{ n }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="ted-timer" [class.urgente]="timerValue <= 2">
+          <span class="ted-timer-val">{{ timerValue }}</span>
+          <span class="ted-timer-lbl">seg.</span>
+        </div>
+
+        <button class="ted-attack-btn" (click)="confirmarAtaque()">
+          · ATACAR ·
+        </button>
+
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         MODO RESULTADO DE DADOS (RESULTADO_DADOS / CONQUISTA sin mostrandoConquista)
+         ════════════════════════════════════════════════════════ -->
+    @if ((currentEvent.tipo === 'RESULTADO_DADOS' || currentEvent.tipo === 'CONQUISTA') && !mostrandoConquista) {
+      <div class="ted-vignette"></div>
+      <div class="ted-result-panel">
+
+        <!-- Header -->
+        <div class="ted-combat-header">
+          <span class="ted-combat-icon">⚔</span>
+          <span class="ted-combat-title">RESULTADO DEL COMBATE</span>
+          <span class="ted-combat-icon">⚔</span>
+        </div>
+
+        <!-- Países -->
+        <div class="ted-combatants">
+          <div class="ted-country atk" [style.color]="currentEvent.colorJugador">
+            <span class="ted-country-lbl">ATACANTE</span>
+            <span class="ted-country-name">{{ currentEvent.paisOrigen }}</span>
+            <span class="ted-player-name">{{ currentEvent.jugadorActivo }}</span>
+          </div>
+          <div class="ted-vs">→</div>
+          <div class="ted-country def">
+            <span class="ted-country-lbl">DEFENSOR</span>
+            <span class="ted-country-name">{{ currentEvent.paisDestino }}</span>
+          </div>
+        </div>
+
+        <!-- Dados -->
+        <div class="ted-dice-result">
+          <div class="ted-dice-group">
+            <span class="ted-dice-lbl">Atacante</span>
+            <div class="ted-dice-row">
+              @for (d of dadosAtaqueAnimados; track $index) {
+                <span class="ted-dado" [class.animado]="d.animado" [class.perdedor]="d.perdedor">
+                  {{ getEmojiDado(d.valor) }}
+                </span>
+              }
+            </div>
+            @if ((currentEvent.perdidasAtacante ?? 0) > 0) {
+              <span class="ted-perdidas">-{{ currentEvent.perdidasAtacante }} ej.</span>
+            }
+          </div>
+          <div class="ted-dice-sep">⚡</div>
+          <div class="ted-dice-group">
+            <span class="ted-dice-lbl">Defensor</span>
+            <div class="ted-dice-row">
+              @for (d of dadosDefensorAnimados; track $index) {
+                <span class="ted-dado" [class.animado]="d.animado" [class.perdedor]="d.perdedor">
+                  {{ getEmojiDado(d.valor) }}
+                </span>
+              }
+            </div>
+            @if ((currentEvent.perdidasDefensor ?? 0) > 0) {
+              <span class="ted-perdidas">-{{ currentEvent.perdidasDefensor }} ej.</span>
+            }
+          </div>
+        </div>
+
+        <!-- Resultado textual -->
+        <div class="ted-result-label" [class.conquista]="currentEvent.conquista">
+          @if (currentEvent.conquista) { ¡CONQUISTA! }
+          @else if ((currentEvent.perdidasDefensor ?? 0) > 0) { ATAQUE EXITOSO }
+          @else { REPELIDO }
+        </div>
+
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         FASE CONQUISTA (transición post-resultado)
+         ════════════════════════════════════════════════════════ -->
+    @if (mostrandoConquista) {
+      <div class="ted-vignette conquista-vignette"></div>
+      <div class="ted-conquista-panel">
+        <div class="ted-conquista-star">★</div>
+        <div class="ted-conquista-titulo">¡CONQUISTA!</div>
+        <div class="ted-conquista-info" [style.color]="currentEvent.colorJugador">
+          {{ currentEvent.jugadorActivo }}
+        </div>
+        <div class="ted-conquista-texto">
+          conquistó <strong>{{ currentEvent.paisDestino }}</strong>
+        </div>
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         MODO NOTIFICACIÓN SIMPLE (resto de eventos)
+         ════════════════════════════════════════════════════════ -->
+    @if (currentEvent.tipo !== 'ATAQUE_INICIADO'
+         && currentEvent.tipo !== 'RESULTADO_DADOS'
+         && currentEvent.tipo !== 'CONQUISTA') {
+      <div class="ted-notif"
+           role="status"
+           [style.--player-color]="currentEvent.colorJugador ?? 'var(--player-rojo)'">
+
+        <!-- Barra de color del jugador -->
+        <div class="ted-notif-stripe"></div>
+
+        <!-- Contenido -->
+        <div class="ted-notif-body">
+          <span class="ted-notif-icon">{{ getIconoEvento() }}</span>
+          <div class="ted-notif-text">
+            <span class="ted-notif-titulo">{{ currentEvent.titulo }}</span>
+            @if (currentEvent.descripcion) {
+              <span class="ted-notif-desc">{{ currentEvent.descripcion }}</span>
+            }
+          </div>
+        </div>
+
+      </div>
+    }
+
+  </div>
+}

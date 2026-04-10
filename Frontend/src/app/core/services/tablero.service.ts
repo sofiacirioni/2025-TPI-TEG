@@ -13,6 +13,7 @@ import { environment } from '../../../environments/environment';
 export class TableroServicio {
   private apiUrl = environment.apiUrl;
   private pollingSubscription?: Subscription;
+  private currentUrl = '';
 
   private _polling = new BehaviorSubject<boolean>(true);
 
@@ -20,14 +21,29 @@ export class TableroServicio {
     return this.http.get<EstadoPaisDto[]>(`${this.apiUrl}/estado/pais/limites/${id}`);
   }
 
+  getDestinosReagrupamiento(idEstadoPaisOrigen: number, idJugador: number, idPartida: number): Observable<EstadoPaisDto[]> {
+    return this.http.get<EstadoPaisDto[]>(
+      `${this.apiUrl}/turno/reagrupar/destinos?idEstadoPaisOrigen=${idEstadoPaisOrigen}&idJugador=${idJugador}&idPartida=${idPartida}`
+    );
+  }
+
   startPolling(url: string) {
-    this._polling.next(true)
+    this.currentUrl = url;
+    this._polling.next(true);
     this.startSubscription(url);
   }
 
   stopPolling() {
-    this._polling.next(false)
+    this._polling.next(false);
+  }
 
+  /** Dispara una consulta inmediata sin esperar el próximo tick del intervalo. */
+  forceRefresh(): void {
+    if (!this.currentUrl) return;
+    this.obtenerPartidaByUrl(this.currentUrl).subscribe({
+      next: p => this._partida.next(p),
+      error: () => {}
+    });
   }
 
   //Subject

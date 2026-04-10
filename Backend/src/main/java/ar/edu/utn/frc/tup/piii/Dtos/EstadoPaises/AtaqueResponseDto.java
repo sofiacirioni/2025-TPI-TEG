@@ -14,4 +14,6 @@ public class AtaqueResponseDto {
     boolean conquista;
     List<Integer> dadosAtaque;
     List<Integer> dadosDefensor;
+    int perdidasAtacante;
+    int perdidasDefensor;
 }

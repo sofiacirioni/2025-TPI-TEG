@@ -1,12 +1,14 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.*;
+import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
 import ar.edu.utn.frc.tup.piii.models.*;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +47,14 @@ public class TurnoController {
     @PutMapping("/reagrupar")
     public ResponseEntity<Boolean> reagruparFichas(@RequestBody MoverFichas moverFichas) {
         return ResponseEntity.ok(turnoService.moverFichas(moverFichas));
+    }
+
+    @GetMapping("/reagrupar/destinos")
+    public ResponseEntity<List<EstadoPaisDto>> getDestinosReagrupamiento(
+            @RequestParam Long idPaisOrigen,
+            @RequestParam Long idJugador,
+            @RequestParam Long idPartida) {
+        return ResponseEntity.ok(turnoService.getDestinosReagrupamiento(idPaisOrigen, idJugador, idPartida));
     }
 
     @PutMapping("/ataque")

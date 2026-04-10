@@ -1,9 +1,14 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { take } from 'rxjs';
 import { TableroServicio } from '../../core/services/tablero.service';
+import { WebSocketService } from '../../core/services/socket.service';
+import { TableroEventService } from '../../core/services/tablero-event.service';
+import { GameEvent } from '../../core/models/interfaces/game-event.interface';
 import { MapaSvgComponent, PaisClickEvent } from './componentes/mapa-svg/mapa-svg.component';
+import { TableroEventDisplayComponent } from './componentes/tablero-event-display/tablero-event-display.component';
 import {
   AtaqueDto,
   AtaqueResponseDto,
@@ -38,7 +43,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })
@@ -49,6 +54,11 @@ export class TableroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private notificationService = inject(NotificationService);
+  private wsService = inject(WebSocketService);
+  readonly tableroEventService = inject(TableroEventService);
+
+  /** true cuando ya nos suscribimos al topic de la partida (solo 1 vez) */
+  private wsPartidaSuscripto = false;
 
   // ── Estado de partida ──────────────────────────────────────
   url!: string;
@@ -213,6 +223,22 @@ export class TableroComponent implements OnInit, OnDestroy {
 
     this.clockInterval = setInterval(() => { this.horaActual = new Date(); this.updateClockHands(); }, 1000);
 
+    // Registrar eventos WS en el historial (solo los que vienen de otros jugadores —
+    // los propios ya se registran en atacarDesdeModal / reagruparDesdeModal)
+    this.tableroEventService.currentEvent$.subscribe(event => {
+      if (!event) return;
+      // ATAQUE_INICIADO: solo UI local, sin historial
+      // RESULTADO_DADOS y CONQUISTA propios: ya los registra atacarDesdeModal
+      // REAGRUPAMIENTO propio: ya lo registra reagruparDesdeModal
+      // Los demás (FIN_TURNO, INCORPORACION, TARJETA_*, ataques de otros) sí se registran
+      const esPropioYaRegistrado =
+        event.jugadorActivo === this.jugadorUsuario?.nombre &&
+        (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA' || event.tipo === 'REAGRUPAMIENTO');
+      if (esPropioYaRegistrado || event.tipo === 'ATAQUE_INICIADO') return;
+      const texto = this.textoHistorialEvento(event);
+      if (texto) this.agregarHistorial(texto, this.tipoHistorialEvento(event));
+    });
+
     this.tableroServicio.partidaObservable.subscribe({
       next: (result: PartidaDto | null) => {
         if (!result) return;
@@ -231,6 +257,16 @@ export class TableroComponent implements OnInit, OnDestroy {
             error: err => console.error('Error consultarMotivoGanador:', err)
           });
           return;
+        }
+
+        // Suscribir al topic WS de la partida la primera vez que cargue
+        if (!this.wsPartidaSuscripto && result.idPartida) {
+          this.wsPartidaSuscripto = true;
+          this.wsService.asegurarConexion();
+          this.wsService.suscribirseEventosPartida(result.idPartida, evento => {
+            const esJugadorLocal = evento.jugadorNombre === this.jugadorUsuario?.nombre;
+            this.tableroEventService.enqueueFromWs(evento, esJugadorLocal);
+          });
         }
 
         const turnoAnteriorNum = this.lastTurnoActual;
@@ -283,6 +319,7 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.tableroServicio.stopPolling();
+    this.wsService.desuscribirsePartida();
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (this.clockInterval) clearInterval(this.clockInterval);
   }
@@ -304,6 +341,7 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Acciones de turno ──────────────────────────────────────
   avanzarFaseTurno() {
     this.tableroServicio.cambiarTurno(this.partida.idPartida).subscribe({
+      next: () => this.tableroServicio.forceRefresh(),
       error: err => console.error('Error al avanzar fase:', err)
     });
   }
@@ -371,8 +409,15 @@ export class TableroComponent implements OnInit, OnDestroy {
     };
     this.tableroServicio.realizarCanje(dto).subscribe({
       next: (tropas: number) => {
-        this.notificationService.success(`Canje exitoso. Tropas obtenidas: ${tropas}`);
         this.cerrarModalCanje();
+        this.tableroEventService.enqueue({
+          tipo: 'TARJETA_CANJEADA',
+          titulo: 'CANJE DE TARJETAS',
+          descripcion: `${this.jugadorUsuario?.nombre ?? 'Jugador'} obtuvo ${tropas} ejércitos`,
+          jugadorActivo: this.jugadorUsuario?.nombre,
+          colorJugador: this.getColorVarJugador(this.jugadorUsuario?.color ?? ''),
+          duracionMs: 3500,
+        });
       },
       error: () => this.notificationService.error('Error al realizar el canje.')
     });
@@ -402,6 +447,7 @@ export class TableroComponent implements OnInit, OnDestroy {
   cerrarModalPais() { this.paisModalSeleccionado = null; }
 
   private calcularLimitrofes() {
+    // Países enemigos: limítrofes directos de otro jugador (para atacar)
     this.paisesEnemigos = [];
     const enemigosIds = new Set<number>();
     for (const p of this.paisesLimitrofes) {
@@ -410,43 +456,100 @@ export class TableroComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Para reagrupar: todos los países propios del jugador (excepto el actual)
-    // El backend BFS validará si hay camino conectado a través del territorio propio
-    const idSeleccionado = this.paisModalSeleccionado?.pais.idPais;
+    // Para reagrupar: pedir al backend los destinos válidos vía BFS
+    this.paisesAliados = [];
+    const idOrigen = this.paisModalSeleccionado?.pais.idPais;
     const idJugador = this.jugadorUsuario?.idJugador;
-    this.paisesAliados = (this.partida?.estadoPaises ?? [])
-      .filter(ep => ep.idJugador === idJugador && ep.pais.idPais !== idSeleccionado);
+    if (idOrigen == null || idJugador == null) return;
+
+    this.tableroServicio.getDestinosReagrupamiento(idOrigen, idJugador, this.partida.idPartida).subscribe({
+      next: destinos => { this.paisesAliados = destinos; },
+      error: () => {
+        // Fallback: mostrar solo limítrofes propios directos
+        this.paisesAliados = this.paisesLimitrofes.filter(p => p.idJugador === idJugador);
+      }
+    });
   }
 
   atacarDesdeModal() {
     if (!this.jugadorUsuario || !this.paisModalSeleccionado) return;
     if (this.idPaisDestinoModal === -1) { this.notificationService.warning('Seleccioná un país destino.'); return; }
-    const dto: AtaqueDto = {
-      idJugador: this.jugadorUsuario.idJugador,
-      idPaisOrigen: this.paisModalSeleccionado.pais.idPais,
-      idPaisDestino: Number(this.idPaisDestinoModal)
-    };
-    this.tableroServicio.atacarPais(dto).subscribe({
-      next: response => {
-        this.ataqueResultado = response;
-        this.paisOrigenNombreModal = this.paisModalSeleccionado!.pais.nombre;
-        this.paisDestinoNombreModal = this.paisesEnemigos.find(p => p.pais.idPais === dto.idPaisDestino)?.pais.nombre ?? '';
-        this.showAtaqueResultado = true;
-        this.agregarHistorial(
-          `${this.jugadorUsuario!.nombre} ${response.conquista ? 'conquistó' : 'atacó'} ${this.paisDestinoNombreModal}`,
-          response.conquista ? 'ataque' : 'normal'
-        );
-        this.cerrarModalPais();
-      },
-      error: err => { console.error('Error ataque:', err); this.notificationService.error('Error al atacar.'); }
+
+    const paisOrigenNombre  = this.paisModalSeleccionado.pais.nombre;
+    const idDestino         = Number(this.idPaisDestinoModal);
+    const paisDestinoNombre = this.paisesEnemigos.find(p => p.pais.idPais === idDestino)?.pais.nombre ?? '';
+    const maxDados          = Math.min(3, Math.max(1, this.paisModalSeleccionado.cantidadTropas - 1));
+    const colorJugador      = this.getColorVarJugador(this.jugadorUsuario.color);
+    // Guardar ID origen ANTES de cerrar el modal (cerrarModalPais() lo pone en null)
+    const idOrigen          = this.paisModalSeleccionado.pais.idPais;
+
+    // Cerrar modal primero, luego mostrar selección de dados
+    this.cerrarModalPais();
+
+    // Suscribirse al resultado de dados ANTES de encolar el evento
+    this.tableroEventService.diceResult$.pipe(take(1)).subscribe(cantDados => {
+      const dto: AtaqueDto = {
+        idJugador: this.jugadorUsuario!.idJugador,
+        idPaisOrigen: idOrigen,
+        idPaisDestino: idDestino,
+        cantDadosAtacante: cantDados,
+      };
+
+      this.tableroServicio.atacarPais(dto).subscribe({
+        next: (response: AtaqueResponseDto) => {
+          // Encolar resultado ANTES de avanzar la cola (para que processNext lo recoja)
+          this.tableroEventService.enqueue({
+            tipo: response.conquista ? 'CONQUISTA' : 'RESULTADO_DADOS',
+            titulo: response.conquista ? '¡CONQUISTA!' : 'RESULTADO DEL COMBATE',
+            jugadorActivo: this.jugadorUsuario!.nombre,
+            colorJugador,
+            paisOrigen: paisOrigenNombre,
+            paisDestino: paisDestinoNombre,
+            dadosAtaque: response.dadosAtaque,
+            dadosDefensor: response.dadosDefensor,
+            conquista: response.conquista,
+            perdidasAtacante: response.perdidasAtacante,
+            perdidasDefensor: response.perdidasDefensor,
+            duracionMs: response.conquista ? 5000 : 4000,
+          });
+          this.tableroEventService.advanceAfterDice();
+          this.tableroServicio.forceRefresh();
+
+          this.agregarHistorial(
+            `${this.jugadorUsuario!.nombre} ${response.conquista ? 'conquistó' : 'atacó'} ${paisDestinoNombre}`,
+            response.conquista ? 'ataque' : 'normal'
+          );
+        },
+        error: err => {
+          this.tableroEventService.advanceAfterDice();
+          console.error('Error ataque:', err);
+          this.notificationService.error('Error al atacar.');
+        }
+      });
+    });
+
+    // Encolar evento de selección de dados (bloqueante)
+    this.tableroEventService.enqueue({
+      tipo: 'ATAQUE_INICIADO',
+      titulo: 'ELECCIÓN DE DADOS',
+      jugadorActivo: this.jugadorUsuario.nombre,
+      colorJugador,
+      paisOrigen: paisOrigenNombre,
+      paisDestino: paisDestinoNombre,
+      diceSelection: { paisOrigen: paisOrigenNombre, paisDestino: paisDestinoNombre, maxDados, timerSegundos: 5 },
     });
   }
 
   defenderDesdeModal() {
     if (!this.jugadorUsuario || !this.paisModalSeleccionado) return;
+    const tropas = Math.floor(this.inputTropasModal);
+    if (tropas < 1 || tropas > this.ejercitosDisponibles) {
+      this.notificationService.warning(`Ingresá entre 1 y ${this.ejercitosDisponibles} ejércitos.`);
+      return;
+    }
     const body = {
       idJugador: this.jugadorUsuario.idJugador,
-      paisesFichas: [{ idPais: this.paisModalSeleccionado.pais.idPais, cantidadFichas: this.inputTropasModal }]
+      paisesFichas: [{ idPais: this.paisModalSeleccionado.pais.idPais, cantidadFichas: tropas }]
     };
     this.tableroServicio.defenderPais(body).subscribe({
       next: resultado => {
@@ -469,12 +572,20 @@ export class TableroComponent implements OnInit, OnDestroy {
       idPaisDestino: Number(this.idPaisDestinoModal),
       cantidadFichas: this.inputTropasModal
     };
+    const paisDest = this.paisesAliados.find(p => p.pais.idPais === Number(this.idPaisDestinoModal))?.pais.nombre ?? '';
     this.tableroServicio.reagruparFichas(dto).subscribe({
       next: resultado => {
         if (resultado) {
-          this.notificationService.success('Reagrupación exitosa.');
           this.agregarHistorial(`${this.jugadorUsuario!.nombre} reagrupó tropas`, 'ok');
           this.cerrarModalPais();
+          this.tableroEventService.enqueue({
+            tipo: 'REAGRUPAMIENTO',
+            titulo: 'REAGRUPAMIENTO',
+            descripcion: `${this.jugadorUsuario!.nombre} movió tropas hacia ${paisDest}`,
+            jugadorActivo: this.jugadorUsuario!.nombre,
+            colorJugador: this.getColorVarJugador(this.jugadorUsuario!.color),
+            duracionMs: 2500,
+          });
         }
       },
       error: err => { console.error('Error reagrupar:', err); this.notificationService.error('Error al reagrupar.'); }
@@ -536,6 +647,25 @@ export class TableroComponent implements OnInit, OnDestroy {
     if (this.historial.length > 20) this.historial.pop();
   }
 
+  private textoHistorialEvento(event: GameEvent): string {
+    switch (event.tipo) {
+      case 'CONQUISTA':       return `${event.jugadorActivo} conquistó ${event.paisDestino}`;
+      case 'RESULTADO_DADOS': return `${event.jugadorActivo} atacó ${event.paisDestino} desde ${event.paisOrigen}`;
+      case 'FIN_TURNO':       return event.descripcion ?? `Fin de turno de ${event.jugadorActivo}`;
+      case 'INCORPORACION':   return event.descripcion ?? `${event.jugadorActivo} incorporó ejércitos`;
+      case 'REAGRUPAMIENTO':  return event.descripcion ?? `${event.jugadorActivo} reagrupó tropas`;
+      case 'TARJETA_OBTENIDA': return event.descripcion ?? `${event.jugadorActivo} obtuvo una tarjeta`;
+      case 'TARJETA_CANJEADA': return event.descripcion ?? `${event.jugadorActivo} canjeó tarjetas`;
+      default: return '';
+    }
+  }
+
+  private tipoHistorialEvento(event: GameEvent): 'ataque' | 'ok' | 'normal' {
+    if (event.tipo === 'CONQUISTA') return 'ataque';
+    if (event.tipo === 'RESULTADO_DADOS') return 'normal';
+    return 'ok';
+  }
+
   // ── Chat ───────────────────────────────────────────────────
   enviarChat() {
     if (!this.chatInput.trim()) return;
@@ -559,6 +689,18 @@ export class TableroComponent implements OnInit, OnDestroy {
       case 'AMARILLO': return '#6B4C00';
       case 'VIOLETA':  return '#6B2490';
       default:         return '#888';
+    }
+  }
+
+  getColorVarJugador(color: string): string {
+    switch (color?.toUpperCase()) {
+      case 'ROJO':     return 'var(--player-rojo)';
+      case 'AZUL':     return 'var(--player-azul)';
+      case 'VERDE':    return 'var(--player-verde)';
+      case 'NARANJA':  return 'var(--player-naranja)';
+      case 'AMARILLO': return 'var(--player-dorado)';
+      case 'VIOLETA':  return 'var(--player-purpura)';
+      default:         return 'var(--player-rojo)';
     }
   }
 

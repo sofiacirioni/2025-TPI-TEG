@@ -65,6 +65,9 @@
     </div>
   }
 
+  <!-- ══ NOTIFICACIONES DE JUEGO (sobre el mapa) ══════════════════ -->
+  <app-tablero-event-display></app-tablero-event-display>
+
   <!-- ══ ZONA CENTRAL: MAPA ════════════════════════════════════════ -->
   <div class="mapa-zona"
        (wheel)="onWheel($event)"
@@ -116,10 +119,12 @@
               <!-- COLOCACION -->
               @if (puedoDefenderDesdeModal) {
                 <div class="modal-accion-group">
-                  <label class="modal-input-lbl">Tropas a colocar</label>
-                  <input class="modal-input" type="number" min="0" [max]="ejercitosDisponibles"
+                  <label class="modal-input-lbl">Tropas a colocar (disp: {{ ejercitosDisponibles }})</label>
+                  <input class="modal-input" type="number" min="1" [max]="ejercitosDisponibles"
                          [(ngModel)]="inputTropasModal" />
-                  <button class="btn-teg-primary btn-modal-accion" (click)="defenderDesdeModal()">
+                  <button class="btn-teg-primary btn-modal-accion"
+                          [disabled]="inputTropasModal < 1 || inputTropasModal > ejercitosDisponibles"
+                          (click)="defenderDesdeModal()">
                     · COLOCAR ·
                   </button>
                 </div>
@@ -151,8 +156,8 @@
                       <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
                     }
                   </select>
-                  <label class="modal-input-lbl">Tropas</label>
-                  <input class="modal-input" type="number" min="0"
+                  <label class="modal-input-lbl">Tropas (máx: {{ paisModalSeleccionado.cantidadTropas - 1 }})</label>
+                  <input class="modal-input" type="number" min="1"
                          [max]="paisModalSeleccionado.cantidadTropas - 1"
                          [(ngModel)]="inputTropasModal" />
                   <button class="btn-teg-primary btn-modal-accion" (click)="reagruparDesdeModal()">

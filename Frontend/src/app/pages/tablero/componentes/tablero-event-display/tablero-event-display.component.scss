@@ -1,0 +1,432 @@
+// ══════════════════════════════════════════════════════════════════
+//  TABLERO EVENT DISPLAY — Notificaciones de juego
+//  Design system: cuarto de operaciones militares s. XX
+// ══════════════════════════════════════════════════════════════════
+@import '../../../../../styles/tokens';
+
+// ── Wrapper posicionado sobre el mapa ─────────────────────────────
+:host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: calc(var(--z-vignette) + 6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.ted-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  padding-top: 14%; // tercio superior del área
+  animation: ted-slide-in 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+
+  &.dismissing {
+    animation: ted-slide-out 0.4s ease-in both;
+  }
+}
+
+@keyframes ted-slide-in {
+  from { opacity: 0; transform: translateY(-24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ted-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-18px); }
+}
+
+// ── Viñeta para modo combate ──────────────────────────────────────
+.ted-vignette {
+  position: fixed; inset: 0; pointer-events: none;
+  background: rgba(0, 0, 0, 0.52);
+  z-index: -1;
+
+  &.conquista-vignette {
+    background: rgba(80, 10, 10, 0.62);
+  }
+}
+
+// ── Paneles de combate ────────────────────────────────────────────
+.ted-combat-panel,
+.ted-result-panel {
+  pointer-events: all;
+  background: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.04) 0px, rgba(88, 58, 24, 0.04) 1px,
+    transparent 1px, transparent 7px
+  );
+  border: 1px solid rgba(67, 42, 30, 0.22);
+  border-radius: $radius-sm;
+  box-shadow:
+    inset 0 0 0 3px rgba(var(--color-sello), 0.0),  // se sobreescribe
+    0 8px 32px rgba(0, 0, 0, 0.65);
+  // Borde interior decorativo con el color sello
+  outline: 1.5px solid rgba(160, 21, 21, 0.22);
+  outline-offset: -5px;
+  padding: 20px 24px;
+  min-width: 300px;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+// ── Header con icono espadas ──────────────────────────────────────
+.ted-combat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 0.5px solid rgba(67, 42, 30, 0.15);
+  padding-bottom: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.ted-combat-icon {
+  font-size: 14px;
+  color: rgba(160, 21, 21, 0.65);
+}
+
+.ted-combat-title {
+  font-family: var(--font-heading);
+  font-size: $text-sm;
+  letter-spacing: 0.18em;
+  color: rgba(67, 42, 30, 0.55);
+  text-transform: uppercase;
+}
+
+// ── Frente a frente: países ───────────────────────────────────────
+.ted-combatants {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.ted-country {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+
+  &.atk .ted-country-name { font-weight: 700; }
+}
+
+.ted-country-lbl {
+  font-family: var(--font-heading);
+  font-size: $text-caption;
+  letter-spacing: 0.14em;
+  color: rgba(67, 42, 30, 0.4);
+  text-transform: uppercase;
+}
+
+.ted-country-name {
+  font-family: var(--font-heading);
+  font-size: $text-base;
+  color: var(--color-oscuro);
+  text-align: center;
+}
+
+.ted-player-name {
+  font-family: var(--font-body);
+  font-size: $text-caption;
+  color: inherit; // hereda el colorJugador del parent
+  font-style: italic;
+}
+
+.ted-vs {
+  font-family: var(--font-heading);
+  font-size: $text-lead;
+  color: rgba(160, 21, 21, 0.55);
+  flex-shrink: 0;
+}
+
+// ── Selector de dados ─────────────────────────────────────────────
+.ted-dice-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ted-dice-lbl {
+  font-family: var(--font-heading);
+  font-size: $text-caption;
+  letter-spacing: 0.14em;
+  color: rgba(67, 42, 30, 0.45);
+  text-transform: uppercase;
+}
+
+.ted-dice-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.ted-dice-btn {
+  width: 40px; height: 40px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba(67, 42, 30, 0.25);
+  background: rgba(67, 42, 30, 0.05);
+  font-family: var(--font-heading);
+  font-size: $text-lead;
+  color: var(--color-oscuro);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: rgba(160, 21, 21, 0.45);
+    background: rgba(160, 21, 21, 0.06);
+  }
+
+  &.selected {
+    background: rgba(160, 21, 21, 0.12);
+    border-color: rgba(160, 21, 21, 0.7);
+    color: var(--color-sello);
+    box-shadow: inset 0 0 0 1px rgba(160, 21, 21, 0.3);
+  }
+}
+
+// ── Timer ─────────────────────────────────────────────────────────
+.ted-timer {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  transition: color 0.3s;
+
+  &.urgente .ted-timer-val {
+    color: var(--color-sello);
+    animation: parpadeo-timer 0.5s ease-in-out infinite alternate;
+  }
+}
+
+.ted-timer-val {
+  font-family: var(--font-heading);
+  font-size: $text-h2;
+  color: rgba(67, 42, 30, 0.65);
+  line-height: 1;
+}
+
+.ted-timer-lbl {
+  font-family: var(--font-body);
+  font-size: $text-caption;
+  color: rgba(67, 42, 30, 0.4);
+}
+
+@keyframes parpadeo-timer {
+  from { opacity: 1; }
+  to   { opacity: 0.35; }
+}
+
+// ── Botón atacar ──────────────────────────────────────────────────
+.ted-attack-btn {
+  font-family: var(--font-heading);
+  font-size: $text-sm;
+  letter-spacing: 0.14em;
+  color: var(--color-claro);
+  background: rgba(160, 21, 21, 0.75);
+  border: 1px solid rgba(160, 21, 21, 0.85);
+  border-radius: $radius-pill;
+  padding: 8px 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(160, 21, 21, 0.92); }
+}
+
+// ── Resultado de dados ────────────────────────────────────────────
+.ted-dice-result {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.ted-dice-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ted-dice-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ted-dado {
+  font-size: 28px;
+  line-height: 1;
+  opacity: 0;
+  transform: rotate(-20deg) scale(0.5);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 1.4, 0.5, 1);
+  position: relative;
+
+  &.animado {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  &.perdedor::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: rgba(160, 21, 21, 0.35);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+}
+
+.ted-dice-sep {
+  font-size: 18px;
+  color: rgba(67, 42, 30, 0.35);
+  margin-top: 22px;
+}
+
+.ted-perdidas {
+  font-family: var(--font-body);
+  font-size: $text-caption;
+  color: var(--color-sello);
+  font-weight: 600;
+}
+
+.ted-result-label {
+  font-family: var(--font-heading);
+  font-size: $text-h3;
+  letter-spacing: 0.1em;
+  color: rgba(30, 122, 80, 0.85);
+
+  &.conquista {
+    color: var(--color-sello);
+    animation: conquista-pulse 0.5s ease-in-out 2;
+  }
+}
+
+@keyframes conquista-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+// ── Panel conquista ───────────────────────────────────────────────
+.ted-conquista-panel {
+  pointer-events: all;
+  background: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.04) 0px, rgba(88, 58, 24, 0.04) 1px,
+    transparent 1px, transparent 7px
+  );
+  border-radius: $radius-sm;
+  outline: 1.5px solid rgba(160, 21, 21, 0.4);
+  outline-offset: -5px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+  padding: 28px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: ted-slide-in 0.3s ease both;
+}
+
+.ted-conquista-star {
+  font-size: 36px;
+  color: var(--color-sello);
+  animation: conquista-pulse 0.6s ease-in-out 3;
+}
+
+.ted-conquista-titulo {
+  font-family: var(--font-heading);
+  font-size: $text-h2;
+  letter-spacing: 0.14em;
+  color: var(--color-sello);
+  text-transform: uppercase;
+}
+
+.ted-conquista-info {
+  font-family: var(--font-heading);
+  font-size: $text-sm;
+  letter-spacing: 0.1em;
+}
+
+.ted-conquista-texto {
+  font-family: var(--font-body);
+  font-size: $text-sm;
+  color: var(--color-oscuro);
+  text-align: center;
+
+  strong {
+    font-weight: 700;
+    color: var(--color-sello);
+  }
+}
+
+// ── Notificación simple ───────────────────────────────────────────
+.ted-notif {
+  pointer-events: none;
+  display: flex;
+  align-items: stretch;
+  background: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.04) 0px, rgba(88, 58, 24, 0.04) 1px,
+    transparent 1px, transparent 7px
+  );
+  border-radius: $radius-sm;
+  outline: 0.5px solid rgba(67, 42, 30, 0.2);
+  outline-offset: -2px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  min-width: 260px;
+  max-width: 380px;
+}
+
+.ted-notif-stripe {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--player-color);
+  opacity: 0.85;
+}
+
+.ted-notif-body {
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+
+.ted-notif-icon {
+  font-size: $text-lead;
+  color: rgba(67, 42, 30, 0.45);
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.ted-notif-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ted-notif-titulo {
+  font-family: var(--font-heading);
+  font-size: $text-sm;
+  letter-spacing: 0.14em;
+  color: var(--color-oscuro);
+  text-transform: uppercase;
+}
+
+.ted-notif-desc {
+  font-family: var(--font-body);
+  font-size: $text-caption;
+  color: rgba(67, 42, 30, 0.65);
+  line-height: 1.5;
+}

@@ -127,7 +127,7 @@ public class BotServiceImpl implements BotService {
                         .orElse(listaPaisesAtacables.get(0));
 
                 Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
-                        objetivo.getPais().getIdPais());
+                        objetivo.getPais().getIdPais(), null);
 
                 var resultado = turnoService.ataque(ataque);
                 ataqueExitoso = resultado.isAtaqueExitoso() || ataqueExitoso;

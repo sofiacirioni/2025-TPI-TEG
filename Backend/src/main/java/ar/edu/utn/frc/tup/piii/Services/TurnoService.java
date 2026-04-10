@@ -1,10 +1,12 @@
 package ar.edu.utn.frc.tup.piii.Services;
 
 import ar.edu.utn.frc.tup.piii.Dtos.CanjeTarjetasDto;
+import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
+import java.util.List;
 
 import ar.edu.utn.frc.tup.piii.Dtos.TarjetaDto;
 
@@ -46,4 +48,6 @@ public interface TurnoService {
     TarjetaDto entregarTarjetaSiCorresponde(Long idJugador, Long idPartida);
 
     void validarUsarTarjetaEnPais(UsarTarjetaEnPaisDto usarTarjetaEnPaisDto);
+
+    List<EstadoPaisDto> getDestinosReagrupamiento(Long idPaisOrigen, Long idJugador, Long idPartida);
 }

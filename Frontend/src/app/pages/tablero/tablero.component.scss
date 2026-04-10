@@ -212,6 +212,15 @@
   font-style: italic;
 }
 
+// ── Notificaciones de juego (overlay sobre el mapa) ──────────────
+app-tablero-event-display {
+  position: absolute;
+  top: 80px; bottom: 48px;
+  left: 280px; right: 267px;
+  z-index: calc(var(--z-vignette) + 6);
+  pointer-events: none;
+}
+
 // ── Mapa central ─────────────────────────────────────────────────
 .mapa-zona {
   position: absolute;

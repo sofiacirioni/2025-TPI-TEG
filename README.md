@@ -308,6 +308,115 @@ Estructura de 3 capas:
 #### Mapa — fichas
 - **Sombra de ficha eliminada**: removida la `<ellipse>` decorativa (`fill: rgba(0,0,0,0.4)`) que proyectaba sombra oval bajo cada token en `mapa-svg.component.html` — mejora legibilidad sobre países con colores similares.
 
+### Tablero — sistema de notificaciones de juego en tiempo real (sesión 2026-04-08)
+
+Sistema de overlay visual que muestra eventos del juego sobre el mapa, con dos modos: panel de combate interactivo y notificación simple.
+
+#### Backend — broadcasts WebSocket
+
+- **`PartidaEventDto`** (`Dtos/PartidaEventDto.java`): nuevo DTO para broadcasts WS con campos `tipo`, `jugadorNombre`, `jugadorColor`, `paisOrigen`, `paisDestino`, `dadosAtaque`, `dadosDefensor`, `conquista`, `perdidasAtacante`, `perdidasDefensor`, `idPartida`.
+- **`Ataque.java`**: campo opcional `cantDadosAtacante` (`Integer`, nullable) — permite al atacante elegir cuántos dados usar; `null` = máximo automático.
+- **`AtaqueResponseDto.java`**: campos `perdidasAtacante` y `perdidasDefensor` añadidos a la respuesta.
+- **`TurnoServiceImpl`**: inyectado `SimpMessagingTemplate`; broadcasts a `/topic/partida.{id}.evento` en:
+  - `ataque()`: respeta `cantDadosAtacante`, calcula pérdidas, emite evento `ATAQUE` o `CONQUISTA`.
+  - `cambiarFaseTurno()`: emite `FIN_TURNO` al avanzar de jugador.
+  - `agregarFichas()`: emite `INCORPORACION` al colocar ejércitos.
+  - `moverFichas()`: emite `REAGRUPAMIENTO` al mover tropas.
+  - `entregarTarjetaSiCorresponde()`: emite `TARJETA_OBTENIDA`.
+  - `validarCanjeTarjetas()`: emite `TARJETA_CANJEADA`.
+
+#### Frontend — `TableroEventService`
+
+Servicio cola (`core/services/tablero-event.service.ts`) que procesa eventos de juego uno a la vez:
+
+- `enqueue(event)`: encola un `GameEvent`; si la cola estaba vacía, lo procesa inmediatamente.
+- `enqueueFromWs(ws, esJugadorLocal)`: convierte `PartidaEventWs` en `GameEvent`; omite ATAQUE/CONQUISTA para el atacante local (ya los encoló desde la respuesta HTTP).
+- `resolveDiceSelection(n)`: emite el número de dados elegido vía `diceResult$`.
+- `advanceAfterDice()`: avanza la cola manualmente después de la respuesta HTTP del ataque.
+- `dismissCurrent()`: descarta el evento actual y avanza.
+- Eventos bloqueantes (`ATAQUE_INICIADO`): no tienen timer automático; esperan `advanceAfterDice()`.
+- Eventos con duración: `RESULTADO_DADOS` 4 s, `CONQUISTA` 5 s, resto 2.5–3.5 s.
+
+#### Frontend — `TableroEventDisplayComponent`
+
+Componente overlay (`tablero-event-display/`) con cuatro modos visuales:
+
+1. **Selección de dados** (`ATAQUE_INICIADO`): panel de combate con nombres de países, botones 1–N dados, countdown 5 s, botón `· ATACAR ·`. El timer auto-confirma con el máximo de dados al expirar.
+2. **Resultado de combate** (`RESULTADO_DADOS` / `CONQUISTA`): dados animados con CSS (aparecen escalonados, los perdedores quedan marcados en rojo), pérdidas de cada bando, etiqueta CONQUISTA / ATAQUE EXITOSO / REPELIDO.
+3. **Pantalla de conquista** (transición post-resultado): overlay sello ★ con nombre del conquistador y país capturado.
+4. **Notificación simple** (resto de eventos): tarjeta con franja lateral del color del jugador, ícono y texto descriptivo.
+
+Posicionado como overlay absoluto sobre la zona del mapa (`z-index: calc(var(--z-vignette) + 6)`). Usa `pointer-events: none` en `:host`; los paneles interactivos tienen `pointer-events: all`.
+
+#### Frontend — integración en `TableroComponent`
+
+- WS subscripción a `/topic/partida.{id}.evento` en el primer emit de `partidaObservable`; desuscripción en `ngOnDestroy`.
+- `atacarDesdeModal()` reescrito: cierra el modal, suscribe `diceResult$.pipe(take(1))` → realiza HTTP con `cantDadosAtacante`, encola resultado y llama `advanceAfterDice()`; encola `ATAQUE_INICIADO` con `diceSelection`.
+- `reagruparDesdeModal()` y `confirmarCanje()`: encolan sus respectivos eventos al completarse.
+- `getColorVarJugador()`: mapea color de jugador a `var(--player-*)`.
+- `partida.interface.ts`: `AtaqueDto` con `cantDadosAtacante?`, `AtaqueResponseDto` con `perdidasAtacante`/`perdidasDefensor`.
+- `socket.service.ts`: método `suscribirseEventosPartida()`, `desuscribirsePartida()`, `asegurarConexion()`.
+
+#### Modelo de datos
+
+```typescript
+interface GameEvent {
+  tipo: 'INCORPORACION' | 'ATAQUE_INICIADO' | 'RESULTADO_DADOS' | 'CONQUISTA'
+      | 'TARJETA_OBTENIDA' | 'TARJETA_CANJEADA' | 'REAGRUPAMIENTO' | 'FIN_TURNO';
+  titulo: string; descripcion?: string;
+  jugadorActivo?: string; colorJugador?: string;
+  paisOrigen?: string; paisDestino?: string;
+  dadosAtaque?: number[]; dadosDefensor?: number[];
+  conquista?: boolean; perdidasAtacante?: number; perdidasDefensor?: number;
+  duracionMs?: number; diceSelection?: DiceSelectionParams;
+}
+```
+
+### Tablero — corrección de bugs de flujo de juego y tests e2e (sesión 2026-04-09)
+
+Corrección de cinco bugs que impedían jugar correctamente, mejora de validaciones y suite de tests de flujo completo.
+
+#### Backend
+
+- **`TurnoServiceImpl.turnoBot()`**: bug corregido — cuando `hostilidad=true` y el bot no conquista ningún país (`faseAtaque()` retorna `false`), `faseReagrupar()` nunca se llamaba y el bot quedaba bloqueado en fase `MOVER_TROPAS` indefinidamente. Ahora `faseReagrupar` siempre se ejecuta independientemente del resultado del ataque.
+- **Nuevo endpoint `GET /api/v1/turno/reagrupar/destinos`** (`TurnoController`): corre el BFS real de `esConectadoPorTerritorioPropio()` contra todos los países propios del jugador y devuelve solo los alcanzables. Evita mostrar destinos inválidos en el frontend.
+- **`EstadoPaisRepository`**: nuevo método `findAllByJugador_IdJugadorAndPartida_IdPartida()` (Spring Data derivado).
+- **`TurnoService`** (interface): declaración del método `getDestinosReagrupamiento(idPaisOrigen, idJugador, idPartida)`.
+
+#### Frontend — bugs corregidos
+
+| # | Bug | Causa raíz | Fix |
+|---|---|---|---|
+| 1 | **Crash al atacar** — el ataque nunca se ejecutaba | `cerrarModalPais()` ponía `paisModalSeleccionado` en `null` antes de que el callback de dados lo leyera en línea 503 | Guardar `idOrigen` en variable local antes de llamar `cerrarModalPais()` |
+| 2 | **Colocación acepta negativos / cero / más del disponible** | `min="0"` sin validación en el componente | `min="1"`, botón `COLOCAR` deshabilitado si `input < 1 \|\| > ejercitosDisponibles`, validación espejo en `defenderDesdeModal()` |
+| 3 | **Indicador de turno no se actualiza** | Hay que esperar el próximo tick del polling (3 s) después de avanzar fase | `avanzarFaseTurno()` llama `tableroServicio.forceRefresh()` en la respuesta HTTP; `forceRefresh()` fue añadido a `TableroServicio` |
+| 4 | **Reagrupamiento muestra todos los países propios** | `calcularLimitrofes()` listaba todos los propios; el BFS solo existía en el backend | Ahora llama al nuevo endpoint `/turno/reagrupar/destinos`; fallback a limítrofes propios directos si el endpoint falla |
+| 5 | **Historial no registra eventos WS** | Los eventos de otros jugadores (FIN_TURNO, ataques, etc.) no llegaban al historial | Suscripción a `currentEvent$` en `ngOnInit` que agrega automáticamente cada evento al historial, evitando duplicar los que ya registra el propio jugador |
+
+#### Frontend — `TableroServicio`
+
+- `currentUrl`: guarda la URL activa para poder hacer `forceRefresh()`.
+- `forceRefresh()`: hace una consulta inmediata a `obtenerPartidaByUrl()` sin esperar el intervalo del polling.
+- `getDestinosReagrupamiento(idEstadoPaisOrigen, idJugador, idPartida)`: llama al nuevo endpoint BFS.
+- `startPolling()` y `stopPolling()` limpiados (sin duplicado de lógica).
+
+#### Tests e2e — `flujo-completo.spec.ts`
+
+Suite nueva (`e2e/flujo-completo.spec.ts`, 16 tests) que cubre el flujo de principio a fin:
+
+| Bloque | Tests |
+|---|---|
+| Estado inicial | tablero carga completo, número de turno positivo, países tienen dueño |
+| Fase COLOCACIÓN | colocar ejércitos, botón deshabilitado con valores inválidos (neg/0/exceso) |
+| Fase ATACAR | panel de dados aparece, historial registra el evento, destinos son solo limítrofes |
+| Fase MOVER TROPAS | reagrupamiento funciona, destinos vienen del BFS backend |
+| Ciclo turno + bots | número de turno avanza, jugador activo cambia, dos rondas completas |
+| Historial y eventos | entradas acumulan, notificaciones tienen estructura correcta |
+
+Los tests que dependen del turno del usuario usan `esperarMiTurno()` — si el turno no llega en el timeout hacen `test.skip()` en lugar de fallar. Los tests de validación de UI son determinísticos y siempre corren.
+
+También corregido en `tablero-dev.spec.ts`: el test "el turno pasa a los bots automáticamente" ahora espera a que sea el turno del usuario antes de leer el número base (evitaba `N° 1 → N° 1` por estado heredado de tests anteriores). Timeout aumentado a 90 s.
+
 ---
 
 ## Equipo

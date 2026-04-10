@@ -2,6 +2,7 @@ package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
 import ar.edu.utn.frc.tup.piii.Dtos.*;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.*;
+import ar.edu.utn.frc.tup.piii.Dtos.PartidaEventDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.*;
 import ar.edu.utn.frc.tup.piii.Services.*;
@@ -11,6 +12,7 @@ import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -47,6 +49,8 @@ public class TurnoServiceImpl implements TurnoService {
     private final ObjetivoService objetivoService;
     @Autowired
     private final LimiteRepository limiteRepository;
+    @Autowired
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -100,6 +104,17 @@ public class TurnoServiceImpl implements TurnoService {
 
         turnoRepository.save(turnoE);
         partidaRepository.save(partidaEntity);
+
+        // Broadcast FIN_TURNO cuando se termina la fase MOVER_TROPAS
+        if (cambioTurno) {
+            PartidaEventDto finTurno = new PartidaEventDto();
+            finTurno.setTipo("FIN_TURNO");
+            finTurno.setJugadorNombre(jugadorActual.getNombre());
+            finTurno.setJugadorColor(jugadorActual.getColor() != null ? jugadorActual.getColor().name() : "");
+            finTurno.setDescripcion("Fin del turno de " + jugadorActual.getNombre());
+            finTurno.setIdPartida(idPartida);
+            messagingTemplate.convertAndSend("/topic/partida." + idPartida + ".evento", finTurno);
+        }
 
         if (siguienteBot != 0L) {
             turnoBot(siguienteBot);
@@ -393,6 +408,14 @@ public class TurnoServiceImpl implements TurnoService {
         if (rta) {
             turnoActual.setReagrupado(true);
             turnoRepository.save(turnoActual);
+
+            PartidaEventDto evento = new PartidaEventDto();
+            evento.setTipo("REAGRUPAMIENTO");
+            evento.setJugadorNombre(jugador.getNombre());
+            evento.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+            evento.setDescripcion(jugador.getNombre() + " reagrupó tropas");
+            evento.setIdPartida(partida.getIdPartida());
+            messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
         }
 
         return rta;
@@ -443,6 +466,17 @@ public class TurnoServiceImpl implements TurnoService {
         return false;
     }
 
+    @Override
+    public List<EstadoPaisDto> getDestinosReagrupamiento(Long idPaisOrigen, Long idJugador, Long idPartida) {
+        List<EstadoPaisEntity> todosPropios = estadoPaisRepository
+                .findAllByJugador_IdJugadorAndPartida_IdPartida(idJugador, idPartida);
+        return todosPropios.stream()
+                .filter(ep -> !ep.getPais().getIdPais().equals(idPaisOrigen))
+                .filter(ep -> esConectadoPorTerritorioPropio(idPaisOrigen, ep.getPais().getIdPais(), idJugador, idPartida))
+                .map(ep -> modelMapper.map(ep, EstadoPaisDto.class))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     @Override
     public TarjetaDto entregarTarjetaSiCorresponde(Long idJugador, Long idPartida) {
@@ -467,11 +501,21 @@ public class TurnoServiceImpl implements TurnoService {
 
             Collections.shuffle(estadoTarjetaEntitiesCopy);
 
-            return estadoTarjetaService.asignarTarjeta(
+            TarjetaDto tarjeta = estadoTarjetaService.asignarTarjeta(
                     new EstadoTarjetaDto().builder()
                             .idEstadoTarjeta(estadoTarjetaEntitiesCopy.get(0).getIdEstadoTarjeta())
                             .idJugador(jugador.getIdJugador())
                             .build());
+
+            PartidaEventDto evento = new PartidaEventDto();
+            evento.setTipo("TARJETA_OBTENIDA");
+            evento.setJugadorNombre(jugador.getNombre());
+            evento.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+            evento.setDescripcion(jugador.getNombre() + " obtuvo una tarjeta");
+            evento.setIdPartida(partida.getIdPartida());
+            messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
+
+            return tarjeta;
         } else {
             throw new IllegalArgumentException("El jugador no conquisto en esta ronda.");
         }
@@ -582,6 +626,15 @@ public class TurnoServiceImpl implements TurnoService {
         if (ejercito < 4) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudieron canjear los ejercitos.");
         }
+
+        PartidaEventDto evento = new PartidaEventDto();
+        evento.setTipo("TARJETA_CANJEADA");
+        evento.setJugadorNombre(jugadorEntity.getNombre());
+        evento.setJugadorColor(jugadorEntity.getColor() != null ? jugadorEntity.getColor().name() : "");
+        evento.setDescripcion(jugadorEntity.getNombre() + " canjeó tarjetas y obtuvo " + ejercito + " ejércitos");
+        evento.setIdPartida(jugadorEntity.getPartida().getIdPartida());
+        messagingTemplate.convertAndSend("/topic/partida." + jugadorEntity.getPartida().getIdPartida() + ".evento", evento);
+
         return ejercito;
     }
 
@@ -706,7 +759,10 @@ public class TurnoServiceImpl implements TurnoService {
         }
 
         int cantidadDefensor = calcularCantidadDados(estadoPaisDefensor.getCantidadTropas(), false);
-        int cantidadAtacante = calcularCantidadDados(estadoPaisAtacante.getCantidadTropas(), true);
+        int maxAtacante = calcularCantidadDados(estadoPaisAtacante.getCantidadTropas(), true);
+        int cantidadAtacante = (ataque.getCantDadosAtacante() != null && ataque.getCantDadosAtacante() > 0)
+                ? Math.min(ataque.getCantDadosAtacante(), maxAtacante)
+                : maxAtacante;
 
         Random random = new Random();
         AtaqueResponseDto response = new AtaqueResponseDto();
@@ -761,6 +817,24 @@ public class TurnoServiceImpl implements TurnoService {
 
         response.setConquista(conquista);
         response.setAtaqueExitoso(conquista || perdidasDefensor > 0);
+        response.setPerdidasAtacante(perdidasAtacante);
+        response.setPerdidasDefensor(perdidasDefensor);
+
+        // Broadcast evento a todos los jugadores de la partida
+        PartidaEventDto evento = new PartidaEventDto();
+        evento.setTipo(conquista ? "CONQUISTA" : "ATAQUE");
+        evento.setJugadorNombre(jugador.getNombre());
+        evento.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+        evento.setPaisOrigen(estadoPaisAtacante.getPais().getNombre());
+        evento.setPaisDestino(estadoPaisDefensor.getPais().getNombre());
+        evento.setDadosAtaque(response.getDadosAtaque());
+        evento.setDadosDefensor(response.getDadosDefensor());
+        evento.setConquista(conquista);
+        evento.setPerdidasAtacante(perdidasAtacante);
+        evento.setPerdidasDefensor(perdidasDefensor);
+        evento.setIdPartida(partida.getIdPartida());
+        messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
+
         return response;
     }
 
@@ -798,6 +872,19 @@ public class TurnoServiceImpl implements TurnoService {
 
         boolean resultado = estadoPaisService.agregarFichasEstadosPaises(agregarFichas);
 
+        if (resultado) {
+            PartidaEventDto evento = new PartidaEventDto();
+            evento.setTipo("INCORPORACION");
+            evento.setJugadorNombre(jugador.getNombre());
+            evento.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+            int totalFichas = agregarFichas.getPaisesFichas().stream()
+                    .mapToInt(e -> e.getCantidadFichas() != null ? e.getCantidadFichas().intValue() : 0)
+                    .sum();
+            evento.setDescripcion(jugador.getNombre() + " incorporó " + totalFichas + " ejércitos");
+            evento.setIdPartida(partida.getIdPartida());
+            messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
+        }
+
         return resultado;
     }
 
@@ -816,8 +903,8 @@ public class TurnoServiceImpl implements TurnoService {
                 if (botEntity.getTarjetas().size() == 5) {
                     canjearCarta(botEntity);
                 }
-                faseReagrupar(botEntity);
             }
+            faseReagrupar(botEntity); // siempre avanzar desde MOVER_TROPAS
         } else {
             cambiarFaseTurno(botEntity.getPartida().getIdPartida());
             cambiarFaseTurno(botEntity.getPartida().getIdPartida());
@@ -887,7 +974,7 @@ public class TurnoServiceImpl implements TurnoService {
                         break;
 
                     Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
-                            paisLimite.getPais().getIdPais());
+                            paisLimite.getPais().getIdPais(), null);
 
                     ataqueExitoso = ataque(ataque).isAtaqueExitoso() || ataqueExitoso;
                 }

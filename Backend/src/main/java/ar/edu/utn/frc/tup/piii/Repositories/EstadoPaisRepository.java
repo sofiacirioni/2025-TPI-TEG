@@ -55,4 +55,6 @@ public interface EstadoPaisRepository extends JpaRepository<EstadoPaisEntity, Lo
     long countByJugador(@Param("jugador") JugadorEntity jugador);
 
     List<EstadoPaisEntity> findAllByPais_IdPaisInAndPartida_IdPartida(Set<Long> idsPaisesLimite, Long idPartida);
+
+    List<EstadoPaisEntity> findAllByJugador_IdJugadorAndPartida_IdPartida(Long idJugador, Long idPartida);
 }

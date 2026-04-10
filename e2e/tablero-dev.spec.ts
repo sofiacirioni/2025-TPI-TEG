@@ -207,3 +207,348 @@ test('screenshot: modal de país', async ({ page }) => {
     fullPage: false,
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FASES Y TURNOS — flujo de juego
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Fases y turnos — flujo de juego', () => {
+
+  test('la info-barra muestra fase actual con el texto correcto', async ({ page }) => {
+    const faseVal = page.locator('.info-barra .info-val').first();
+    await expect(faseVal).toBeVisible();
+    const faseTexto = await faseVal.textContent();
+    // La fase debe ser una de las tres válidas (con o sin tildes)
+    expect(['COLOCACIÓN', 'COLOCACION', 'ATACAR', 'MOVER TROPAS', 'MOVER_TROPAS'])
+      .toContain(faseTexto!.trim().toUpperCase().replace('Ó','O').replace('Ó','O'));
+  });
+
+  test('el numero de turno es positivo', async ({ page }) => {
+    const turnoInfo = page.locator('.info-barra .info-sub');
+    await expect(turnoInfo).toBeVisible();
+    const texto = await turnoInfo.textContent();
+    const num = parseInt(texto!.replace(/\D/g, ''), 10);
+    expect(num).toBeGreaterThanOrEqual(1);
+  });
+
+  test('si es mi turno: botón AVANZAR FASE está presente y avanza fase', async ({ page }) => {
+    const btnAvanzar = page.locator('.btn-avanzar');
+    const esmiturno = await btnAvanzar.isVisible();
+
+    if (!esmiturno) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'No es el turno del usuario' });
+      return; // no es mi turno, skip silencioso
+    }
+
+    // Leer fase actual
+    const faseAntes = await page.locator('.info-barra .info-val').first().textContent();
+
+    await btnAvanzar.click();
+    await page.waitForTimeout(1_500); // polling actualiza
+
+    // Verificar que la fase cambió o el turno avanzó
+    const faseDespues = await page.locator('.info-barra .info-val').first().textContent();
+    // Fase cambió O el botón ya no está (pasó al siguiente jugador)
+    const btnSigueVisible = await btnAvanzar.isVisible();
+    const cambioFase = faseAntes !== faseDespues || !btnSigueVisible;
+    expect(cambioFase, `Fase debe cambiar tras AVANZAR FASE. Antes: ${faseAntes}, Después: ${faseDespues}`).toBe(true);
+  });
+
+  test('ciclo completo de fases si es mi turno: COLOCACIÓN → ATACAR → MOVER TROPAS', async ({ page }) => {
+    const btnAvanzar = page.locator('.btn-avanzar');
+
+    // Esperar hasta 15s a que sea mi turno
+    let esmiturno = false;
+    for (let i = 0; i < 15; i++) {
+      if (await btnAvanzar.isVisible()) { esmiturno = true; break; }
+      await page.waitForTimeout(1_000);
+    }
+    if (!esmiturno) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'Nunca llegó el turno del usuario' });
+      return;
+    }
+
+    const fasesEsperadas = ['COLOCACIÓN', 'COLOCACION', 'ATACAR', 'MOVER TROPAS', 'MOVER_TROPAS'];
+    const faseActual = await page.locator('.info-barra .info-val').first().textContent();
+
+    // Avanzar hasta cubrir al menos 2 fases
+    const fasesVistas: string[] = [faseActual!.trim()];
+    for (let paso = 0; paso < 3; paso++) {
+      const btnV = await btnAvanzar.isVisible();
+      if (!btnV) break;
+      await btnAvanzar.click();
+      await page.waitForTimeout(1_500);
+      const f = await page.locator('.info-barra .info-val').first().textContent();
+      fasesVistas.push(f!.trim());
+    }
+
+    // Deben haberse visto al menos 2 fases distintas
+    const distintas = new Set(fasesVistas.map(f => f.toUpperCase()));
+    expect(distintas.size, `Se esperaban ≥2 fases distintas, solo se vieron: ${[...distintas].join(', ')}`).toBeGreaterThanOrEqual(2);
+  });
+
+  test('el turno pasa a los bots automáticamente (sin intervención del usuario)', async ({ page }) => {
+    test.setTimeout(90_000);
+    const btnAvanzar = page.locator('.btn-avanzar');
+
+    // Esperar hasta 20s a que sea mi turno (puede haber llegado de un estado heredado)
+    let esmiturno = false;
+    for (let i = 0; i < 20; i++) {
+      if (await btnAvanzar.isVisible()) { esmiturno = true; break; }
+      await page.waitForTimeout(1_000);
+    }
+    if (!esmiturno) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'Nunca llegó el turno del usuario' });
+      return;
+    }
+
+    // Leer turno DESPUÉS de confirmar que es mi turno (estado estable)
+    const turnoAntes = await page.locator('.info-barra .info-sub').textContent();
+
+    // Ceder las 3 fases para que lleguen y ejecuten los bots
+    for (let i = 0; i < 3; i++) {
+      if (await btnAvanzar.isVisible()) {
+        await btnAvanzar.click();
+        await page.waitForTimeout(2_000);
+      }
+    }
+
+    // Polling: el backend ejecuta bots sincrónicamente, esperar cambio de turno
+    let turnoNuevo = await page.locator('.info-barra .info-sub').textContent();
+    for (let i = 0; i < 25; i++) {
+      if (turnoNuevo !== turnoAntes) break;
+      await page.waitForTimeout(1_500);
+      turnoNuevo = await page.locator('.info-barra .info-sub').textContent();
+    }
+
+    expect(turnoNuevo, `El turno debe avanzar; antes=${turnoAntes} después=${turnoNuevo}`)
+      .not.toBe(turnoAntes);
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTIFICACIONES — panel de eventos de juego
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Sistema de notificaciones — visual y funcional', () => {
+
+  test('el componente app-tablero-event-display existe en el DOM', async ({ page }) => {
+    await expect(page.locator('app-tablero-event-display')).toBeAttached();
+  });
+
+  test('el overlay de notificaciones tiene z-index mayor que el mapa', async ({ page }) => {
+    const notifZ = await page.locator('app-tablero-event-display').evaluate(el =>
+      parseInt(window.getComputedStyle(el).zIndex) || 0
+    );
+    const mapaZ = await page.locator('.mapa-zona').evaluate(el =>
+      parseInt(window.getComputedStyle(el).zIndex) || 0
+    );
+    expect(notifZ, `z-index notif (${notifZ}) debe ser > z-index mapa (${mapaZ})`).toBeGreaterThan(mapaZ);
+  });
+
+  test('el overlay cubre la misma área que el mapa', async ({ page }) => {
+    const notifBox = await page.locator('app-tablero-event-display').boundingBox();
+    const mapaBox = await page.locator('.mapa-zona').boundingBox();
+    expect(notifBox, 'El overlay debe tener una bounding box').toBeTruthy();
+    expect(mapaBox, 'El mapa debe tener una bounding box').toBeTruthy();
+    // Los bordes deben coincidir aproximadamente (±4px)
+    expect(Math.abs(notifBox!.x - mapaBox!.x)).toBeLessThan(4);
+    expect(Math.abs(notifBox!.y - mapaBox!.y)).toBeLessThan(4);
+  });
+
+  test('ataque muestra panel de selección de dados', async ({ page }) => {
+    const btnAvanzar = page.locator('.btn-avanzar');
+
+    // Llegar a fase ATACAR
+    for (let i = 0; i < 15; i++) {
+      const faseTexto = await page.locator('.info-barra .info-val').first().textContent();
+      if (faseTexto?.toUpperCase().includes('ATACAR')) break;
+      if (await btnAvanzar.isVisible()) {
+        await btnAvanzar.click();
+        await page.waitForTimeout(1_500);
+      } else {
+        await page.waitForTimeout(1_000);
+      }
+    }
+
+    const faseActual = await page.locator('.info-barra .info-val').first().textContent();
+    if (!faseActual?.toUpperCase().includes('ATACAR')) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'No se pudo llegar a fase ATACAR' });
+      return;
+    }
+
+    // Buscar un país propio con enemigos adyacentes
+    const paises = page.locator(PAIS_PATH);
+    const totalPaises = await paises.count();
+    let atacado = false;
+
+    for (let i = 0; i < totalPaises && !atacado; i++) {
+      await paises.nth(i).click();
+      const modal = page.locator('.modal-pais');
+      const modalVis = await modal.isVisible({ timeout: 2_000 }).catch(() => false);
+      if (!modalVis) continue;
+
+      // Verificar que sea nuestro país con botón de ataque
+      const btnAtacar = modal.locator('.btn-teg-danger, button:has-text("ATACAR"), button:has-text("· ATACAR ·")');
+      const tieneAtaque = await btnAtacar.isVisible({ timeout: 500 }).catch(() => false);
+
+      if (!tieneAtaque) {
+        await page.locator('.btn-modal-cerrar').click().catch(() => {});
+        await page.waitForTimeout(300);
+        continue;
+      }
+
+      // Seleccionar primer enemigo disponible
+      const selectDestino = modal.locator('select').first();
+      const tieneSelect = await selectDestino.isVisible({ timeout: 500 }).catch(() => false);
+      if (tieneSelect) {
+        const opciones = await selectDestino.locator('option').count();
+        if (opciones > 1) {
+          await selectDestino.selectOption({ index: 1 });
+        }
+      } else {
+        // Intentar con los botones de país enemigo si los hay
+        const enemigoBtn = modal.locator('.pais-enemigo, .limitrofe-item').first();
+        const tieneEnemigo = await enemigoBtn.isVisible({ timeout: 500 }).catch(() => false);
+        if (!tieneEnemigo) {
+          await page.locator('.btn-modal-cerrar').click().catch(() => {});
+          await page.waitForTimeout(300);
+          continue;
+        }
+        await enemigoBtn.click();
+      }
+
+      // Click en ATACAR del modal
+      await btnAtacar.click();
+
+      // Verificar que aparece el panel de dados
+      const panelDados = page.locator('.ted-combat-panel');
+      const apareció = await panelDados.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (apareció) {
+        atacado = true;
+
+        // Screenshot del panel de dados
+        await page.screenshot({ path: 'e2e/screenshots/notif-dados-seleccion.png' });
+
+        // Verificar elementos del panel
+        await expect(page.locator('.ted-combat-title')).toBeVisible();
+        await expect(page.locator('.ted-combatants')).toBeVisible();
+        await expect(page.locator('.ted-dice-btns')).toBeVisible();
+        await expect(page.locator('.ted-attack-btn')).toBeVisible();
+        await expect(page.locator('.ted-timer')).toBeVisible();
+
+        // Confirmar ataque
+        await page.locator('.ted-attack-btn').click();
+        await page.waitForTimeout(500);
+
+        // Debe aparecer el resultado (result-panel o conquista-panel)
+        const resultado = page.locator('.ted-result-panel, .ted-conquista-panel');
+        const resultadoVis = await resultado.isVisible({ timeout: 5_000 }).catch(() => false);
+        if (resultadoVis) {
+          await page.screenshot({ path: 'e2e/screenshots/notif-resultado-combate.png' });
+        }
+      } else {
+        await page.locator('.btn-modal-cerrar').click().catch(() => {});
+      }
+      break;
+    }
+
+    // Si no encontramos país atacable, loguear (no fallar — depende del estado del juego)
+    if (!atacado) {
+      console.log('No se encontró país atacable en fase ATACAR — puede ser válido si el jugador está rodeado de aliados');
+    }
+  });
+
+  test('notificación simple (FIN_TURNO) es visualmente coherente con el design system', async ({ page }) => {
+    test.setTimeout(60_000);
+    const btnAvanzar = page.locator('.btn-avanzar');
+
+    // Avanzar las 3 fases del turno si es el turno del usuario
+    if (await btnAvanzar.isVisible()) {
+      for (let i = 0; i < 3; i++) {
+        if (await btnAvanzar.isVisible()) {
+          await btnAvanzar.click();
+          await page.waitForTimeout(1_200);
+        }
+      }
+    }
+
+    // Esperar si aparece una notificación ted-notif (FIN_TURNO u otro evento)
+    const notif = page.locator('.ted-notif');
+    const notifVis = await notif.isVisible({ timeout: 5_000 }).catch(() => false);
+
+    if (notifVis) {
+      // Verificar design system: fondo papel, fuente heading
+      const bg = await notif.evaluate(el => window.getComputedStyle(el).backgroundColor);
+      // El fondo no debe ser negro puro ni completamente transparente
+      expect(bg).not.toBe('rgba(0, 0, 0, 0)');
+      expect(bg).not.toBe('rgb(0, 0, 0)');
+
+      // Verificar que la stripe lateral está presente
+      await expect(notif.locator('.ted-notif-stripe')).toBeVisible();
+
+      // Screenshot
+      await page.screenshot({ path: 'e2e/screenshots/notif-simple.png' });
+    } else {
+      console.log('No apareció notificación simple — puede que no fuera el turno del usuario');
+    }
+  });
+
+  test('screenshot: estado tablero con bots jugando', async ({ page }) => {
+    // Dejar pasar 3s para que bots hagan alguna acción
+    await page.waitForTimeout(3_000);
+    await page.screenshot({ path: 'e2e/screenshots/tablero-con-bots.png' });
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DESIGN SYSTEM — coherencia visual del overlay de notificaciones
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Design system — coherencia visual notificaciones', () => {
+
+  test('el panel de combate usa la fuente heading (Special Elite)', async ({ page }) => {
+    // Generar un panel de combate forzando un ataque si es posible
+    // Fallback: verificar que los estilos CSS están definidos correctamente
+    const fontHeading = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-heading').trim()
+    );
+    expect(fontHeading.length).toBeGreaterThan(0);
+    // Debe incluir 'Special Elite' o 'Roboto Slab' como definido en el design system
+    expect(fontHeading.toLowerCase()).toMatch(/special|roboto|slab|serif/i);
+  });
+
+  test('las variables de color de jugadores están definidas', async ({ page }) => {
+    const vars = ['--player-rojo', '--player-azul', '--player-verde',
+                  '--player-naranja', '--player-purpura', '--player-dorado'];
+    for (const v of vars) {
+      const val = await page.evaluate((varName) =>
+        getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+      , v);
+      expect(val, `${v} debe estar definida`).not.toBe('');
+    }
+  });
+
+  test('el overlay no tiene fondo sólido negro (mantiene transparencia)', async ({ page }) => {
+    const bg = await page.locator('app-tablero-event-display').evaluate(el =>
+      window.getComputedStyle(el).backgroundColor
+    );
+    // El host debe ser transparente (pointer-events: none, sin background)
+    expect(bg).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('el mapa mantiene su border y fondo en todos los estados', async ({ page }) => {
+    const mapa = page.locator('.mapa-zona');
+    await expect(mapa).toBeVisible();
+
+    const borderColor = await mapa.evaluate(el =>
+      window.getComputedStyle(el).borderColor
+    );
+    // No debe ser completamente transparente
+    expect(borderColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+});

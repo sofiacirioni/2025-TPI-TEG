@@ -106,12 +106,16 @@ export interface AtaqueResponseDto {
   conquista: boolean;
   dadosAtaque: number[];
   dadosDefensor: number[];
+  perdidasAtacante: number;
+  perdidasDefensor: number;
 }
 
 export interface AtaqueDto {
   idJugador: number;
   idPaisOrigen: number;
   idPaisDestino: number;
+  /** Cantidad de dados elegidos por el atacante (1-3). Opcional. */
+  cantDadosAtacante?: number;
 }
 
 export interface MoverFichas {
