@@ -21,6 +21,12 @@
         {{ jugador.color }}
       </span>
     </div>
+    <div class="text-white-50 small mt-1">
+      {{ jugador.ejercito ?? 0 }} ej.
+      @if ((jugador.cantidadTarjetas ?? 0) > 0) {
+        &nbsp;· {{ jugador.cantidadTarjetas }} 🃏
+      }
+    </div>
   </div>
 
   <!-- Indicador de color (opcional) -->

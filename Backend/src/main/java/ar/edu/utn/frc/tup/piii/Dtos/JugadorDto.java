@@ -20,5 +20,6 @@ public class JugadorDto {
     private String url;
     private Integer ejercito;
     private boolean consquisto;
+    private Integer cantidadTarjetas;
 
 }

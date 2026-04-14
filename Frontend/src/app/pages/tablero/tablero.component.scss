@@ -26,9 +26,9 @@
 .tablero-vignette {
   position: absolute; inset: 0; pointer-events: none;
   z-index: calc(var(--z-vignette) + 1);
-  background: radial-gradient(ellipse 90% 80% at 50% 40%,
-    transparent 35%, rgba(4,2,1,0.25) 60%,
-    rgba(4,2,1,0.55) 85%, #040201 100%);
+  background: radial-gradient(ellipse 95% 88% at 50% 42%,
+    transparent 50%, rgba(4,2,1,0.18) 68%,
+    rgba(4,2,1,0.42) 88%, rgba(4,2,1,0.7) 100%);
 }
 
 .tablero-luz {
@@ -100,6 +100,19 @@
   animation: parpadeo 0.8s ease-in-out infinite alternate;
 }
 
+.info-inactividad {
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(198,156,109,0.7);
+  transition: color 0.3s;
+
+  &.inactividad-critica {
+    color: var(--color-sello);
+    animation: parpadeo 0.5s ease-in-out infinite alternate;
+  }
+}
+
 @keyframes parpadeo {
   from { opacity: 1; }
   to   { opacity: 0.5; }
@@ -149,41 +162,70 @@
   position: absolute; top: 12px; left: 8px;
   z-index: calc(var(--z-vignette) + 3); cursor: pointer; width: 200px;
   filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
+  // perspective para que el hover rotateX de la solapa sea 3D visible
+  perspective: 500px;
 }
 
 .sobre-paper {
-  background: #EDE5B0;
-  border: 0.5px solid rgba(100,80,20,0.35);
+  background: #C8A96E;
+  border: 0.5px solid rgba(100,60,10,0.4);
   border-radius: 1px;
   padding: 10px 8px 8px;
   min-height: 100px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   position: relative;
+  // Mismo patrón de líneas diagonales que el sobre grande
+  &::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(100,60,20,0.1) 25%, transparent 25%,
+                transparent 50%, rgba(100,60,20,0.1) 50%, rgba(100,60,20,0.1) 75%,
+                transparent 75%);
+    background-size: 8px 8px;
+    pointer-events: none;
+  }
 }
 
 .sobre-solapa {
-  position: absolute; top: 0; left: 0; right: 0; height: 30px;
-  background: #D4C878;
+  position: absolute; top: 0; left: 0; right: 0; height: 32px;
+  background: #B8934E;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transition: transform 0.3s;
-  transform-origin: top;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.4, 1);
+  transform-origin: top center;
+  z-index: 1;
 }
 
 .sobre-objetivo:hover .sobre-solapa {
-  transform: rotateX(160deg);
+  transform: perspective(500px) rotateX(165deg);
+}
+
+// Lacre pequeño en la solapa (mismo estilo que el grande)
+.sobre-lacre-mini {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 20px;
+  background: #A01515;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px rgba(160,21,21,0.3), inset 0 1px 2px rgba(0,0,0,0.4);
+  z-index: 2; pointer-events: none;
+}
+
+.lacre-mini-sigla {
+  font-family: var(--font-heading); font-size: 0.45rem;
+  color: #EFE8CE; letter-spacing: 0.03em; user-select: none;
 }
 
 .sobre-sello {
   font-family: var(--font-heading); font-size: $text-caption;
-  letter-spacing: 0.1em; color: rgba(160,21,21,0.7);
-  border: 0.5px solid rgba(160,21,21,0.45);
+  letter-spacing: 0.1em; color: rgba(160,21,21,0.8);
+  border: 0.5px solid rgba(160,21,21,0.5);
   padding: 2px 5px; border-radius: 1px;
-  transform: rotate(-5deg); margin-top: 28px;
+  transform: rotate(-5deg); margin-top: 30px;
 }
 
 .sobre-label {
   font-family: var(--font-heading); font-size: $text-caption;
-  letter-spacing: 0.05em; color: rgba(100,80,20,0.5);
+  letter-spacing: 0.05em; color: rgba(67,42,30,0.7);
 }
 
 .objetivo-modal {
@@ -210,6 +252,46 @@
   font-family: var(--font-body); font-weight: 300;
   font-size: $text-sm; color: var(--color-sello); line-height: 1.6;
   font-style: italic;
+}
+
+.objetivo-desc {
+  font-family: var(--font-body); font-size: $text-sm; color: var(--color-oscuro);
+  margin: 0 0 6px; line-height: 1.4; font-style: italic;
+}
+
+.objetivo-divider {
+  height: 1px; background: rgba(160,21,21,0.25); margin: 4px 0 6px;
+}
+
+.objetivo-items {
+  list-style: none; padding: 0; margin: 0;
+}
+
+.objetivo-item {
+  display: flex; align-items: flex-start; gap: 5px;
+  font-family: var(--font-body); font-size: $text-caption; color: var(--color-oscuro);
+  padding: 2px 0; border-bottom: 1px dashed rgba(67,42,30,0.15);
+  &:last-child { border-bottom: none; }
+  &.completado { color: var(--color-secondary); .obj-check { color: var(--color-secondary); } }
+}
+
+.obj-check {
+  flex-shrink: 0; font-size: 0.65rem; color: var(--color-oscuro); line-height: 1.6;
+}
+
+.obj-texto {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; line-height: 1.5;
+}
+
+.obj-cuenta {
+  font-family: var(--font-heading); font-size: $text-caption;
+  color: var(--color-medio); letter-spacing: 0.06em; white-space: nowrap;
+}
+
+.objetivo-convertido {
+  font-family: var(--font-heading); font-size: $text-caption;
+  color: var(--color-sello); letter-spacing: 0.08em;
+  margin: 6px 0 0; opacity: 0.8;
 }
 
 // ── Notificaciones de juego (overlay sobre el mapa) ──────────────
@@ -578,8 +660,33 @@ app-tablero-event-display {
 }
 
 .ficha-stats {
-  font-family: var(--font-body); font-weight: 300;
-  font-size: $text-caption; color: rgba(198,156,109,0.6);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.ficha-stat-item {
+  display: flex; align-items: center; gap: 3px;
+  cursor: default;
+}
+
+.ficha-stat-icon {
+  width: 12px; height: 12px; flex-shrink: 0;
+  fill: var(--color-claro);
+  opacity: 0.65;
+  transition: opacity 0.15s;
+
+  .ficha-stat-item:hover & {
+    opacity: 1;
+  }
+}
+
+.ficha-stat-val {
+  font-family: var(--font-body); font-weight: 400;
+  font-size: $text-caption; color: var(--color-claro);
+  opacity: 0.65;
+  line-height: 1;
 }
 
 .ficha-bot {
@@ -622,7 +729,7 @@ app-tablero-event-display {
   line-height: 1.4; padding-bottom: 3px;
   border-bottom: 0.5px solid rgba(198,156,109,0.05);
 
-  &.hist-ataque { color: rgba(160,21,21,0.75); }
+  &.hist-ataque { color: rgba(191,104,0,0.90); }
   &.hist-ok     { color: rgba(184,216,213,0.85); }
 }
 

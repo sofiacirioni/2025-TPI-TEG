@@ -1,14 +1,16 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { take } from 'rxjs';
+import { StompSubscription } from '@stomp/stompjs';
 import { TableroServicio } from '../../core/services/tablero.service';
 import { WebSocketService } from '../../core/services/socket.service';
 import { TableroEventService } from '../../core/services/tablero-event.service';
 import { GameEvent } from '../../core/models/interfaces/game-event.interface';
 import { MapaSvgComponent, PaisClickEvent } from './componentes/mapa-svg/mapa-svg.component';
 import { TableroEventDisplayComponent } from './componentes/tablero-event-display/tablero-event-display.component';
+import { ObjetivoRevelacionComponent } from './componentes/objetivo-revelacion/objetivo-revelacion.component';
 import {
   AtaqueDto,
   AtaqueResponseDto,
@@ -19,6 +21,7 @@ import {
   FaseTurno,
   JugadorDto,
   MoverFichas,
+  ObjetivoProgreso,
   PartidaDto,
   TurnoDto,
   UsarTarjetaEnPaisDto,
@@ -43,7 +46,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })
@@ -65,7 +68,6 @@ export class TableroComponent implements OnInit, OnDestroy {
   partida!: PartidaDto;
   esMiTurno = false;
   jugadorId = 0;
-  jugadorConsquisto: JugadorDto | null = null;
 
   // ── Tarjetas ───────────────────────────────────────────────
   cartasJugador: EstadoTarjetaDto[] = [];
@@ -76,6 +78,10 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   // ── Objetivo secreto ───────────────────────────────────────
   objetivoVisible = false;
+  showRevelacion = false;
+  private revelacionMostrada = false;
+  progresoObjetivo: ObjetivoProgreso | null = null;
+  private objetivoWsSub: StompSubscription | null = null;
 
   // ── Modal de país ──────────────────────────────────────────
   paisModalSeleccionado: EstadoPaisDto | null = null;
@@ -99,10 +105,22 @@ export class TableroComponent implements OnInit, OnDestroy {
   private lastMouseX = 0;
   private lastMouseY = 0;
 
-  // ── Timer de turno ─────────────────────────────────────────
-  tiempoRestante = 120;
+  // ── Timer de turno (5 min total) ──────────────────────────────
+  tiempoRestante = 300;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private lastTurnoActual = -1;
+  /** Id del jugador activo en el último ciclo de polling — detecta cambio de turno incluso con bots síncronos */
+  private lastJugadorActualId = -1;
+
+  // ── Inactividad (30 s) ─────────────────────────────────────────
+  inactividadRestante = 30;
+  showInactividad = false;
+  private inactividadInterval: ReturnType<typeof setInterval> | null = null;
+  // Mousemove: acumulador de desplazamiento en ventana de 2 s
+  private mouseAccumDist = 0;
+  private mouseWindowStart = 0;
+  private mousePrevX = 0;
+  private mousePrevY = 0;
 
   // ── Reloj decorativo ───────────────────────────────────────
   horaActual = new Date();
@@ -207,13 +225,13 @@ export class TableroComponent implements OnInit, OnDestroy {
     return this.getTurnoActual()?.idJugador === this.jugadorUsuario?.idJugador;
   }
   get puedoAtacarDesdeModal(): boolean {
-    return this.faseActual === FaseTurno.ATACAR && this.esSuyoPaisModal && this.estaJugandoModal;
+    return this.faseActual === FaseTurno.ATAQUE && this.esSuyoPaisModal && this.estaJugandoModal;
   }
   get puedoDefenderDesdeModal(): boolean {
-    return this.faseActual === FaseTurno.COLOCACION && this.esSuyoPaisModal && this.estaJugandoModal;
+    return this.faseActual === FaseTurno.INCORPORACION && this.esSuyoPaisModal && this.estaJugandoModal;
   }
   get puedoReagruparDesdeModal(): boolean {
-    return this.faseActual === FaseTurno.MOVER_TROPAS && this.esSuyoPaisModal && this.estaJugandoModal;
+    return this.faseActual === FaseTurno.REAGRUPACION && this.esSuyoPaisModal && this.estaJugandoModal;
   }
 
   // ── Ciclo de vida ──────────────────────────────────────────
@@ -237,6 +255,17 @@ export class TableroComponent implements OnInit, OnDestroy {
       if (esPropioYaRegistrado || event.tipo === 'ATAQUE_INICIADO') return;
       const texto = this.textoHistorialEvento(event);
       if (texto) this.agregarHistorial(texto, this.tipoHistorialEvento(event));
+
+      // Refrescar progreso del objetivo tras cada conquista (puede cambiar avance de continentes)
+      if (event.tipo === 'CONQUISTA') {
+        const jId = this.jugadorUsuario?.idJugador;
+        if (jId) {
+          this.tableroServicio.obtenerProgresoObjetivo(jId).pipe(take(1)).subscribe({
+            next: p => { this.progresoObjetivo = p; },
+            error: () => {}
+          });
+        }
+      }
     });
 
     this.tableroServicio.partidaObservable.subscribe({
@@ -251,7 +280,7 @@ export class TableroComponent implements OnInit, OnDestroy {
                 this.notificationService.success(
                   `¡${result.ganador!.color} ganó la partida! Objetivo: ${verificacion.objetivoCumplido}`
                 );
-                this.router.navigate(['/principal']);
+                this.router.navigate(['/estadisticas']);
               }
             },
             error: err => console.error('Error consultarMotivoGanador:', err)
@@ -267,6 +296,27 @@ export class TableroComponent implements OnInit, OnDestroy {
             const esJugadorLocal = evento.jugadorNombre === this.jugadorUsuario?.nombre;
             this.tableroEventService.enqueueFromWs(evento, esJugadorLocal);
           });
+
+          // Suscribir al topic personal de progreso de objetivo
+          const jugadorId = this.authService.getJugadorId();
+          if (jugadorId) {
+            this.objetivoWsSub = this.wsService.suscribirseProgresoObjetivo(
+              result.idPartida, jugadorId,
+              (progreso: ObjetivoProgreso) => { this.progresoObjetivo = progreso; }
+            );
+          }
+        }
+
+        // Mostrar revelación la primera vez que tengamos objetivo cargado
+        if (!this.revelacionMostrada && this.jugadorUsuario?.objetivo) {
+          this.revelacionMostrada = true;
+          this.showRevelacion = true;
+          // Cargar progreso inicial desde REST
+          const jId = this.jugadorUsuario.idJugador;
+          this.tableroServicio.obtenerProgresoObjetivo(jId).subscribe({
+            next: p => { this.progresoObjetivo = p; },
+            error: () => {}
+          });
         }
 
         const turnoAnteriorNum = this.lastTurnoActual;
@@ -277,27 +327,37 @@ export class TableroComponent implements OnInit, OnDestroy {
           this.iniciarTimer();
           const jNuevo = this.jugadorActualTurno;
           if (jNuevo) this.agregarHistorial(`Turno de ${jNuevo.nombre} — ${this.faseActual}`, 'ok');
+          // Refrescar progreso al iniciar cada nuevo turno
+          const jId = this.jugadorUsuario?.idJugador;
+          if (jId) {
+            this.tableroServicio.obtenerProgresoObjetivo(jId).pipe(take(1)).subscribe({
+              next: p => { this.progresoObjetivo = p; },
+              error: () => {}
+            });
+          }
         }
         this.lastTurnoActual = turnoActualNum;
 
         const usuario = this.authService.getCurrentUser();
         const turno = this.getTurnoActual();
-        if (!turno) { this.esMiTurno = false; return; }
+        if (!turno) { this.esMiTurno = false; this.lastJugadorActualId = -1; return; }
 
         const jugador = result.jugadores?.find(j => j.idJugador === turno.idJugador);
-        if (!jugador) { this.esMiTurno = false; return; }
+        if (!jugador) { this.esMiTurno = false; this.lastJugadorActualId = -1; return; }
 
         const idJugadorActual = this.authService.getJugadorId() ?? 0;
+        // turnoChanged es true cuando cambia el jugador activo — funciona aunque los bots sean síncronos
+        const turnoChanged = this.lastJugadorActualId !== turno.idJugador;
+        this.lastJugadorActualId = turno.idJugador;
+
         if (jugador.idUsuario === usuario?.idUsuario && jugador.idJugador === idJugadorActual) {
           this.esMiTurno = true;
           this.jugadorId = jugador.idJugador;
+          if (turnoChanged) this.iniciarInactividad();
         } else {
           this.esMiTurno = false;
+          this.detenerInactividad();
         }
-
-        this.jugadorConsquisto = result.jugadores?.find(
-          j => j.consquisto && j.idUsuario === usuario?.idUsuario && turno.fase === FaseTurno.MOVER_TROPAS
-        ) ?? null;
 
         const jugadorUsuario = result.jugadores?.find(j => j.idUsuario === usuario?.idUsuario);
         this.cartasJugador = result.estadoTarjetas?.filter(t => t.idJugador === jugadorUsuario?.idJugador) ?? [];
@@ -311,6 +371,13 @@ export class TableroComponent implements OnInit, OnDestroy {
         }
 
         this.calcularCombinacionesCanje(this.cartasJugador);
+
+        // Canje obligatorio: si es mi turno, estoy en INCORPORACION y tengo 5+ cartas,
+        // abrir el panel de canje automáticamente para que el jugador seleccione
+        if (this.esMiTurno && this.faseActual === FaseTurno.INCORPORACION
+            && this.cartasJugador.length >= 5 && !this.showCanjeModal) {
+          this.showCanjeModal = true;
+        }
       }
     });
 
@@ -320,22 +387,123 @@ export class TableroComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.tableroServicio.stopPolling();
     this.wsService.desuscribirsePartida();
+    this.objetivoWsSub?.unsubscribe();
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (this.clockInterval) clearInterval(this.clockInterval);
+    this.detenerInactividad();
+  }
+
+  onRevelacionConfirmada(): void {
+    this.showRevelacion = false;
+  }
+
+  // ── HostListeners para detectar actividad ─────────────────────
+  @HostListener('click')
+  @HostListener('keydown')
+  onActivityEvent(): void {
+    this.registrarActividad();
+  }
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMoveActivity(event: MouseEvent): void {
+    if (!this.esMiTurno) return;
+    const now = Date.now();
+    if (now - this.mouseWindowStart > 2000) {
+      this.mouseAccumDist = 0;
+      this.mouseWindowStart = now;
+      this.mousePrevX = event.clientX;
+      this.mousePrevY = event.clientY;
+      return;
+    }
+    const dx = Math.abs(event.clientX - this.mousePrevX);
+    const dy = Math.abs(event.clientY - this.mousePrevY);
+    this.mouseAccumDist += Math.sqrt(dx * dx + dy * dy);
+    this.mousePrevX = event.clientX;
+    this.mousePrevY = event.clientY;
+    if (this.mouseAccumDist > 50) {
+      this.registrarActividad();
+      this.mouseAccumDist = 0;
+      this.mouseWindowStart = now;
+    }
+  }
+
+  registrarActividad(): void {
+    if (!this.esMiTurno) return;
+    this.inactividadRestante = 30;
+    this.showInactividad = false;
   }
 
   // ── Timer ──────────────────────────────────────────────────
   iniciarTimer() {
     if (this.timerInterval) clearInterval(this.timerInterval);
-    this.tiempoRestante = 120;
+    this.tiempoRestante = 300;
     this.timerInterval = setInterval(() => {
       if (this.tiempoRestante > 0) {
         this.tiempoRestante--;
       } else {
         if (this.timerInterval) clearInterval(this.timerInterval);
-        if (this.esMiTurno) this.avanzarFaseTurno();
+        this.detenerInactividad();
+        if (this.esMiTurno) this.saltarTurnoCompleto();
       }
     }, 1000);
+  }
+
+  private iniciarInactividad(): void {
+    this.detenerInactividad();
+    if (!this.esMiTurno) return;
+    const turno = this.getTurnoActual();
+    const jugadorActivo = this.partida?.jugadores?.find(j => j.idJugador === turno?.idJugador);
+    if (jugadorActivo?.tipoJugador === 'BOT') return;
+    this.inactividadRestante = 60;
+    this.showInactividad = false;
+    this.inactividadInterval = setInterval(() => {
+      if (this.inactividadRestante > 0) {
+        this.inactividadRestante--;
+        if (this.inactividadRestante <= 15) this.showInactividad = true;
+      } else {
+        // Pasa el turno completo al siguiente jugador
+        this.detenerInactividad();
+        if (this.esMiTurno) this.saltarTurnoCompleto();
+      }
+    }, 1000);
+  }
+
+  /** Avanza todas las fases restantes del turno actual (máx 3 llamadas encadenadas). */
+  private saltarTurnoCompleto(intentosRestantes = 3): void {
+    if (intentosRestantes <= 0) { this.tableroServicio.forceRefresh(); return; }
+
+    // Si hay canje obligatorio pendiente (5+ cartas en INCORPORACION), canjear antes de avanzar
+    if (this.faseActual === FaseTurno.INCORPORACION
+        && this.cartasJugador.length >= 5
+        && this.combinacionesPosibles.length > 0) {
+      const dto: CanjeTarjetasDto = {
+        idTarjetas: this.combinacionesPosibles[0].map(c => c.idEstadoTarjeta),
+        idJugador: this.jugadorId
+      };
+      this.tableroServicio.realizarCanje(dto).subscribe({
+        next: () => this.tableroServicio.forceRefresh(),
+        error: () => {}
+      });
+    }
+
+    this.tableroServicio.cambiarTurno(this.partida.idPartida).subscribe({
+      next: () => {
+        this.tableroServicio.forceRefresh();
+        // Esperar a que el estado actualice y verificar si aún es mi turno
+        setTimeout(() => {
+          if (this.esMiTurno) this.saltarTurnoCompleto(intentosRestantes - 1);
+        }, 400);
+      },
+      error: err => { console.error('Error al saltar turno:', err); this.tableroServicio.forceRefresh(); }
+    });
+  }
+
+  private detenerInactividad(): void {
+    if (this.inactividadInterval) {
+      clearInterval(this.inactividadInterval);
+      this.inactividadInterval = null;
+    }
+    this.showInactividad = false;
   }
 
   // ── Acciones de turno ──────────────────────────────────────
@@ -343,17 +511,6 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.tableroServicio.cambiarTurno(this.partida.idPartida).subscribe({
       next: () => this.tableroServicio.forceRefresh(),
       error: err => console.error('Error al avanzar fase:', err)
-    });
-  }
-
-  obtenerTarjeta() {
-    if (!this.jugadorConsquisto) {
-      this.notificationService.info('No conquistaste ningún país en este turno.');
-      return;
-    }
-    this.tableroServicio.obtenerTarjeta(this.jugadorConsquisto.idJugador, this.partida.idPartida).subscribe({
-      next: () => this.notificationService.success('¡Tarjeta obtenida!'),
-      error: err => { console.error('Error al obtener tarjeta:', err); this.notificationService.error('Error al obtener la tarjeta.'); }
     });
   }
 
@@ -477,7 +634,11 @@ export class TableroComponent implements OnInit, OnDestroy {
 
     const paisOrigenNombre  = this.paisModalSeleccionado.pais.nombre;
     const idDestino         = Number(this.idPaisDestinoModal);
-    const paisDestinoNombre = this.paisesEnemigos.find(p => p.pais.idPais === idDestino)?.pais.nombre ?? '';
+    const paisDestinoEstado = this.paisesEnemigos.find(p => p.pais.idPais === idDestino);
+    const paisDestinoNombre = paisDestinoEstado?.pais.nombre ?? '';
+    const jugadorDefensorObj = this.partida?.jugadores?.find(j => Number(j.idJugador) === Number(paisDestinoEstado?.idJugador));
+    const jugadorDefensor   = jugadorDefensorObj?.nombre ?? '';
+    const colorDefensor     = this.getColorVarJugador(jugadorDefensorObj?.color ?? '');
     const maxDados          = Math.min(3, Math.max(1, this.paisModalSeleccionado.cantidadTropas - 1));
     const colorJugador      = this.getColorVarJugador(this.jugadorUsuario.color);
     // Guardar ID origen ANTES de cerrar el modal (cerrarModalPais() lo pone en null)
@@ -497,12 +658,14 @@ export class TableroComponent implements OnInit, OnDestroy {
 
       this.tableroServicio.atacarPais(dto).subscribe({
         next: (response: AtaqueResponseDto) => {
-          // Encolar resultado ANTES de avanzar la cola (para que processNext lo recoja)
-          this.tableroEventService.enqueue({
+          // Insertar resultado al FRENTE para que tenga prioridad sobre TARJETA_OBTENIDA del WS
+          this.tableroEventService.enqueueAtFront({
             tipo: response.conquista ? 'CONQUISTA' : 'RESULTADO_DADOS',
             titulo: response.conquista ? '¡CONQUISTA!' : 'RESULTADO DEL COMBATE',
             jugadorActivo: this.jugadorUsuario!.nombre,
             colorJugador,
+            jugadorDefensor,
+            colorDefensor,
             paisOrigen: paisOrigenNombre,
             paisDestino: paisDestinoNombre,
             dadosAtaque: response.dadosAtaque,
@@ -534,6 +697,8 @@ export class TableroComponent implements OnInit, OnDestroy {
       titulo: 'ELECCIÓN DE DADOS',
       jugadorActivo: this.jugadorUsuario.nombre,
       colorJugador,
+      jugadorDefensor,
+      colorDefensor,
       paisOrigen: paisOrigenNombre,
       paisDestino: paisDestinoNombre,
       diceSelection: { paisOrigen: paisOrigenNombre, paisDestino: paisDestinoNombre, maxDados, timerSegundos: 5 },
@@ -555,7 +720,7 @@ export class TableroComponent implements OnInit, OnDestroy {
       next: resultado => {
         if (resultado) {
           this.notificationService.success('Ejércitos colocados.');
-          this.agregarHistorial(`${this.jugadorUsuario!.nombre} colocó en ${this.paisModalSeleccionado!.pais.nombre}`, 'ok');
+          // El registro de historial viene del evento WS INCORPORACION (ya incluye país y cantidad)
           this.cerrarModalPais();
         }
       },

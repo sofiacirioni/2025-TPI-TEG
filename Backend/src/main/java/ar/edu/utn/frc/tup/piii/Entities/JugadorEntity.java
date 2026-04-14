@@ -77,4 +77,9 @@ public class JugadorEntity {
     @Column
     private Integer ejercito = 0;
 
+    /** Color del jugador que eliminó a este jugador (null si aún no fue eliminado o si se rindió). */
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Color eliminadoPorColor;
+
 }

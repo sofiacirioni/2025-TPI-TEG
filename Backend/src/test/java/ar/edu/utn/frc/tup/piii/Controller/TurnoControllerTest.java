@@ -164,11 +164,12 @@ class TurnoControllerTest {
     @Test
     @DisplayName("PUT /ataque → 200 with AtaqueResponseDto")
     void putAtaque_ok() throws Exception {
-        Ataque req = new Ataque(1L, 10L, 20L);
+        Ataque req = new Ataque(1L, 10L, 20L, null);
         AtaqueResponseDto resp = new AtaqueResponseDto(
-                true,
+                true, false,
                 Arrays.asList(6, 4, 2),
-                Arrays.asList(5, 3)
+                Arrays.asList(5, 3),
+                0, 0
         );
         when(turnoService.ataque(any(Ataque.class))).thenReturn(resp);
 

@@ -1,6 +1,8 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoDto;
+import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoItemDto;
+import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoProgresoDto;
 import ar.edu.utn.frc.tup.piii.Dtos.VerificacionObjetivoDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.*;
@@ -180,21 +182,25 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                     .findFirst()
                     .orElse(null);
 
-            if (jugadorEnemigo.isPerdio()) {
+            if (jugadorEnemigo != null && jugadorEnemigo.isPerdio()) {
+                Color eliminadoPor = jugadorEnemigo.getEliminadoPorColor();
+                boolean yoLoElimine = eliminadoPor == null || eliminadoPor == jugador.getColor();
 
-                partidaEntity.setGanador(jugador);
-                partidaEntity.setEstadoPartida(EstadoPartida.TERMINADA);
+                if (yoLoElimine) {
+                    // El portador eliminó al enemigo → gana
+                    partidaEntity.setGanador(jugador);
+                    partidaEntity.setEstadoPartida(EstadoPartida.TERMINADA);
+                    for (JugadorEntity j : partidaEntity.getJugadores()) {
+                        j.setPerdio(true);
+                    }
+                    partidaRepository.save(partidaEntity);
 
-                for(JugadorEntity j : partidaEntity.getJugadores()) {
-                    j.setPerdio(true);
+                    return VerificacionObjetivoDto.builder()
+                            .gano(true)
+                            .objetivoCumplido(objetivo.getDescripcion())
+                            .build();
                 }
-
-                partidaRepository.save(partidaEntity);
-
-                return VerificacionObjetivoDto.builder()
-                        .gano(true)
-                        .objetivoCumplido(objetivo.getDescripcion())
-                        .build();
+                // Enemigo fue eliminado por otro → objetivo se convierte: cae al check de 30 países
             }
 
         } else {
@@ -267,5 +273,124 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                 .gano(false)
                 .objetivoCumplido("Ninguno")
                 .build();
+    }
+
+    // ── Progreso del objetivo ──────────────────────────────────────────────────────
+
+    @Override
+    public ObjetivoProgresoDto calcularProgreso(Long idJugador) {
+        JugadorEntity jugador = jugadorRepository.findById(idJugador)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado."));
+
+        ObjetivoEntity objetivo = objetivoRepository.findById(jugador.getObjetivo().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Objetivo no encontrado."));
+
+        PartidaEntity partida = partidaRepository.findById(jugador.getPartida().getIdPartida())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Partida no encontrada."));
+
+        List<EstadoPaisEntity> misPaises = estadoPaisRepository
+                .findEstadoPaisEntitiesByJugador_IdJugador(idJugador);
+
+        // Detectar si el objetivo de eliminación fue convertido (enemigo eliminado por otro jugador)
+        boolean objetivoConvertido = false;
+        if (objetivo.getColorEnemigo() != null) {
+            JugadorEntity enemigo = partida.getJugadores().stream()
+                    .filter(j -> j.getColor() == objetivo.getColorEnemigo())
+                    .findFirst().orElse(null);
+            if (enemigo != null && enemigo.isPerdio()) {
+                Color killedBy = enemigo.getEliminadoPorColor();
+                if (killedBy != null && killedBy != jugador.getColor()) {
+                    objetivoConvertido = true;
+                }
+            }
+        }
+
+        List<ObjetivoItemDto> items = new ArrayList<>();
+        String descripcion;
+        boolean completado;
+
+        if (objetivoConvertido) {
+            // El enemigo fue eliminado por otro jugador → objetivo se convierte a 30 países
+            int actual = misPaises.size();
+            items.add(ObjetivoItemDto.builder()
+                    .descripcion("Objetivo convertido — Países en dominio")
+                    .valorActual(actual)
+                    .valorObjetivo(30)
+                    .completado(actual >= 30)
+                    .build());
+            descripcion = "Conquistar 30 países (objetivo convertido)";
+            completado = actual >= 30;
+
+        } else if (objetivo.getColorEnemigo() != null) {
+            // Objetivo de eliminación activo: mostrar cuántos países le quedan al enemigo
+            JugadorEntity enemigo = partida.getJugadores().stream()
+                    .filter(j -> j.getColor() == objetivo.getColorEnemigo())
+                    .findFirst().orElse(null);
+
+            String nombreEnemigo = enemigo != null ? enemigo.getNombre() : objetivo.getColorEnemigo().name();
+            boolean eliminado = enemigo != null && enemigo.isPerdio();
+            int paisesEnemigo = eliminado ? 0
+                    : (enemigo != null
+                        ? estadoPaisRepository.findEstadoPaisEntitiesByJugador_IdJugador(enemigo.getIdJugador()).size()
+                        : 0);
+
+            // valorActual = 0 cuando está eliminado (objetivo: llegar a 0 países del enemigo)
+            items.add(ObjetivoItemDto.builder()
+                    .descripcion("Países restantes de " + nombreEnemigo)
+                    .valorActual(paisesEnemigo)
+                    .valorObjetivo(0)
+                    .completado(eliminado)
+                    .build());
+
+            descripcion = "Destruir al ejército de " + nombreEnemigo + " (" + objetivo.getColorEnemigo().name() + ")";
+            completado = eliminado;
+
+        } else {
+            // Objetivo territorial: X/N por categoría
+            Map<String, Long> porContinente = misPaises.stream()
+                    .map(e -> e.getPais().getContinente().getNombre())
+                    .collect(Collectors.groupingBy(n -> n, Collectors.counting()));
+
+            descripcion = objetivo.getDescripcion();
+
+            if (objetivo.getCantidadPaisesObjetivo() != null && objetivo.getCantidadPaisesObjetivo() > 0) {
+                int actual = misPaises.size();
+                int req = objetivo.getCantidadPaisesObjetivo();
+                items.add(ObjetivoItemDto.builder()
+                        .descripcion("Países en dominio total")
+                        .valorActual(actual)
+                        .valorObjetivo(req)
+                        .completado(actual >= req)
+                        .build());
+            }
+
+            addContinenteItem(items, objetivo.getAfrica(),       "Africa",           porContinente);
+            addContinenteItem(items, objetivo.getAsia(),         "Asia",             porContinente);
+            addContinenteItem(items, objetivo.getEuropa(),       "Europa",           porContinente);
+            addContinenteItem(items, objetivo.getAmericaNorte(), "America del Norte", porContinente);
+            addContinenteItem(items, objetivo.getAmericaSur(),   "America del Sur",  porContinente);
+            addContinenteItem(items, objetivo.getOceania(),      "Oceania",          porContinente);
+
+            completado = items.stream().allMatch(ObjetivoItemDto::isCompletado);
+        }
+
+        return ObjetivoProgresoDto.builder()
+                .descripcion(descripcion)
+                .items(items)
+                .completado(completado)
+                .objetivoConvertido(objetivoConvertido)
+                .build();
+    }
+
+    private void addContinenteItem(List<ObjetivoItemDto> items, Integer requerido,
+                                   String nombre, Map<String, Long> porContinente) {
+        if (requerido == null || requerido == 0) return;
+        int actual = porContinente.getOrDefault(nombre, 0L).intValue();
+        items.add(ObjetivoItemDto.builder()
+                .descripcion("Países de " + nombre)
+                .valorActual(actual)
+                .valorObjetivo(requerido)
+                .completado(actual >= requerido)
+                .build());
     }
 }

@@ -133,6 +133,15 @@ export class WebSocketService {
     this.partidaSub = null;
   }
 
+  /** Suscribe al topic personal de progreso de objetivo del jugador. Devuelve la suscripción para poder cancelarla. */
+  suscribirseProgresoObjetivo(idPartida: number, idJugador: number, callback: (progreso: any) => void): StompSubscription | null {
+    const topic = `/topic/partida.${idPartida}.objetivo.${idJugador}`;
+    if (!this.conectado) return null;
+    return this.stompClient.subscribe(topic, (message: IMessage) => {
+      try { callback(JSON.parse(message.body)); } catch (e) { /* ignore */ }
+    });
+  }
+
   /** Asegura que la conexión esté activa (sin sala). Útil para el tablero. */
   asegurarConexion(): void {
     if (!this.stompClient.active) {

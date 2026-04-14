@@ -21,7 +21,8 @@
   align-items: flex-start;
   justify-content: center;
   width: 100%;
-  padding-top: 14%; // tercio superior del área
+  padding-top: 6%; // cuarto superior del área
+  z-index: 1;
   animation: ted-slide-in 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 
   &.dismissing {
@@ -39,11 +40,11 @@
   to   { opacity: 0; transform: translateY(-18px); }
 }
 
-// ── Viñeta para modo combate ──────────────────────────────────────
+// ── Viñeta para modo combate — cubre el host completo ────────────
 .ted-vignette {
-  position: fixed; inset: 0; pointer-events: none;
+  position: absolute; inset: 0; pointer-events: none;
   background: rgba(0, 0, 0, 0.52);
-  z-index: -1;
+  z-index: 0;
 
   &.conquista-vignette {
     background: rgba(80, 10, 10, 0.62);
@@ -366,6 +367,15 @@
     font-weight: 700;
     color: var(--color-sello);
   }
+}
+
+// ── Degradado radial detrás de notificaciones simples ────────────
+.ted-notif-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 45% at 50% 0%, rgba(0, 0, 0, 0.42) 0%, transparent 100%);
+  z-index: 0;
 }
 
 // ── Notificación simple ───────────────────────────────────────────

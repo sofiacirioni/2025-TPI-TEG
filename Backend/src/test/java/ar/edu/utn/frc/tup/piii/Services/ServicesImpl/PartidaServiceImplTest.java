@@ -343,7 +343,7 @@ public class PartidaServiceImplTest {
         TurnoEntity turnoEntity = new TurnoEntity();
         turnoEntity.setIdTurno(1L);
         turnoEntity.setNroTurno(1);
-        turnoEntity.setFase(FaseTurno.ATACAR);
+        turnoEntity.setFase(FaseTurno.ATAQUE);
         turnoEntity.setJugador(jugadorEntity);
 
         TarjetaEntity tarjetaEntity = new TarjetaEntity();

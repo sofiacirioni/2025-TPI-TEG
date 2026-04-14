@@ -1,0 +1,76 @@
+<div class="rev-overlay" [class.cerrando]="estado === 'cerrando'">
+
+  <!-- ══ SOBRE ═══════════════════════════════════════════ -->
+  <div class="sobre-wrap" [class.abriendo]="estado === 'abriendo' || estado === 'abierto'" [class.cerrando]="estado === 'cerrando'">
+
+    <!-- Solapa superior (se dobla al abrir, se cierra al confirmar) -->
+    <div class="sobre-flap" [class.abierta]="estado === 'abierto'">
+      <div class="sobre-lacre">
+        <span class="lacre-sigla">TEG</span>
+      </div>
+    </div>
+
+    <!-- Cuerpo del sobre -->
+    <div class="sobre-cuerpo">
+      <div class="sobre-lineas"></div>
+      <p class="sobre-sello-texto">ORDEN SECRETA</p>
+    </div>
+
+    <!-- ══ HOJA DE ÓRDENES (emerge del sobre, se retrae al confirmar) ════════════ -->
+    <div class="hoja-wrap" [class.visible]="estado === 'abierto'">
+      <div class="hoja">
+
+        <!-- Encabezado -->
+        <div class="hoja-header">
+          <span class="hoja-numero">ORDEN DE OPERACIONES N° {{ numeroOrden }}</span>
+          <div class="hoja-divider"></div>
+          <span class="hoja-titulo">MISIÓN ASIGNADA</span>
+          <div class="hoja-divider"></div>
+        </div>
+
+        <!-- Descripción principal -->
+        <p class="hoja-descripcion">{{ descripcion }}</p>
+
+        <!-- Ítems de progreso -->
+        <ul class="hoja-items">
+          @for (item of items; track item.texto) {
+            <li class="hoja-item" [class.completado]="item.completado">
+              <span class="checkbox">{{ item.completado ? '■' : '□' }}</span>
+              <span class="item-texto">
+                @if (item.colorHex) {
+                  <!-- Objetivo de eliminación: nombre con su color -->
+                  <span class="ficha-jugador" [style.background-color]="item.colorHex"></span>
+                }
+                {{ item.texto }}
+                @if (item.valorObjetivo > 0) {
+                  <span class="item-cuenta">: {{ item.valorActual }}/{{ item.valorObjetivo }}</span>
+                } @else {
+                  <span class="item-cuenta"> — en curso</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+
+        <!-- Pie con firma -->
+        <div class="hoja-footer">
+          <div class="hoja-divider"></div>
+          <div class="hoja-firma-row">
+            <span class="hoja-firma">~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="hoja-comando">COMANDO SUPREMO</span>
+          </div>
+        </div>
+
+      </div><!-- /hoja -->
+    </div><!-- /hoja-wrap -->
+
+  </div><!-- /sobre-wrap -->
+
+  <!-- Botón ENTENDIDO (aparece cuando la hoja está visible) -->
+  @if (estado === 'abierto') {
+    <button class="btn-entendido btn-teg-primary" (click)="confirmar()">
+      · ENTENDIDO ·
+    </button>
+  }
+
+</div>

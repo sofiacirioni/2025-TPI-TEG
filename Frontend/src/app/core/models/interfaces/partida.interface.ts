@@ -12,9 +12,9 @@ export enum TipoObjetivo {
 }
 
 export enum FaseTurno {
-  ATACAR = 'ATACAR',
-  MOVER_TROPAS = 'MOVER_TROPAS',
-  COLOCACION = 'COLOCACION',
+  ATAQUE = 'ATAQUE',
+  REAGRUPACION = 'REAGRUPACION',
+  INCORPORACION = 'INCORPORACION',
 }
 
 
@@ -66,11 +66,35 @@ export interface JugadorDto {
   ejercito: number;
   consquisto: boolean;
   url?: string;
+  cantidadTarjetas?: number;
 }
 
 export interface ObjetivoDto {
   descripcion: string;
   tipoObjetivo: TipoObjetivo;
+  /** Presente cuando el objetivo es eliminar a un jugador. */
+  colorEnemigo?: string;
+  cantidadPaisesObjetivo?: number;
+  africa?: number;
+  asia?: number;
+  europa?: number;
+  americaNorte?: number;
+  americaSur?: number;
+  oceania?: number;
+}
+
+export interface ObjetivoItem {
+  descripcion: string;
+  valorActual: number;
+  valorObjetivo: number;
+  completado: boolean;
+}
+
+export interface ObjetivoProgreso {
+  descripcion: string;
+  items: ObjetivoItem[];
+  completado: boolean;
+  objetivoConvertido: boolean;
 }
 
 export interface TurnoDto {

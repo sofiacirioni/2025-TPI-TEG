@@ -1,9 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 const FASES: Record<string, string> = {
-  'COLOCACION':   'COLOCACIÓN',
-  'ATACAR':       'ATACAR',
-  'MOVER_TROPAS': 'MOVER TROPAS',
+  'INCORPORACION': 'INCORPORACIÓN',
+  'ATAQUE':        'ATAQUE',
+  'REAGRUPACION':  'REAGRUPACIÓN',
 };
 
 @Pipe({ name: 'faseDisplay', standalone: true })

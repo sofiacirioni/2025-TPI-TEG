@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, interval, NEVER, Observable, startWith, Subscription, switchMap } from 'rxjs';
-import { AtaqueDto, AtaqueResponseDto, CanjeTarjetasDto, EstadoPaisDto, PartidaDto, TarjetaDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../models/interfaces/partida.interface';
+import { AtaqueDto, AtaqueResponseDto, CanjeTarjetasDto, EstadoPaisDto, ObjetivoProgreso, PartidaDto, TarjetaDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../models/interfaces/partida.interface';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -23,7 +23,7 @@ export class TableroServicio {
 
   getDestinosReagrupamiento(idEstadoPaisOrigen: number, idJugador: number, idPartida: number): Observable<EstadoPaisDto[]> {
     return this.http.get<EstadoPaisDto[]>(
-      `${this.apiUrl}/turno/reagrupar/destinos?idEstadoPaisOrigen=${idEstadoPaisOrigen}&idJugador=${idJugador}&idPartida=${idPartida}`
+      `${this.apiUrl}/turno/reagrupar/destinos?idPaisOrigen=${idEstadoPaisOrigen}&idJugador=${idJugador}&idPartida=${idPartida}`
     );
   }
 
@@ -130,6 +130,12 @@ export class TableroServicio {
     return this.http.put<VerificacionObjetivo>(
       `${this.apiUrl}/turno/verificarGanador?idJugador=${idJugador}`,
       {}
+    );
+  }
+
+  obtenerProgresoObjetivo(idJugador: number): Observable<ObjetivoProgreso> {
+    return this.http.get<ObjetivoProgreso>(
+      `${this.apiUrl}/objetivos/progreso/${idJugador}`
     );
   }
 

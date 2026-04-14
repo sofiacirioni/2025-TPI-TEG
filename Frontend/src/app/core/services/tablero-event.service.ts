@@ -26,9 +26,15 @@ export class TableroEventService {
   private diceResultSubject = new Subject<number>();
   readonly diceResult$: Observable<number> = this.diceResultSubject.asObservable();
 
-  /** Encola un evento genérico. */
+  /** Encola un evento genérico al final de la cola. */
   enqueue(event: GameEvent): void {
     this.queue.push(event);
+    if (!this.processing) this.processNext();
+  }
+
+  /** Inserta un evento al FRENTE de la cola (tiene prioridad sobre los ya encolados). */
+  enqueueAtFront(event: GameEvent): void {
+    this.queue.unshift(event);
     if (!this.processing) this.processNext();
   }
 
@@ -51,6 +57,8 @@ export class TableroEventService {
           titulo: ws.conquista ? '¡CONQUISTA!' : 'COMBATE',
           jugadorActivo: ws.jugadorNombre,
           colorJugador: color,
+          jugadorDefensor: ws.jugadorDefensor ?? '',
+          colorDefensor: COLOR_VAR_MAP[ws.jugadorColorDefensor?.toUpperCase() ?? ''] ?? '',
           paisOrigen: ws.paisOrigen,
           paisDestino: ws.paisDestino,
           dadosAtaque: ws.dadosAtaque,

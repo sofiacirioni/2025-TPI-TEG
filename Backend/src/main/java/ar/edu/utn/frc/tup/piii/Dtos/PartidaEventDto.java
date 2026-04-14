@@ -27,4 +27,6 @@ public class PartidaEventDto {
     private int perdidasAtacante;
     private int perdidasDefensor;
     private Long idPartida;
+    private String jugadorDefensor;
+    private String jugadorColorDefensor;
 }

@@ -21,6 +21,8 @@ export interface GameEvent {
   descripcion?: string;
   jugadorActivo?: string;
   colorJugador?: string;
+  jugadorDefensor?: string;
+  colorDefensor?: string;
   paisOrigen?: string;
   paisDestino?: string;
   /** ms de duración. 0 = bloqueante (espera dismissCurrent). Default: 3500 */
@@ -40,6 +42,8 @@ export interface PartidaEventWs {
   tipo: string;
   jugadorNombre: string;
   jugadorColor: string;
+  jugadorDefensor?: string;
+  jugadorColorDefensor?: string;
   descripcion: string;
   paisOrigen: string;
   paisDestino: string;

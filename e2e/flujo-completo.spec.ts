@@ -154,6 +154,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.tablero-container', { timeout: 20_000 });
   await page.waitForSelector(PAIS_PATH, { timeout: 15_000 });
+  // Descartar el overlay de revelación de objetivo si está presente
+  const btnEntendido = page.locator('.btn-entendido');
+  if (await btnEntendido.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await btnEntendido.click();
+    await page.waitForTimeout(800);
+  }
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -174,8 +180,8 @@ test.describe('Flujo completo — estado inicial', () => {
 
     // La fase debe ser una válida
     const fase = await faseActual(page);
-    expect(['COLOCACION', 'COLOCACIÓN', 'ATACAR', 'MOVER TROPAS', 'MOVER_TROPAS'])
-      .toContain(fase.replace('Ó', 'O'));
+    expect(['INCORPORACION', 'ATAQUE', 'REAGRUPACION'])
+      .toContain(fase.replace(/[ÓÚÁÉ]/g, c => ({Ó:'O',Ú:'U',Á:'A',É:'E'})[c]!));
   });
 
   test('el número de turno es positivo y el jugador activo está indicado', async ({ page }) => {
@@ -208,7 +214,7 @@ test.describe('Flujo completo — estado inicial', () => {
 // BLOQUE 2 — Fase COLOCACIÓN
 // ════════════════════════════════════════════════════════════════════
 
-test.describe('Flujo completo — fase COLOCACIÓN', () => {
+test.describe('Flujo completo — fase INCORPORACIÓN', () => {
 
   test('puede colocar ejércitos en un país propio', async ({ page }) => {
     test.setTimeout(50_000);
@@ -216,15 +222,15 @@ test.describe('Flujo completo — fase COLOCACIÓN', () => {
     const esMiTurno = await esperarMiTurno(page, 20_000);
     if (!esMiTurno) { test.skip(); return; }
 
-    // Llegar a COLOCACION (puede que ya esté ahí)
+    // Llegar a INCORPORACION (puede que ya esté ahí)
     for (let i = 0; i < 5; i++) {
       const f = await faseActual(page);
-      if (f.includes('COLOC')) break;
+      if (f.includes('INCORP')) break;
       await avanzarFase(page);
     }
 
     const f = await faseActual(page);
-    if (!f.includes('COLOC')) { test.skip(); return; }
+    if (!f.includes('INCORP')) { test.skip(); return; }
 
     const ejercitosAntes = parseInt(
       (await page.locator('.info-barra .info-val-big').textContent() ?? '0').trim()
@@ -242,10 +248,10 @@ test.describe('Flujo completo — fase COLOCACIÓN', () => {
     if (!esMiTurno) { test.skip(); return; }
 
     for (let i = 0; i < 5; i++) {
-      if ((await faseActual(page)).includes('COLOC')) break;
+      if ((await faseActual(page)).includes('INCORP')) break;
       await avanzarFase(page);
     }
-    if (!(await faseActual(page)).includes('COLOC')) { test.skip(); return; }
+    if (!(await faseActual(page)).includes('INCORP')) { test.skip(); return; }
 
     // Buscar un país propio con input de colocación
     const paises = page.locator(PAIS_PATH);
@@ -312,7 +318,7 @@ test.describe('Flujo completo — fase COLOCACIÓN', () => {
 // BLOQUE 3 — Fase ATACAR
 // ════════════════════════════════════════════════════════════════════
 
-test.describe('Flujo completo — fase ATACAR', () => {
+test.describe('Flujo completo — fase ATAQUE', () => {
 
   test('puede iniciar un ataque y ver el panel de selección de dados', async ({ page }) => {
     test.setTimeout(70_000);
@@ -320,12 +326,12 @@ test.describe('Flujo completo — fase ATACAR', () => {
     const esMiTurno = await esperarMiTurno(page, 25_000);
     if (!esMiTurno) { test.skip(); return; }
 
-    // Avanzar hasta ATACAR
+    // Avanzar hasta ATAQUE
     for (let i = 0; i < 8; i++) {
-      if ((await faseActual(page)).includes('ATACAR')) break;
+      if ((await faseActual(page)).includes('ATAQUE')) break;
       await avanzarFase(page);
     }
-    if (!(await faseActual(page)).includes('ATACAR')) { test.skip(); return; }
+    if (!(await faseActual(page)).includes('ATAQUE')) { test.skip(); return; }
 
     const resultado = await atacarPais(page);
 
@@ -357,10 +363,10 @@ test.describe('Flujo completo — fase ATACAR', () => {
     const historialAntes = await page.locator('.hist-item').count();
 
     for (let i = 0; i < 8; i++) {
-      if ((await faseActual(page)).includes('ATACAR')) break;
+      if ((await faseActual(page)).includes('ATAQUE')) break;
       await avanzarFase(page);
     }
-    if (!(await faseActual(page)).includes('ATACAR')) { test.skip(); return; }
+    if (!(await faseActual(page)).includes('ATAQUE')) { test.skip(); return; }
 
     const resultado = await atacarPais(page);
     if (resultado !== 'atacado') { test.skip(); return; }
@@ -379,10 +385,10 @@ test.describe('Flujo completo — fase ATACAR', () => {
     if (!esMiTurno) { test.skip(); return; }
 
     for (let i = 0; i < 8; i++) {
-      if ((await faseActual(page)).includes('ATACAR')) break;
+      if ((await faseActual(page)).includes('ATAQUE')) break;
       await avanzarFase(page);
     }
-    if (!(await faseActual(page)).includes('ATACAR')) { test.skip(); return; }
+    if (!(await faseActual(page)).includes('ATAQUE')) { test.skip(); return; }
 
     // Buscar un modal con select de destino de ataque
     const paises = page.locator(PAIS_PATH);
@@ -423,7 +429,7 @@ test.describe('Flujo completo — fase ATACAR', () => {
 // BLOQUE 4 — Fase MOVER TROPAS (reagrupamiento)
 // ════════════════════════════════════════════════════════════════════
 
-test.describe('Flujo completo — fase MOVER TROPAS', () => {
+test.describe('Flujo completo — fase REAGRUPACIÓN', () => {
 
   test('puede reagrupar tropas hacia un país propio conectado', async ({ page }) => {
     test.setTimeout(60_000);
@@ -431,15 +437,15 @@ test.describe('Flujo completo — fase MOVER TROPAS', () => {
     const esMiTurno = await esperarMiTurno(page, 25_000);
     if (!esMiTurno) { test.skip(); return; }
 
-    // Avanzar hasta MOVER_TROPAS
+    // Avanzar hasta REAGRUPACION
     for (let i = 0; i < 10; i++) {
       const f = await faseActual(page);
-      if (f.includes('MOVER') || f.includes('TROPAS')) break;
+      if (f.includes('REAGRUP')) break;
       await avanzarFase(page);
     }
 
     const f = await faseActual(page);
-    if (!f.includes('MOVER') && !f.includes('TROPAS')) { test.skip(); return; }
+    if (!f.includes('REAGRUP')) { test.skip(); return; }
 
     // Buscar un país propio con al menos 2 tropas y destinos disponibles
     const paises = page.locator(PAIS_PATH);
@@ -494,12 +500,12 @@ test.describe('Flujo completo — fase MOVER TROPAS', () => {
 
     for (let i = 0; i < 10; i++) {
       const f = await faseActual(page);
-      if (f.includes('MOVER') || f.includes('TROPAS')) break;
+      if (f.includes('REAGRUP')) break;
       await avanzarFase(page);
     }
 
     const f = await faseActual(page);
-    if (!f.includes('MOVER') && !f.includes('TROPAS')) { test.skip(); return; }
+    if (!f.includes('REAGRUP')) { test.skip(); return; }
 
     // Obtener todos los jugadores para verificar que ningún destino sea enemigo
     const paises = page.locator(PAIS_PATH);

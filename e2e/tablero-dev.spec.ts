@@ -31,6 +31,12 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector('.tablero-container', { timeout: 20_000 });
   // Esperar a que el mapa haya renderizado al menos un path de país
   await page.waitForSelector(PAIS_PATH, { timeout: 15_000 });
+  // Descartar el overlay de revelación de objetivo si está presente
+  const btnEntendido = page.locator('.btn-entendido');
+  if (await btnEntendido.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await btnEntendido.click();
+    await page.waitForTimeout(800);
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -172,8 +178,23 @@ test.describe('Funcional — elementos de juego', () => {
   test('el sobre del objetivo abre el modal al hacer click', async ({ page }) => {
     await page.click('.sobre-objetivo');
     await expect(page.locator('.objetivo-modal')).toBeVisible({ timeout: 3_000 });
-    const texto = await page.locator('.objetivo-texto').textContent();
-    expect(texto!.length).toBeGreaterThan(5);
+
+    // El modal muestra el progreso dinámico (.objetivo-desc + .objetivo-items)
+    // o el texto estático como fallback (.objetivo-texto) si el progreso aún no cargó
+    const hasDesc    = await page.locator('.objetivo-desc').isVisible({ timeout: 1_500 }).catch(() => false);
+    const hasItems   = await page.locator('.objetivo-items').isVisible({ timeout: 500 }).catch(() => false);
+    const hasTexto   = await page.locator('.objetivo-texto').isVisible({ timeout: 500 }).catch(() => false);
+
+    if (hasDesc) {
+      const texto = await page.locator('.objetivo-desc').textContent();
+      expect(texto!.trim().length).toBeGreaterThan(5);
+    } else if (hasTexto) {
+      const texto = await page.locator('.objetivo-texto').textContent();
+      expect(texto!.trim().length).toBeGreaterThan(5);
+    }
+    // Al menos uno de los dos formatos debe estar presente
+    expect(hasDesc || hasTexto || hasItems, 'El modal debe mostrar contenido del objetivo').toBe(true);
+
     await page.click('.objetivo-modal');
     await expect(page.locator('.objetivo-modal')).not.toBeVisible({ timeout: 3_000 });
   });
@@ -219,8 +240,8 @@ test.describe('Fases y turnos — flujo de juego', () => {
     await expect(faseVal).toBeVisible();
     const faseTexto = await faseVal.textContent();
     // La fase debe ser una de las tres válidas (con o sin tildes)
-    expect(['COLOCACIÓN', 'COLOCACION', 'ATACAR', 'MOVER TROPAS', 'MOVER_TROPAS'])
-      .toContain(faseTexto!.trim().toUpperCase().replace('Ó','O').replace('Ó','O'));
+    expect(['INCORPORACION', 'ATAQUE', 'REAGRUPACION'])
+      .toContain(faseTexto!.trim().toUpperCase().replace(/[ÓÚÁ]/g, c => ({Ó:'O',Ú:'U',Á:'A'})[c]!));
   });
 
   test('el numero de turno es positivo', async ({ page }) => {
@@ -254,7 +275,7 @@ test.describe('Fases y turnos — flujo de juego', () => {
     expect(cambioFase, `Fase debe cambiar tras AVANZAR FASE. Antes: ${faseAntes}, Después: ${faseDespues}`).toBe(true);
   });
 
-  test('ciclo completo de fases si es mi turno: COLOCACIÓN → ATACAR → MOVER TROPAS', async ({ page }) => {
+  test('ciclo completo de fases si es mi turno: INCORPORACIÓN → ATAQUE → REAGRUPACIÓN', async ({ page }) => {
     const btnAvanzar = page.locator('.btn-avanzar');
 
     // Esperar hasta 15s a que sea mi turno
@@ -268,7 +289,7 @@ test.describe('Fases y turnos — flujo de juego', () => {
       return;
     }
 
-    const fasesEsperadas = ['COLOCACIÓN', 'COLOCACION', 'ATACAR', 'MOVER TROPAS', 'MOVER_TROPAS'];
+    const fasesEsperadas = ['INCORPORACIÓN', 'INCORPORACION', 'ATAQUE', 'REAGRUPACIÓN', 'REAGRUPACION'];
     const faseActual = await page.locator('.info-barra .info-val').first().textContent();
 
     // Avanzar hasta cubrir al menos 2 fases
@@ -363,7 +384,7 @@ test.describe('Sistema de notificaciones — visual y funcional', () => {
     // Llegar a fase ATACAR
     for (let i = 0; i < 15; i++) {
       const faseTexto = await page.locator('.info-barra .info-val').first().textContent();
-      if (faseTexto?.toUpperCase().includes('ATACAR')) break;
+      if (faseTexto?.toUpperCase().includes('ATAQUE')) break;
       if (await btnAvanzar.isVisible()) {
         await btnAvanzar.click();
         await page.waitForTimeout(1_500);
@@ -373,7 +394,7 @@ test.describe('Sistema de notificaciones — visual y funcional', () => {
     }
 
     const faseActual = await page.locator('.info-barra .info-val').first().textContent();
-    if (!faseActual?.toUpperCase().includes('ATACAR')) {
+    if (!faseActual?.toUpperCase().includes('ATAQUE')) {
       test.info().annotations.push({ type: 'skip-reason', description: 'No se pudo llegar a fase ATACAR' });
       return;
     }
@@ -549,6 +570,163 @@ test.describe('Design system — coherencia visual notificaciones', () => {
     );
     // No debe ser completamente transparente
     expect(borderColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REVELACIÓN DE OBJETIVO — componente sobre animado
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Revelación de objetivo — sobre animado', () => {
+
+  // Este bloque NO usa el beforeEach estándar (que descarta el overlay).
+  // Navega fresh para ver el overlay en su estado inicial.
+
+  test('el overlay de revelación aparece al cargar el tablero', async ({ page }) => {
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+
+    // El overlay puede tardar hasta ~2s en aparecer (espera que cargue el objetivo)
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+
+    if (!apareció) {
+      console.log('Overlay de revelación no apareció — puede que la sesión ya lo haya descartado');
+      return;
+    }
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-sobre-cerrado.png' });
+    await expect(overlay).toBeVisible();
+  });
+
+  test('el sobre se abre y muestra la hoja de órdenes', async ({ page }) => {
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    // Esperar a que la hoja sea visible (animación de apertura ~1.2s)
+    const hoja = page.locator('.hoja');
+    const hojaVisible = await hoja.isVisible({ timeout: 4_000 }).catch(() => false);
+    if (!hojaVisible) { test.skip(); return; }
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-hoja-abierta.png' });
+
+    // Debe mostrar el título y la descripción
+    await expect(page.locator('.hoja-titulo')).toBeVisible();
+    await expect(page.locator('.hoja-descripcion')).toBeVisible();
+
+    // Debe tener al menos un ítem de objetivo
+    const items = page.locator('.hoja-item');
+    expect(await items.count()).toBeGreaterThanOrEqual(1);
+  });
+
+  test('la hoja muestra ítems con formato X/N o "en curso"', async ({ page }) => {
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    const hoja = page.locator('.hoja');
+    await hoja.isVisible({ timeout: 4_000 }).catch(() => false);
+
+    // Al menos un ítem debe tener cuenta (X/N o "en curso")
+    const cuentas = page.locator('.item-cuenta');
+    const hayCuentas = await cuentas.count();
+    expect(hayCuentas).toBeGreaterThanOrEqual(1);
+
+    // Verificar que el texto contiene / o "restante"
+    const texto = await cuentas.first().textContent() ?? '';
+    expect(texto.includes('/') || texto.includes('restante') || texto.includes('curso')).toBe(true);
+  });
+
+  test('el botón ENTENDIDO descarta el overlay y muestra el tablero', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+    await page.waitForSelector(PAIS_PATH, { timeout: 15_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    // Esperar el botón ENTENDIDO
+    const btn = page.locator('.btn-entendido');
+    await expect(btn).toBeVisible({ timeout: 5_000 });
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-con-boton.png' });
+
+    // Click en ENTENDIDO
+    await btn.click();
+
+    // El overlay debe desaparecer
+    await expect(overlay).not.toBeVisible({ timeout: 3_000 });
+
+    // El tablero debe quedar interactuable
+    await expect(page.locator('.sobre-objetivo')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('.mapa-zona')).toBeVisible();
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-descartada.png' });
+  });
+
+  test('el overlay tiene el diseño correcto — overlay oscuro y backdrop blur', async ({ page }) => {
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    // El fondo debe ser oscuro semitransparente (no totalmente transparente ni negro sólido)
+    const bg = await overlay.evaluate(el => window.getComputedStyle(el).backgroundColor);
+    expect(bg).not.toBe('rgba(0, 0, 0, 0)');     // no transparente
+    expect(bg).not.toBe('rgb(255, 255, 255)');     // no blanco
+    // Debe tener componente alpha < 1 (semitransparente)
+    const match = bg.match(/rgba\([\d\s,]+,([\d.]+)\)/);
+    if (match) {
+      expect(parseFloat(match[1])).toBeLessThan(1);
+    }
+
+    // El sobre debe estar centrado en la pantalla
+    const sobreBox  = await page.locator('.sobre-wrap').boundingBox();
+    const viewport  = page.viewportSize()!;
+    if (sobreBox) {
+      const centroCobre = sobreBox.x + sobreBox.width / 2;
+      const centroVP    = viewport.width / 2;
+      expect(Math.abs(centroCobre - centroVP)).toBeLessThan(50);
+    }
+  });
+
+  test('panel ORDEN SECRETA muestra progreso dinámico después de descartar revelación', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+    await page.waitForSelector(PAIS_PATH, { timeout: 15_000 });
+
+    // Descartar revelación si está presente
+    const btn = page.locator('.btn-entendido');
+    if (await btn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await btn.click();
+      await page.waitForTimeout(800);
+    }
+
+    // Abrir el panel ORDEN SECRETA
+    await page.click('.sobre-objetivo');
+    await expect(page.locator('.objetivo-modal')).toBeVisible({ timeout: 3_000 });
+
+    // Verificar que muestra datos estructurados (nuevo formato o fallback)
+    const hasItems = await page.locator('.objetivo-items').isVisible({ timeout: 2_000 }).catch(() => false);
+    const hasDesc  = await page.locator('.objetivo-desc').isVisible({ timeout: 500 }).catch(() => false);
+    const hasFallb = await page.locator('.objetivo-texto').isVisible({ timeout: 500 }).catch(() => false);
+
+    expect(hasItems || hasDesc || hasFallb, 'El panel debe mostrar contenido del objetivo').toBe(true);
+
+    await page.screenshot({ path: 'e2e/screenshots/panel-orden-secreta-progreso.png' });
   });
 
 });

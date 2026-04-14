@@ -417,6 +417,139 @@ Los tests que dependen del turno del usuario usan `esperarMiTurno()` — si el t
 
 También corregido en `tablero-dev.spec.ts`: el test "el turno pasa a los bots automáticamente" ahora espera a que sea el turno del usuario antes de leer el número base (evitaba `N° 1 → N° 1` por estado heredado de tests anteriores). Timeout aumentado a 90 s.
 
+### Tablero — sistema de objetivos secretos con revelación animada (sesión 2026-04-12)
+
+Refactorización completa del sistema de objetivos secretos: seguimiento dinámico del progreso, regla alternativa del reglamento TEG, revelación con sobre animado y panel de progreso en tiempo real.
+
+#### Backend — modelo y lógica de objetivos
+
+- **`JugadorEntity`**: campo `eliminadoPorColor: Color` (`@Enumerated(STRING)`, nullable) — registra qué jugador eliminó a cada bando. Necesario para implementar la regla alternativa.
+- **`TurnoServiceImpl.ataque()`**: detecta eliminación del defensor (0 países restantes), setea `defensor.perdio = true` y `defensor.eliminadoPorColor = atacante.color`, persiste. Emite progreso del objetivo del atacante vía WebSocket al topic personal `/topic/partida.{id}.objetivo.{jugadorId}`.
+- **`ObjetivoServiceImpl.verificarObjetivos()`**: corrección de la regla alternativa — si el enemigo del objetivo fue eliminado por otro jugador, el objetivo **no** se cumple sino que se convierte a "conquistar 30 países".
+- **`ObjetivoServiceImpl.calcularProgreso()`** (nuevo): genera un `ObjetivoProgresoDto` con ítems de progreso concretos:
+  - Objetivo convertido (regla alternativa): un ítem `X/30 países`.
+  - Objetivo de eliminación: muestra cuántos países le quedan al enemigo (`N países restantes`).
+  - Objetivo territorial: un ítem por continente requerido (`X/N países`).
+
+#### Backend — nuevos DTOs y endpoint
+
+| DTO | Campos |
+|---|---|
+| `ObjetivoItemDto` | `descripcion`, `valorActual`, `valorObjetivo`, `completado` |
+| `ObjetivoProgresoDto` | `descripcion`, `items: List<ObjetivoItemDto>`, `completado`, `objetivoConvertido` |
+| `ObjetivoDto` (extendido) | `colorEnemigo`, `cantidadPaisesObjetivo`, `africa`, `asia`, `europa`, `americaNorte`, `americaSur`, `oceania` |
+
+- **`GET /api/v1/objetivos/progreso/{idJugador}`** → `ObjetivoProgresoDto`: snapshot de progreso actual del objetivo del jugador.
+
+#### Backend — WebSocket de progreso
+
+`TurnoServiceImpl.ataque()` emite a `/topic/partida.{idPartida}.objetivo.{idJugador}` (topic personal) cada vez que el atacante conquista un país, enviando el `ObjetivoProgresoDto` actualizado. Solo recibe el jugador dueño del objetivo.
+
+#### Frontend — interfaces y servicios
+
+- **`partida.interface.ts`**: `ObjetivoDto` extendido con campos estructurales; nuevas interfaces `ObjetivoItem` y `ObjetivoProgreso`.
+- **`tablero.service.ts`**: método `obtenerProgresoObjetivo(idJugador)` — `GET /api/v1/objetivos/progreso/{idJugador}`.
+- **`socket.service.ts`**: método `suscribirseProgresoObjetivo(idPartida, idJugador, callback)` — suscripción al topic personal de progreso; retorna `StompSubscription` para permitir desuscripción por componente.
+
+#### Frontend — `ObjetivoRevelacionComponent` (nuevo)
+
+Componente standalone (`tablero/componentes/objetivo-revelacion/`) que muestra el objetivo secreto al inicio de la partida mediante una animación de sobre de época.
+
+**Máquina de estados**: `'cerrado' → 'abriendo' → 'abierto' → 'cerrando'`
+
+**Animación del sobre** (CSS puro):
+- Solapa triangular (`border-left/right/bottom`) que se abre con `rotateX(170deg)` en 0.55 s.
+- Hoja de órdenes que emerge del sobre con `translateY(-160px)` cuando `estado === 'abierto'`.
+- Lacre rojo central (`$color-sello`) con texto "TEG".
+- Overlay de pantalla completa con `backdrop-filter: blur(6px)`.
+- Auto-dismiss en 15 s si el usuario no interactúa.
+
+**Contenido de la hoja** (diseño militar de época):
+- Número de orden generado aleatoriamente, sello "MISIÓN ASIGNADA".
+- Descripción textual del objetivo.
+- Lista de ítems con checkbox `□/■` y contador `X/N` (para objetivos territoriales) o texto "en curso" (eliminación).
+- Footer con firma y "COMANDO SUPREMO".
+- Botón `· ENTENDIDO ·` visible solo cuando el sobre está abierto.
+
+#### Frontend — integración en `TableroComponent`
+
+- `showRevelacion`: boolean, se activa en el primer load cuando `jugadorUsuario?.objetivo` existe y la revelación no fue mostrada aún (`revelacionMostrada` flag).
+- `progresoObjetivo: ObjetivoProgreso | null`: cargado en init vía REST, actualizado en tiempo real vía WS.
+- `objetivoWsSub: StompSubscription | null`: desuscripto en `ngOnDestroy`.
+- `onRevelacionConfirmada()`: oculta el overlay y carga el progreso inicial.
+- Panel ORDEN SECRETA (sidebar): reemplaza el texto estático por lista de ítems dinámica de `progresoObjetivo` con `□/■` checkboxes y contadores `X/N`. Fallback al texto plano si el progreso aún no llegó.
+
+#### Tests e2e — actualizaciones
+
+- **`tablero-dev.spec.ts` `beforeEach`**: descarta el overlay de revelación si está visible (`.btn-entendido` click + 800 ms).
+- **`flujo-completo.spec.ts` `beforeEach`**: ídem — misma lógica de dismiss para que los tests existentes no queden bloqueados por el overlay de pantalla completa.
+- **Nuevo bloque `'Revelación de objetivo — sobre animado'`** en `tablero-dev.spec.ts` (6 tests): overlay aparece al cargar, solapa se abre (`sobre-flap.abierta`), ítems tienen formato `X/N`, botón ENTENDIDO descarta el overlay, design system (`$font-heading`, color `$color-sello`), panel ORDEN SECRETA muestra ítems post-cierre.
+- Test existente `'el sobre del objetivo abre el modal al hacer click'` actualizado para manejar ambos formatos de panel (`.objetivo-texto` antiguo y `.objetivo-desc`/`.objetivo-items` nuevo).
+
+### Tablero — corrección de bugs de UX y sistema de eventos (sesión 2026-04-10)
+
+Cinco correcciones de bugs encontrados en pruebas manuales del tablero de juego.
+
+#### 1. Orden conquista/tarjeta
+
+- **Causa**: `TARJETA_OBTENIDA` llega por WebSocket antes de que la respuesta HTTP del ataque sea procesada, por lo que se encolaba primero y aparecía antes del resultado de combate.
+- **Fix**: nuevo método `enqueueAtFront(event)` en `TableroEventService` que inserta al principio de la cola con prioridad. El resultado del ataque (CONQUISTA/RESULTADO_DADOS) lo usa en `atacarDesdeModal()` para garantizar que siempre se muestre antes de la notificación de tarjeta.
+
+#### 2. Defensor no mostrado en panel de ataque
+
+- **Causa raíz doble**: (a) type mismatch entre `EstadoPaisDto.idJugador` (string JSON) y `JugadorDto.idJugador` (number TypeScript) hacía que `find()` nunca coincidiera; (b) el template usaba `@if (jugadorDefensor)` que es falsy con string vacío.
+- **Fix**: comparación con `Number()` en ambos lados al buscar el jugador defensor; template actualizado para mostrar `'—'` como fallback cuando el nombre es vacío/undefined.
+
+#### 3. Timer — inactividad no arranca en el primer turno
+
+- **Causa**: `iniciarInactividad()` corre desde `iniciarTimer()` en `ngOnInit()`, antes de que `esMiTurno` esté determinado — retorna inmediatamente por la guarda `if (!this.esMiTurno) return`.
+- **Fix**: cuando el suscriptor de `partidaObservable` detecta que `esMiTurno` pasa de `false` a `true` por primera vez y no hay intervalo de inactividad activo, llama `iniciarInactividad()`.
+
+#### 4. Timer — al expirar, solo avanzaba una fase
+
+- **Causa**: al llegar a 0, se llamaba `avanzarFaseTurno()` una sola vez, pasando solo la fase actual en lugar del turno completo.
+- **Fix**: nuevo método privado `saltarTurnoCompleto(intentosRestantes=3)` que encadena hasta 3 llamadas secuenciales a `cambiarTurno`, verificando después de cada respuesta si `esMiTurno` sigue siendo `true`; si es `false`, el turno ya pasó al siguiente jugador y se detiene.
+
+#### 5. Posición y opacidad de overlays
+
+- **Notificaciones simples más arriba**: `padding-top` del wrapper de eventos reducido de `14%` a `6%` — aparecen en el cuarto superior del mapa en lugar del tercio.
+- **Viñeta menos oscura**: gradiente radial de `tablero.component.scss` expandido — zona transparente de `35%` a `50%`, elipse más amplia (`90%×80%` → `95%×88%`), opacidades reducidas de `0.25/0.55/1.0` a `0.18/0.42/0.7`, el mapa central queda notoriamente más visible.
+
+### Tablero — mejoras a la revelación de objetivos y coherencia visual (sesión 2026-04-14)
+
+Refinamiento del sistema de objetivos: animación más rápida, sobre más grande, corrección de la solapa 3D, animación de posición final, coherencia visual entre el sobre de revelación y el del tablero, y actualización en tiempo real del progreso.
+
+#### `ObjetivoRevelacionComponent` — ajustes de animación
+
+- **Delay eliminado**: el componente iniciaba la animación con 400 ms de espera — reducido a 60 ms para que el sobre aparezca inmediatamente al entrar a la partida.
+- **Sobre agrandado**: ancho 320 px → 460 px. Bordes de la solapa triangular (border-left/right) ajustados de 160 px a 230 px cada uno. Cuerpo actualizado. La hoja de órdenes emerge -195 px (antes -160 px) para mostrar más contenido.
+- **Solapa 3D corregida**: `rotateX(170deg)` plano reemplazado por `perspective(600px) rotateX(175deg)` — la perspectiva inline hace visible el doblez tridimensional.
+- **Animación de posición final**: al hacer click en `· ENTENDIDO ·`, la hoja se retrae y la solapa se cierra primero (bindings cambiados de `estado === 'abierto' || estado === 'cerrando'` a solo `estado === 'abierto'`); luego el sobre vuela hacia la esquina superior izquierda del tablero con `transform: translate(-44vw, -43vh) scale(0.08)`.
+
+#### `tablero.component` — sobre coherente con la animación
+
+El sobre pequeño del tablero (`sobre-objetivo`, top-left) rediseñado para coincidir visualmente con el sobre de revelación:
+
+| Elemento | Antes | Ahora |
+|---|---|---|
+| Cuerpo (`.sobre-paper`) | `#EDE5B0` beige claro | `#C8A96E` dorado igual que el sobre animado |
+| Solapa (`.sobre-solapa`) | `#D4C878` amarillo-verde | `#B8934E` dorado oscuro |
+| Hover solapa | `rotateX(160deg)` sin perspectiva | `perspective(500px) rotateX(165deg)` 3D visible |
+| Lacre | ausente | Círculo rojo `#A01515` con texto "TEG" (`.sobre-lacre-mini`) |
+| Textura | sin textura | Líneas diagonales `135deg` igual que cuerpo del sobre grande |
+
+#### Progreso del objetivo — actualización en tiempo real
+
+El `progresoObjetivo` solo se cargaba una vez al inicio (REST) y actualizaba via WebSocket, pero el topic no emitía en todos los casos. Ahora se refresca también:
+
+- **En cada evento `CONQUISTA`**: cuando cualquier jugador conquista un país, el tablero solicita el progreso actualizado (`GET /api/v1/objetivos/progreso/{idJugador}`).
+- **Al inicio de cada turno**: cuando el número de turno cambia en el polling, se recarga el progreso. Garantiza que los contadores reflejen el estado real aunque el WebSocket se haya perdido.
+
+#### Corrección ortográfica
+
+- `'Africa'` → `'África'` en `ObjetivoRevelacionComponent.buildItems()` — corregida la tilde faltante en la cadena de texto mostrada en la hoja de órdenes.
+- Import `ObjetivoItem` sin uso eliminado del componente.
+
 ---
 
 ## Equipo

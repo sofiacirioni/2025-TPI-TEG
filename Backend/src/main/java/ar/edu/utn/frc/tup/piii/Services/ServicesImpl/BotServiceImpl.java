@@ -1,10 +1,12 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
+import ar.edu.utn.frc.tup.piii.Dtos.CanjeTarjetasDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.EstadoPaisFicha;
-import ar.edu.utn.frc.tup.piii.Dtos.UsarTarjetaEnPaisDto;
-import ar.edu.utn.frc.tup.piii.Entities.*;
+import ar.edu.utn.frc.tup.piii.Entities.EstadoPaisEntity;
+import ar.edu.utn.frc.tup.piii.Entities.EstadoTarjetaEntity;
+import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
@@ -12,240 +14,208 @@ import ar.edu.utn.frc.tup.piii.Services.BotService;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-
-import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * Lógica de juego para jugadores bot (dificultad básica).
+ * Cada turno se ejecuta de forma asíncrona con 3 s de cooldown entre fases,
+ * para que el frontend pueda percibir las acciones del bot en tiempo real.
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BotServiceImpl implements BotService {
 
-    @Autowired
-    private JugadorRepository jugadorRepository;
+    private final JugadorRepository jugadorRepository;
+    private final EstadoPaisRepository estadoPaisRepository;
+    private final EstadoTarjetaRepository estadoTarjetaRepository;
+    private final EstadoPaisService estadoPaisService;
 
-    @Autowired
-    private EstadoPaisRepository estadoPaisRepository;
-
-    @Autowired
-    private EstadoPaisService estadoPaisService;
-
+    /** @Lazy rompe la dependencia circular con TurnoServiceImpl */
+    @Lazy
     @Autowired
     private TurnoService turnoService;
 
-    @Autowired
-    private EstadoTarjetaRepository estadoTarjetaRepository;
+    /** Pausa entre fases del bot (ms). Package-private para poder sobreescribirlo en tests. */
+    int cooldownMs = 3000;
 
-    @Override
-    @Transactional
-    public boolean turnoBot(Long idJugador) {
-        JugadorEntity botEntity = jugadorRepository.findByIdJugador(idJugador).orElseThrow(
-                () -> new IllegalArgumentException("Jugador no encontrado con ID: " + idJugador));
-
-        if (botEntity.getEjercito() > 0) {
-            faseDefensa(botEntity);
-        }
-
-        if (botEntity.getPartida().getHostilidad()) {
-            if (faseAtaque(botEntity)) {
-                pedirCarta(botEntity);
-                if (botEntity.getTarjetas().size() == 5) {
-                    canjearCarta(botEntity);
-                }
-                faseReagrupar(botEntity);
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    @Transactional
-    public boolean faseDefensa(JugadorEntity botEntity) {
-        Random random = new Random();
-
-        List<EstadoPaisEntity> paises = estadoPaisRepository.findByJugador_IdJugador(botEntity.getIdJugador());
-
-        while (botEntity.getEjercito() > 0) {
-            EstadoPaisEntity pais = paises.get(random.nextInt(paises.size()));
-            int cantidad = random.nextInt(botEntity.getEjercito());
-
-            EstadoPaisFicha estadoPaisFicha = EstadoPaisFicha.builder()
-                    .idPais(pais.getIdEstadoPais())
-                    .cantidadFichas((long) cantidad)
-                    .build();
-
-            AgregarFichas agregarFichas = AgregarFichas.builder()
-                    .idJugador(botEntity.getIdJugador())
-                    .paisesFichas(List.of(estadoPaisFicha))
-                    .build();
-
-            turnoService.agregarFichas(agregarFichas);
-
-        }
-
-        estadoPaisRepository.saveAll(paises);
-        jugadorRepository.save(botEntity);
-
-        turnoService.cambiarFaseTurno(botEntity.getPartida().getIdPartida());
-        return true;
-    }
-
-    @Override
-    @Transactional
-    public boolean faseAtaque(JugadorEntity botEntity) {
-        boolean ataqueExitoso = false;
-
-        List<EstadoPaisEntity> paises = estadoPaisRepository.findByJugador_IdJugador(botEntity.getIdJugador());
-
-        // Recorre todos los paises del bot
-        for (EstadoPaisEntity pais : paises) {
-            // Mientras tenga tropas para atacar (> 1)
-            while (pais.getCantidadTropas() > 1) {
-                List<EstadoPaisEntity> paisesLimites = estadoPaisService
-                        .getLimitesEstadoPaisEntity(pais.getIdEstadoPais());
-
-                // Filtra quellos paises limitrofes que si puede atacar
-                List<EstadoPaisEntity> listaPaisesAtacables = new ArrayList<>(paisesLimites);
-                listaPaisesAtacables.removeIf(
-                        paisLimite -> Objects.equals(paisLimite.getJugador().getIdJugador(), botEntity.getIdJugador()));
-
-                if (listaPaisesAtacables.isEmpty()) {
-                    break; // No hay a quien atacar desde este pais
-                }
-
-                // Elige un objetivo (el primero o aleatorio es mejor, pero mantenemos simple
-                // por ahora)
-                // Mejora: Atacar al que tenga menos tropas para maximizar chance
-                EstadoPaisEntity objetivo = listaPaisesAtacables.stream()
-                        .min((p1, p2) -> Integer.compare(p1.getCantidadTropas(), p2.getCantidadTropas()))
-                        .orElse(listaPaisesAtacables.get(0));
-
-                Ataque ataque = new Ataque(botEntity.getIdJugador(), pais.getPais().getIdPais(),
-                        objetivo.getPais().getIdPais(), null);
-
-                var resultado = turnoService.ataque(ataque);
-                ataqueExitoso = resultado.isAtaqueExitoso() || ataqueExitoso;
-
-                // Si el pais origen se queda sin tropas para seguir atacando
-                if (pais.getCantidadTropas() <= 1)
-                    break;
-
-                // Si conquisto el objetivo, ya no es atacable (es propio), bucle continua y
-                // elegira otro o parara
-                // Pero si conquisto, el objetivo ahora es del bot.
-                // Refrescamos estado del pais origen? JPA deberia manejarlo, pero `pais` es una
-                // entidad cargada.
-                // Al atacar, TurnoService modifica la entidad en DB. `pais` en memoria podria
-                // estar desactualizado?
-                // TurnoService modifica las entidades gestionadas. Si estamos en la misma
-                // transaccion, deberia verse.
-                // Pero `pais` fue leido al inicio.
-
-                // Refrescamos o confiamos en que TurnoService actualiza las referencias?
-                // En JPA, si TurnoService carga y guarda, nuestra instancia `pais` podria
-                // quedar "stale" si no es la misma instancia gestionada.
-                // Dado que estamos en @Transactional, el entity manager es el mismo.
-                // Sin embargo, TurnoService hace `estadoPaisRepository.findBy...` lo que puede
-                // traer otra instancia si no esta en cache L1?
-                // Mejor recargar el pais origen dsp del ataque para asegurar troops count
-                // correctos.
-
-                pais = estadoPaisRepository.findById(pais.getIdEstadoPais()).orElseThrow();
-            }
-        }
-
-        turnoService.cambiarFaseTurno(botEntity.getPartida().getIdPartida());
-        return ataqueExitoso;
-    }
-
-    @Override
-    @Transactional
-    public boolean faseReagrupar(JugadorEntity botEntity) {
-
-        turnoService.cambiarFaseTurno(botEntity.getPartida().getIdPartida());
-        return false;
-    }
-
-    @Override
-    @Transactional
-    public boolean pedirCarta(JugadorEntity botEntity) {
-        turnoService.entregarTarjetaSiCorresponde(botEntity.getIdJugador(), botEntity.getPartida().getIdPartida());
-
-        List<EstadoPaisEntity> ePaisesE = estadoPaisRepository.findByJugador_IdJugador(botEntity.getIdJugador());
-
-        List<PaisEntity> paises = ePaisesE.stream()
-                .map(EstadoPaisEntity::getPais)
-                .toList();
-
-        List<EstadoTarjetaEntity> tarjetas = estadoTarjetaRepository.findByJugador_IdJugador(botEntity.getIdJugador());
-
-        List<EstadoTarjetaEntity> tarjetasSinUsar = tarjetas.stream()
-                .filter(t -> !t.isUsada() && paises.contains(t.getTarjeta().getPais())).toList();
-
-        for (EstadoTarjetaEntity t : tarjetasSinUsar) {
-            usarCarta(botEntity, t);
-        }
-
-        return true;
-    }
-
-    @Override
-    @Transactional
-    public boolean usarCarta(JugadorEntity botEntity, EstadoTarjetaEntity estadoTarjetaEntity) {
-
-        UsarTarjetaEnPaisDto dto = UsarTarjetaEnPaisDto.builder()
-                .idJugador(botEntity.getIdJugador())
-                .idTarjeta(estadoTarjetaEntity.getIdEstadoTarjeta())
-                .build();
-
-        turnoService.validarUsarTarjetaEnPais(dto);
-        return false;
-    }
-
-    @Override
-    @Transactional
-    public boolean canjearCarta(JugadorEntity botEntity) {
-        /*
-         * List<EstadoTarjetaEntity> tarjetasIguales =
-         * botEntity.getTarjetas().stream().filter()
-         */
-
-        return false;
-    }
-
-    /*
-     * private calcularCombinacionesCanje(cartas: EstadoTarjetaDto[]): void {
-     * this.puedeCanjear = false;
-     * this.combinacionesPosibles = [];
-     * 
-     * if (!cartas || cartas.length < 3) return;
-     * 
-     * const disponibles = cartas.filter(c => !c.canjeada);
-     * 
-     * // Generar todas las combinaciones posibles de 3 cartas
-     * for (let i = 0; i < disponibles.length - 2; i++) {
-     * for (let j = i + 1; j < disponibles.length - 1; j++) {
-     * for (let k = j + 1; k < disponibles.length; k++) {
-     * const combo = [disponibles[i], disponibles[j], disponibles[k]];
-     * const simbolos = combo.map(c => c.tarjeta?.simbolo).filter(Boolean);
-     * 
-     * if (simbolos.length === 3) {
-     * const set = new Set(simbolos);
-     * if (set.size === 1 || set.size === 3) {
-     * this.combinacionesPosibles.push(combo);
-     * }
-     * }
-     * }
-     * }
-     * }
-     * 
-     * this.puedeCanjear = this.combinacionesPosibles.length > 0;
-     * }
+    /**
+     * Ejecuta el turno completo del bot de forma asíncrona:
+     *   1. Fase INCORPORACION: distribuye ejércitos aleatoriamente.
+     *   2. Avanza a ATAQUE (cooldown).
+     *   3. Fase ATAQUE: ataca vecinos con menos tropas que el origen.
+     *   4. Avanza a REAGRUPACION (cooldown).
+     *   5. Avanza desde REAGRUPACION → pasa al siguiente jugador.
      */
+    @Override
+    @Async
+    public void executeTurnAsync(Long idJugador) {
+        Long partidaId = null;
+        try {
+            JugadorEntity bot = jugadorRepository.findByIdJugador(idJugador)
+                    .orElseThrow(() -> new IllegalArgumentException("Bot no encontrado: " + idJugador));
+            partidaId = bot.getPartida().getIdPartida();
+
+            // --- INCORPORACION ---
+            realizarIncorporacion(idJugador);
+            Thread.sleep(cooldownMs);
+
+            // Avanzar INCORPORACION → ATAQUE
+            turnoService.cambiarFaseTurno(partidaId);
+            Thread.sleep(cooldownMs);
+
+            // --- ATAQUE ---
+            realizarAtaque(idJugador);
+            Thread.sleep(cooldownMs);
+
+            // Avanzar ATAQUE → REAGRUPACION
+            turnoService.cambiarFaseTurno(partidaId);
+            Thread.sleep(cooldownMs);
+
+            // --- REAGRUPACION → siguiente jugador ---
+            turnoService.cambiarFaseTurno(partidaId);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log.error("Error en turno del bot {}: {}", idJugador, e.getMessage());
+            // Recuperación: intentar avanzar las fases restantes para desbloquear el juego
+            if (partidaId != null) {
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        turnoService.cambiarFaseTurno(partidaId);
+                        Thread.sleep(200);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    } catch (Exception ignored) {
+                        // Fase ya avanzada o partida terminada
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Distribuye todos los ejércitos disponibles del bot en sus países de forma aleatoria.
+     * Primero canjea tarjetas si tiene 5 o más (canje obligatorio según reglas TEG).
+     * Cada llamada a agregarFichas tiene su propia transacción a través del proxy de TurnoService.
+     */
+    private void realizarIncorporacion(Long idJugador) {
+        realizarCanjeSiNecesario(idJugador);
+        JugadorEntity bot = jugadorRepository.findByIdJugador(idJugador)
+                .orElseThrow(() -> new IllegalArgumentException("Bot no encontrado: " + idJugador));
+        int ejercitosRestantes = bot.getEjercito();
+        if (ejercitosRestantes <= 0) return;
+
+        List<EstadoPaisEntity> misPaises = estadoPaisRepository.findByJugador_IdJugador(idJugador);
+        if (misPaises.isEmpty()) return;
+
+        Random random = new Random();
+        while (ejercitosRestantes > 0) {
+            EstadoPaisEntity pais = misPaises.get(random.nextInt(misPaises.size()));
+            // Asignar entre 1 y todos los ejércitos restantes
+            int cantidad = ejercitosRestantes == 1 ? 1 : (random.nextInt(ejercitosRestantes) + 1);
+
+            turnoService.agregarFichas(AgregarFichas.builder()
+                    .idJugador(idJugador)
+                    .paisesFichas(List.of(EstadoPaisFicha.builder()
+                            .idPais(pais.getPais().getIdPais())
+                            .cantidadFichas((long) cantidad)
+                            .build()))
+                    .build());
+
+            ejercitosRestantes -= cantidad;
+        }
+    }
+
+    /**
+     * Canjea tarjetas si el bot tiene 5 o más (canje obligatorio en TEG).
+     * Busca la primera combinación válida: 3 del mismo símbolo o 3 símbolos distintos.
+     */
+    private void realizarCanjeSiNecesario(Long idJugador) {
+        List<EstadoTarjetaEntity> disponibles = estadoTarjetaRepository.findByJugadorId(idJugador)
+                .stream().filter(c -> !c.isCanjeada()).collect(Collectors.toList());
+        if (disponibles.size() < 5) return;
+
+        // Buscar la primera combinación válida
+        for (int i = 0; i < disponibles.size() - 2; i++) {
+            for (int j = i + 1; j < disponibles.size() - 1; j++) {
+                for (int k = j + 1; k < disponibles.size(); k++) {
+                    String s1 = disponibles.get(i).getTarjeta().getSimbolo().name();
+                    String s2 = disponibles.get(j).getTarjeta().getSimbolo().name();
+                    String s3 = disponibles.get(k).getTarjeta().getSimbolo().name();
+                    Set<String> simbolos = Set.of(s1, s2, s3);
+                    if (simbolos.size() == 1 || simbolos.size() == 3) {
+                        CanjeTarjetasDto dto = new CanjeTarjetasDto(
+                                List.of(disponibles.get(i).getIdEstadoTarjeta(),
+                                        disponibles.get(j).getIdEstadoTarjeta(),
+                                        disponibles.get(k).getIdEstadoTarjeta()),
+                                idJugador);
+                        try {
+                            turnoService.validarCanjeTarjetas(dto);
+                            log.info("Bot {} canjeó tarjetas obligatoriamente", idJugador);
+                        } catch (Exception e) {
+                            log.warn("Bot {}: error en canje obligatorio: {}", idJugador, e.getMessage());
+                        }
+                        return; // Solo un canje por turno
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Ataca países vecinos con menos tropas que el país atacante.
+     * Lee entidades frescas antes de cada ataque para evitar referencias obsoletas
+     * (conquistas previas en el mismo turno podrían cambiar la propiedad de los países).
+     */
+    private void realizarAtaque(Long idJugador) {
+        List<EstadoPaisEntity> misPaises = estadoPaisRepository.findByJugador_IdJugador(idJugador);
+
+        for (EstadoPaisEntity pais : misPaises) {
+            // Lectura fresca para obtener tropas actualizadas
+            EstadoPaisEntity origen = estadoPaisRepository.findById(pais.getIdEstadoPais()).orElse(null);
+            if (origen == null || origen.getCantidadTropas() <= 1) continue;
+
+            // Vecinos enemigos ordenados por menos tropas (más fáciles primero)
+            List<EstadoPaisEntity> atacables = estadoPaisService
+                    .getLimitesEstadoPaisEntity(origen.getIdEstadoPais())
+                    .stream()
+                    .filter(v -> !v.getJugador().getIdJugador().equals(idJugador))
+                    .sorted(Comparator.comparingInt(EstadoPaisEntity::getCantidadTropas))
+                    .collect(Collectors.toList());
+
+            for (EstadoPaisEntity objetivo : atacables) {
+                // Re-leer origen para tropas actuales tras ataques previos
+                EstadoPaisEntity origenActual = estadoPaisRepository.findById(origen.getIdEstadoPais()).orElse(null);
+                if (origenActual == null || origenActual.getCantidadTropas() <= 1) break;
+
+                // Re-leer objetivo para verificar que sigue siendo enemigo
+                EstadoPaisEntity destActual = estadoPaisRepository.findById(objetivo.getIdEstadoPais()).orElse(null);
+                if (destActual == null || destActual.getJugador().getIdJugador().equals(idJugador)) continue;
+
+                try {
+                    turnoService.ataque(new Ataque(
+                            idJugador,
+                            origenActual.getPais().getIdPais(),
+                            destActual.getPais().getIdPais(),
+                            null));
+                } catch (Exception e) {
+                    // Ataque inválido (p. ej. territorio conquistado justo antes): continuar
+                    log.debug("Ataque de bot {} fallido: {}", idJugador, e.getMessage());
+                }
+            }
+        }
+    }
 }

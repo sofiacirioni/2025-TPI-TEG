@@ -1,11 +1,20 @@
 @if (visible && currentEvent) {
+  <!-- Viñeta de fondo para modo combate y conquista — fuera de ted-wrapper para cubrir toda la pantalla -->
+  @if (currentEvent.tipo === 'ATAQUE_INICIADO' || currentEvent.tipo === 'RESULTADO_DADOS' || currentEvent.tipo === 'CONQUISTA' || mostrandoConquista) {
+    <div class="ted-vignette" [class.conquista-vignette]="mostrandoConquista"></div>
+  }
+
+  <!-- Degradado radial detrás de notificaciones simples -->
+  @if (currentEvent.tipo !== 'ATAQUE_INICIADO' && currentEvent.tipo !== 'RESULTADO_DADOS' && currentEvent.tipo !== 'CONQUISTA' && !mostrandoConquista) {
+    <div class="ted-notif-backdrop"></div>
+  }
+
   <div class="ted-wrapper" [class.dismissing]="dismissing" [attr.aria-live]="'polite'">
 
     <!-- ════════════════════════════════════════════════════════
          MODO COMBATE: selección de dados (ATAQUE_INICIADO)
          ════════════════════════════════════════════════════════ -->
     @if (currentEvent.tipo === 'ATAQUE_INICIADO' && currentEvent.diceSelection) {
-      <div class="ted-vignette"></div>
       <div class="ted-combat-panel" role="dialog" aria-modal="true" aria-labelledby="ted-combat-title">
 
         <!-- Header -->
@@ -23,9 +32,10 @@
             <span class="ted-player-name">{{ currentEvent.jugadorActivo }}</span>
           </div>
           <div class="ted-vs">VS</div>
-          <div class="ted-country def">
+          <div class="ted-country def" [style.color]="currentEvent.colorDefensor">
             <span class="ted-country-lbl">DEFIENDE</span>
             <span class="ted-country-name">{{ currentEvent.paisDestino }}</span>
+            <span class="ted-player-name">{{ currentEvent.jugadorDefensor || '—' }}</span>
           </div>
         </div>
 
@@ -61,7 +71,6 @@
          MODO RESULTADO DE DADOS (RESULTADO_DADOS / CONQUISTA sin mostrandoConquista)
          ════════════════════════════════════════════════════════ -->
     @if ((currentEvent.tipo === 'RESULTADO_DADOS' || currentEvent.tipo === 'CONQUISTA') && !mostrandoConquista) {
-      <div class="ted-vignette"></div>
       <div class="ted-result-panel">
 
         <!-- Header -->
@@ -79,9 +88,12 @@
             <span class="ted-player-name">{{ currentEvent.jugadorActivo }}</span>
           </div>
           <div class="ted-vs">→</div>
-          <div class="ted-country def">
+          <div class="ted-country def" [style.color]="currentEvent.colorDefensor">
             <span class="ted-country-lbl">DEFENSOR</span>
             <span class="ted-country-name">{{ currentEvent.paisDestino }}</span>
+            @if (currentEvent.jugadorDefensor) {
+              <span class="ted-player-name">{{ currentEvent.jugadorDefensor }}</span>
+            }
           </div>
         </div>
 
@@ -130,7 +142,6 @@
          FASE CONQUISTA (transición post-resultado)
          ════════════════════════════════════════════════════════ -->
     @if (mostrandoConquista) {
-      <div class="ted-vignette conquista-vignette"></div>
       <div class="ted-conquista-panel">
         <div class="ted-conquista-star">★</div>
         <div class="ted-conquista-titulo">¡CONQUISTA!</div>

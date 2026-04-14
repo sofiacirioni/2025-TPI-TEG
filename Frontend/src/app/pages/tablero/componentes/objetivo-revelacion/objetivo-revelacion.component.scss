@@ -1,0 +1,320 @@
+@import '../../../../../styles/tokens';
+
+// ── Overlay de pantalla completa ─────────────────────────────────
+.rev-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-vignette) + 10);
+  background: rgba(10, 5, 2, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-6;
+
+  animation: fade-in 0.4s ease forwards;
+
+  &.cerrando {
+    animation: fade-out 0.7s ease forwards;
+  }
+}
+
+@keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+// ── Contenedor del sobre ─────────────────────────────────────────
+.sobre-wrap {
+  position: relative;
+  width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(0.85);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.4, 1),
+              opacity  0.5s ease;
+
+  &.abriendo {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  // Al confirmar: se cierra y vuela a la posición del sobre-objetivo (top-left)
+  &.cerrando {
+    transform: translate(-44vw, -43vh) scale(0.08);
+    opacity: 0;
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.8, 1),
+                opacity  0.45s ease 0.2s;
+  }
+}
+
+// ── Solapa del sobre ─────────────────────────────────────────────
+.sobre-flap {
+  width: 460px;
+  height: 0;
+  border-left:  230px solid transparent;
+  border-right: 230px solid transparent;
+  border-bottom: 110px solid #C8A96E;
+  filter: drop-shadow(0 -2px 4px rgba(0,0,0,0.4));
+  transform-origin: top center;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.4, 1);
+  position: relative;
+  z-index: 3;
+
+  &.abierta {
+    transform: perspective(600px) rotateX(175deg);
+  }
+}
+
+// ── Lacre en el centro de la solapa ─────────────────────────────
+.sobre-lacre {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42px;
+  height: 42px;
+  background: $color-sello;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px rgba(160, 21, 21, 0.3), inset 0 1px 3px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+.lacre-sigla {
+  font-family: $font-heading;
+  font-size: 0.6rem;
+  color: #EFE8CE;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+// ── Cuerpo del sobre ─────────────────────────────────────────────
+.sobre-cuerpo {
+  width: 460px;
+  min-height: 160px;
+  background: #C8A96E;
+  border-top: none;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: $space-4;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+
+  // Líneas diagonales interiores
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(100,60,20,0.12) 25%, transparent 25%,
+                transparent 50%, rgba(100,60,20,0.12) 50%, rgba(100,60,20,0.12) 75%,
+                transparent 75%);
+    background-size: 8px 8px;
+    pointer-events: none;
+  }
+}
+
+.sobre-lineas {
+  flex: 1;
+}
+
+.sobre-sello-texto {
+  font-family: $font-heading;
+  font-size: $text-caption;
+  letter-spacing: 0.25em;
+  color: rgba(67, 42, 30, 0.6);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+// ── Hoja de órdenes (emerge del sobre) ──────────────────────────
+.hoja-wrap {
+  position: absolute;
+  top: -10px;        // justo encima del cuerpo del sobre
+  left: 20px;
+  right: 20px;
+  z-index: 4;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.25s,
+              opacity  0.55s ease 0.25s;
+  pointer-events: none;
+
+  &.visible {
+    transform: translateY(-195px);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.hoja {
+  background: $color-claro;
+  border: 2px solid $color-sello;
+  padding: $space-4 $space-4 $space-3;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.65), inset 0 0 0 4px rgba(160,21,21,0.08);
+  position: relative;
+
+  // Textura de líneas finas diagonales
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -55deg,
+      transparent,
+      transparent 14px,
+      rgba(67,42,30,0.04) 14px,
+      rgba(67,42,30,0.04) 15px
+    );
+    pointer-events: none;
+  }
+}
+
+// ── Contenido de la hoja ─────────────────────────────────────────
+.hoja-header {
+  text-align: center;
+  margin-bottom: $space-2;
+}
+
+.hoja-numero {
+  font-family: $font-heading;
+  font-size: $text-caption;
+  letter-spacing: 0.18em;
+  color: $color-oscuro;
+  opacity: 0.7;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: $space-1;
+}
+
+.hoja-divider {
+  height: 1px;
+  background: $color-sello;
+  opacity: 0.5;
+  margin: $space-1 0;
+}
+
+.hoja-titulo {
+  font-family: $font-heading;
+  font-size: $text-lead;
+  letter-spacing: 0.12em;
+  color: $color-oscuro;
+  text-transform: uppercase;
+  display: block;
+  margin: $space-2 0 $space-1;
+}
+
+.hoja-descripcion {
+  font-family: $font-body;
+  font-size: $text-sm;
+  color: $color-oscuro;
+  margin: $space-2 0 $space-3;
+  line-height: 1.5;
+  font-style: italic;
+  text-align: center;
+}
+
+// ── Lista de ítems de progreso ───────────────────────────────────
+.hoja-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 $space-3;
+}
+
+.hoja-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  font-family: $font-body;
+  font-size: $text-sm;
+  color: $color-oscuro;
+  padding: $space-1 0;
+  border-bottom: 1px dashed rgba(67,42,30,0.2);
+
+  &:last-child { border-bottom: none; }
+
+  &.completado {
+    color: $color-secondary;
+    .checkbox { color: $color-secondary; }
+  }
+}
+
+.checkbox {
+  font-size: $text-base;
+  line-height: 1;
+  flex-shrink: 0;
+  color: $color-oscuro;
+}
+
+.item-texto {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-1;
+  line-height: 1.4;
+}
+
+.ficha-jugador {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.3);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.item-cuenta {
+  font-family: $font-heading;
+  font-size: $text-caption;
+  letter-spacing: 0.08em;
+  color: $color-medio;
+  white-space: nowrap;
+}
+
+// ── Pie de la hoja ───────────────────────────────────────────────
+.hoja-footer {
+  margin-top: $space-2;
+}
+
+.hoja-firma-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: $space-2;
+}
+
+.hoja-firma {
+  font-family: $font-body;
+  font-size: $text-sm;
+  color: $color-oscuro;
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.hoja-comando {
+  font-family: $font-heading;
+  font-size: $text-caption;
+  letter-spacing: 0.2em;
+  color: $color-oscuro;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+// ── Botón ENTENDIDO ──────────────────────────────────────────────
+.btn-entendido {
+  position: relative;
+  z-index: 5;
+  animation: slide-up 0.35s ease forwards;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
