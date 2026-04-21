@@ -4,6 +4,7 @@ import ar.edu.utn.frc.tup.piii.Dtos.*;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
+import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueDefender;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
@@ -60,6 +61,24 @@ public class TurnoController {
     @PutMapping("/ataque")
     public ResponseEntity<AtaqueResponseDto> atacar(@RequestBody Ataque ataque) {
         return ResponseEntity.ok(turnoService.ataque(ataque));
+    }
+
+    /**
+     * Paso 1 del flujo dual: atacante registra el ataque.
+     * Si el defensor es humano, devuelve 202 y el frontend espera la resolución por WS.
+     */
+    @PutMapping("/ataque/iniciar")
+    public ResponseEntity<AtaqueResponseDto> iniciarAtaque(@RequestBody Ataque ataque) {
+        AtaqueResponseDto respuesta = turnoService.iniciarAtaque(ataque);
+        return ResponseEntity.ok(respuesta);
+    }
+
+    /**
+     * Paso 2 del flujo dual: defensor confirma dados y dispara la resolución.
+     */
+    @PutMapping("/ataque/defender")
+    public ResponseEntity<AtaqueResponseDto> defenderAtaque(@RequestBody AtaqueDefender ataqueDefender) {
+        return ResponseEntity.ok(turnoService.resolverAtaque(ataqueDefender));
     }
 
     @PutMapping("/pasarTurno")

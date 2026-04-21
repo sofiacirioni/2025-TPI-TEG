@@ -5,12 +5,14 @@ import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Main class.
  */
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "ar.edu.utn.frc.tup.piii.Repositories")
+@EnableScheduling
 @OpenAPIDefinition(info = @Info(
         title = "TEG-grupo8 API",
         version = "0.0.1-SNAPSHOT",

@@ -4,37 +4,71 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { TableroEventService } from '../../../../core/services/tablero-event.service';
+import { TableroServicio } from '../../../../core/services/tablero.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { GameEvent } from '../../../../core/models/interfaces/game-event.interface';
+import { NombrePaisPipe } from '../../../../core/pipes/nombre-pais.pipe';
+
+type RolCombate = 'atacante' | 'defensor' | 'espectador' | 'local';
+
+/** Color enum → nombre de archivo SVG de la ficha (en /assets/vectors/tablero/fichas/) */
+const FICHA_MAP: Record<string, string> = {
+  ROJO:     'red-player',
+  AZUL:     'blue-player',
+  VERDE:    'green-player',
+  NARANJA:  'orange-player',
+  AMARILLO: 'gold-player',
+  VIOLETA:  'purple-player',
+};
+
+/** Color enum → hex del design system para texto/bordes (del CLAUDE.md) */
+const COLOR_HEX_MAP: Record<string, string> = {
+  ROJO:     '#A01515',
+  AZUL:     '#1A4080',
+  VERDE:    '#1E7A50',
+  NARANJA:  '#BF6800',
+  AMARILLO: '#6B4C00',
+  VIOLETA:  '#6B2490',
+};
 
 @Component({
   selector: 'app-tablero-event-display',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NombrePaisPipe],
   templateUrl: './tablero-event-display.component.html',
   styleUrl:    './tablero-event-display.component.scss',
 })
 export class TableroEventDisplayComponent implements OnInit, OnDestroy {
 
   private eventService = inject(TableroEventService);
+  private tableroServicio = inject(TableroServicio);
+  private authService = inject(AuthService);
   private sub?: Subscription;
 
   currentEvent: GameEvent | null = null;
   visible = false;
   dismissing = false;
 
-  // Dados con estado de animación
+  rol: RolCombate = 'local';
+
   dadosAtaqueAnimados: { valor: number; perdedor: boolean; animado: boolean }[] = [];
   dadosDefensorAnimados: { valor: number; perdedor: boolean; animado: boolean }[] = [];
 
-  // Selección de dados
   dadosSeleccionados = 1;
   timerValue = 5;
   private countdownInterval?: ReturnType<typeof setInterval>;
 
-  // Post-resultado: fase conquista
+  atacanteLanzo = false;
+  defensorLanzo = false;
+
+  slotMachineActive = false;
+  slotDadosAtk: number[] = [];
+  slotDadosDef: number[] = [];
+  private slotInterval?: ReturnType<typeof setInterval>;
+  private slotTimeout?: ReturnType<typeof setTimeout>;
+
   mostrandoConquista = false;
 
-  // Identificador de dismiss — incrementar al llegar un evento nuevo cancela el dismiss anterior
   private dismissId = 0;
 
   ngOnInit(): void {
@@ -43,22 +77,29 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
         this.startDismiss();
         return;
       }
-      this.dismissId++; // cancela cualquier dismiss pendiente
+      this.dismissId++;
       this.mostrandoConquista = false;
       this.currentEvent = event;
       this.dismissing = false;
       this.visible = true;
 
-      if (event.tipo === 'ATAQUE_INICIADO' && event.diceSelection) {
-        this.dadosSeleccionados = event.diceSelection.maxDados;
-        this.startCountdown(event.diceSelection.timerSegundos ?? 5);
+      if (event.tipo === 'ATAQUE_INICIADO') {
+        this.rol = this.computeRol(event);
+        this.atacanteLanzo = false;
+        this.defensorLanzo = false;
+        this.slotMachineActive = false;
+        if (event.diceSelection) {
+          this.dadosSeleccionados = this.rol === 'atacante'
+            ? (event.diceSelection.cantDadosAtacante ?? event.diceSelection.maxDados)
+            : event.diceSelection.maxDados;
+          this.startCountdown(event.diceSelection.timerSegundos ?? 5);
+        }
       }
 
       if (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA') {
-        this.animarDados(event);
-        // Si hubo conquista, transicionar a pantalla de conquista al final
+        this.startSlotMachine(event);
         if (event.conquista && event.tipo !== 'CONQUISTA') {
-          setTimeout(() => { this.mostrandoConquista = true; }, 2500);
+          setTimeout(() => { this.mostrandoConquista = true; }, 5500);
         }
       }
     });
@@ -67,6 +108,15 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.clearCountdown();
+    this.clearSlotMachine();
+  }
+
+  private computeRol(event: GameEvent): RolCombate {
+    if (event.idAtacante == null) return 'local';
+    const miId = this.authService.getJugadorId();
+    if (miId != null && miId === event.idAtacante) return 'atacante';
+    if (miId != null && miId === event.idDefensor) return 'defensor';
+    return 'espectador';
   }
 
   private startDismiss(): void {
@@ -74,7 +124,7 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     this.dismissing = true;
     const myId = ++this.dismissId;
     setTimeout(() => {
-      if (this.dismissId !== myId) return; // cancelado por evento nuevo
+      if (this.dismissId !== myId) return;
       this.visible = false;
       this.currentEvent = null;
       this.dismissing = false;
@@ -82,30 +132,87 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     }, 400);
   }
 
-  // ── Selección de dados ────────────────────────────────────────────
-
   get maxDados(): number {
     return this.currentEvent?.diceSelection?.maxDados ?? 3;
   }
 
+  get dadosAtacanteSlots(): number {
+    const pre = this.currentEvent?.diceSelection?.cantDadosAtacante;
+    return pre ?? this.dadosSeleccionados;
+  }
+
   seleccionarDados(n: number): void {
-    if (n >= 1 && n <= this.maxDados) {
+    if (this.puedeSeleccionarDados() && n >= 1 && n <= this.maxDados) {
       this.dadosSeleccionados = n;
     }
+  }
+
+  puedeSeleccionarDados(): boolean {
+    if (this.rol === 'local') return true;
+    if (this.rol === 'defensor') return !this.defensorLanzo;
+    return false;
+  }
+
+  puedeLanzar(): boolean {
+    if (this.rol === 'espectador') return false;
+    if (this.rol === 'local') return true;
+    if (this.rol === 'atacante') return !this.atacanteLanzo;
+    if (this.rol === 'defensor') return !this.defensorLanzo;
+    return false;
+  }
+
+  lanzar(): void {
+    switch (this.rol) {
+      case 'local':
+        this.confirmarAtaque();
+        break;
+      case 'atacante':
+        this.atacanteLanzo = true;
+        break;
+      case 'defensor':
+        this.lanzarDefensor();
+        break;
+    }
+  }
+
+  private lanzarDefensor(): void {
+    if (!this.currentEvent) return;
+    const idPartida = this.currentEvent.idPartida;
+    const miId = this.authService.getJugadorId();
+    if (idPartida == null || miId == null) {
+      this.defensorLanzo = true;
+      return;
+    }
+    this.defensorLanzo = true;
+    this.clearCountdown();
+    this.tableroServicio.defenderAtaque({
+      idPartida,
+      idJugador: miId,
+      cantDadosDefensor: this.dadosSeleccionados,
+    }).subscribe({
+      next: () => this.tableroServicio.forceRefresh(),
+      error: err => console.error('Error defender ataque:', err),
+    });
   }
 
   confirmarAtaque(): void {
     this.clearCountdown();
     this.eventService.resolveDiceSelection(this.dadosSeleccionados);
-    // No llamar startDismiss aquí — advanceAfterDice() en tablero.component
-    // disparará processNext() que emitirá el resultado y actualizará el panel.
   }
 
-  /** ESC cierra el selector de dados para observadores */
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    this.cerrarManual();
+  }
+
+  cerrarManual(): void {
+    if (!this.visible) return;
     if (this.currentEvent?.tipo === 'ATAQUE_INICIADO') return;
-    if (this.visible) this.eventService.dismissCurrent();
+    this.eventService.dismissCurrent();
+  }
+
+  onBackdropClick(): void {
+    this.cerrarManual();
   }
 
   private startCountdown(seconds: number): void {
@@ -115,7 +222,13 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
       this.timerValue--;
       if (this.timerValue <= 0) {
         this.clearCountdown();
-        this.confirmarAtaque(); // auto-submit con max dados
+        if (this.rol === 'defensor' && !this.defensorLanzo) {
+          this.lanzarDefensor();
+        } else if (this.rol === 'local') {
+          this.confirmarAtaque();
+        } else if (this.rol === 'atacante' && !this.atacanteLanzo) {
+          this.atacanteLanzo = true;
+        }
       }
     }, 1000);
   }
@@ -127,7 +240,32 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── Animación de dados ────────────────────────────────────────────
+  private startSlotMachine(event: GameEvent): void {
+    this.clearSlotMachine();
+    const atk = event.dadosAtaque ?? [];
+    const def = event.dadosDefensor ?? [];
+    this.slotMachineActive = true;
+    this.slotDadosAtk = atk.map(() => 1 + Math.floor(Math.random() * 6));
+    this.slotDadosDef = def.map(() => 1 + Math.floor(Math.random() * 6));
+
+    this.slotInterval = setInterval(() => {
+      this.slotDadosAtk = this.slotDadosAtk.map(() => 1 + Math.floor(Math.random() * 6));
+      this.slotDadosDef = this.slotDadosDef.map(() => 1 + Math.floor(Math.random() * 6));
+    }, 80);
+
+    this.slotTimeout = setTimeout(() => {
+      this.clearSlotMachine();
+      this.slotMachineActive = false;
+      this.animarDados(event);
+    }, 3000);
+  }
+
+  private clearSlotMachine(): void {
+    if (this.slotInterval) clearInterval(this.slotInterval);
+    if (this.slotTimeout) clearTimeout(this.slotTimeout);
+    this.slotInterval = undefined;
+    this.slotTimeout = undefined;
+  }
 
   private animarDados(event: GameEvent): void {
     const atk = event.dadosAtaque ?? [];
@@ -145,13 +283,10 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
       animado: false,
     }));
 
-    // Lanzar animación escalonada
     [...this.dadosAtaqueAnimados, ...this.dadosDefensorAnimados].forEach((d, idx) => {
       setTimeout(() => { d.animado = true; }, 100 + idx * 120);
     });
   }
-
-  // ── Helpers de UI ─────────────────────────────────────────────────
 
   getIconoEvento(): string {
     switch (this.currentEvent?.tipo) {
@@ -167,11 +302,49 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** PNG del dado: white = atacante, black = defensor. */
+  getDadoImg(valor: number, variante: 'white' | 'black'): string {
+    const v = Math.min(6, Math.max(1, valor));
+    return `assets/images/tablero/dice/${variante}-dice-${v}.png`;
+  }
+
   getEmojiDado(valor: number): string {
     return ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][valor] ?? '?';
   }
 
+  /** SVG de la ficha según el color key (ROJO, AZUL, ...). Fallback: rojo. */
+  getFichaPath(colorKey: string | undefined): string {
+    const name = FICHA_MAP[(colorKey ?? '').toUpperCase()] ?? 'red-player';
+    return `assets/vectors/tablero/fichas/${name}.svg`;
+  }
+
+  /** Hex color del jugador según su key. Fallback: color oscuro del tema. */
+  getColorHex(colorKey: string | undefined): string {
+    return COLOR_HEX_MAP[(colorKey ?? '').toUpperCase()] ?? '#432A1E';
+  }
+
   range(n: number): number[] {
     return Array.from({ length: n }, (_, i) => i + 1);
+  }
+
+  get ganadorColor(): string {
+    if (!this.currentEvent) return '';
+    const atacanteHex = this.getColorHex(this.currentEvent.colorJugadorKey);
+    const defensorHex = this.getColorHex(this.currentEvent.colorDefensorKey);
+    if (this.currentEvent.conquista) return atacanteHex;
+    const pa = this.currentEvent.perdidasAtacante ?? 0;
+    const pd = this.currentEvent.perdidasDefensor ?? 0;
+    if (pd > pa) return atacanteHex;
+    return defensorHex;
+  }
+
+  get textoResultado(): string {
+    if (!this.currentEvent) return '';
+    if (this.currentEvent.conquista) return '¡CONQUISTA!';
+    const pa = this.currentEvent.perdidasAtacante ?? 0;
+    const pd = this.currentEvent.perdidasDefensor ?? 0;
+    if (pd > pa) return 'ATAQUE EXITOSO';
+    if (pd < pa) return 'ATAQUE REPELIDO';
+    return 'COMBATE';
   }
 }

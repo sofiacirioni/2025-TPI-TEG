@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PartidaEventDto {
-    /** ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA */
+    /** ATAQUE_INICIADO | ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA */
     private String tipo;
     private String jugadorNombre;
     private String jugadorColor;
@@ -29,4 +29,15 @@ public class PartidaEventDto {
     private Long idPartida;
     private String jugadorDefensor;
     private String jugadorColorDefensor;
+
+    // ── Campos específicos de ATAQUE_INICIADO ─────────────────────────
+    /** Cantidad de dados que eligió el atacante (solo en ATAQUE_INICIADO). */
+    private Integer cantDadosAtacante;
+    /** Máximo de dados que puede usar el defensor (solo en ATAQUE_INICIADO). */
+    private Integer maxDadosDefensor;
+    /** Segundos disponibles para que el defensor elija antes del timeout. */
+    private Integer timerSegundos;
+    /** IDs útiles para que el frontend identifique rol sin depender de nombres. */
+    private Long idAtacante;
+    private Long idDefensor;
 }

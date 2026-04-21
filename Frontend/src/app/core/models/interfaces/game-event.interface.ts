@@ -1,6 +1,7 @@
 export type GameEventTipo =
   | 'INCORPORACION'
   | 'ATAQUE_INICIADO'
+  | 'ATAQUE'
   | 'RESULTADO_DADOS'
   | 'CONQUISTA'
   | 'TARJETA_OBTENIDA'
@@ -13,6 +14,8 @@ export interface DiceSelectionParams {
   paisDestino: string;
   maxDados: number;
   timerSegundos: number;
+  /** Dados ya seleccionados por el atacante (mostrado también al defensor). */
+  cantDadosAtacante?: number;
 }
 
 export interface GameEvent {
@@ -21,8 +24,12 @@ export interface GameEvent {
   descripcion?: string;
   jugadorActivo?: string;
   colorJugador?: string;
+  /** Clave de color sin procesar (ROJO, AZUL, ...) — permite al consumidor
+   *  derivar el hex o el asset SVG de la ficha del jugador. */
+  colorJugadorKey?: string;
   jugadorDefensor?: string;
   colorDefensor?: string;
+  colorDefensorKey?: string;
   paisOrigen?: string;
   paisDestino?: string;
   /** ms de duración. 0 = bloqueante (espera dismissCurrent). Default: 3500 */
@@ -33,6 +40,11 @@ export interface GameEvent {
   conquista?: boolean;
   perdidasAtacante?: number;
   perdidasDefensor?: number;
+  // IDs de atacante/defensor (útil para rol en ATAQUE_INICIADO y resolución)
+  idAtacante?: number;
+  idDefensor?: number;
+  // Identificador de partida (necesario para defenderAtaque desde el modal)
+  idPartida?: number;
   // Parámetros de selección de dados (ATAQUE_INICIADO)
   diceSelection?: DiceSelectionParams;
 }
@@ -53,4 +65,10 @@ export interface PartidaEventWs {
   perdidasAtacante: number;
   perdidasDefensor: number;
   idPartida: number;
+  // Campos específicos de ATAQUE_INICIADO
+  cantDadosAtacante?: number;
+  maxDadosDefensor?: number;
+  timerSegundos?: number;
+  idAtacante?: number;
+  idDefensor?: number;
 }

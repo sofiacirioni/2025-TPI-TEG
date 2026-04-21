@@ -4,21 +4,23 @@
   <div class="sobre-wrap" [class.abriendo]="estado === 'abriendo' || estado === 'abierto'" [class.cerrando]="estado === 'cerrando'">
 
     <!-- Solapa superior (se dobla al abrir, se cierra al confirmar) -->
-    <div class="sobre-flap" [class.abierta]="estado === 'abierto'">
-      <div class="sobre-lacre">
-        <span class="lacre-sigla">TEG</span>
-      </div>
-    </div>
+    <div class="sobre-flap" [class.abierta]="estado === 'abierto'"></div>
+
+    <!-- Sello lacrado: fuera de la solapa para que no lo recorte el clip-path ni la rotación -->
+    <img class="sobre-lacre"
+         src="assets/images/tablero/teg-wax-seal.png"
+         alt="Sello TEG"
+         [class.flap-abierta]="estado === 'abierto'" />
 
     <!-- Cuerpo del sobre -->
-    <div class="sobre-cuerpo">
+    <div class="sobre-cuerpo paper-grunge--v2">
       <div class="sobre-lineas"></div>
       <p class="sobre-sello-texto">ORDEN SECRETA</p>
     </div>
 
     <!-- ══ HOJA DE ÓRDENES (emerge del sobre, se retrae al confirmar) ════════════ -->
     <div class="hoja-wrap" [class.visible]="estado === 'abierto'">
-      <div class="hoja">
+      <div class="hoja paper-grunge--v5">
 
         <!-- Encabezado -->
         <div class="hoja-header">
@@ -29,7 +31,7 @@
         </div>
 
         <!-- Descripción principal -->
-        <p class="hoja-descripcion">{{ descripcion }}</p>
+        <p class="hoja-descripcion">{{ descripcion | nombrePais }}</p>
 
         <!-- Ítems de progreso -->
         <ul class="hoja-items">
@@ -41,8 +43,10 @@
                   <!-- Objetivo de eliminación: nombre con su color -->
                   <span class="ficha-jugador" [style.background-color]="item.colorHex"></span>
                 }
-                {{ item.texto }}
-                @if (item.valorObjetivo > 0) {
+                {{ item.texto | nombrePais }}
+                @if (item.esEliminacion) {
+                  <span class="item-cuenta">: {{ item.valorActual }} {{ item.valorActual === 1 ? 'país' : 'países' }}</span>
+                } @else if (item.valorObjetivo > 0) {
                   <span class="item-cuenta">: {{ item.valorActual }}/{{ item.valorObjetivo }}</span>
                 } @else {
                   <span class="item-cuenta"> — en curso</span>

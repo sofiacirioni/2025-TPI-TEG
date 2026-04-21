@@ -79,6 +79,10 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Objetivo secreto ───────────────────────────────────────
   objetivoVisible = false;
   showRevelacion = false;
+  /** Oculto por defecto: aparece solo cuando la revelación está finalizando
+   *  (evento cerrandoStart del componente) o cuando se entra a una partida sin
+   *  revelación pendiente. Esto evita el flash inicial de aparición+desaparición. */
+  sobreObjetivoVisible = false;
   private revelacionMostrada = false;
   progresoObjetivo: ObjetivoProgreso | null = null;
   private objetivoWsSub: StompSubscription | null = null;
@@ -111,6 +115,13 @@ export class TableroComponent implements OnInit, OnDestroy {
   private lastTurnoActual = -1;
   /** Id del jugador activo en el último ciclo de polling — detecta cambio de turno incluso con bots síncronos */
   private lastJugadorActualId = -1;
+  /** Flag: timer arrancó al menos una vez. Evita que el polling o el else-if
+   *  de "partida en curso" re-arranquen el timer en cada tick. */
+  private timerIniciado = false;
+  /** true → el timer y el timer de inactividad NO decrementan su contador en
+   *  este tick. Se activa mientras hay un evento en cola del sistema de
+   *  notificaciones, para no robarle segundos al jugador. */
+  private timerPausado = false;
 
   // ── Inactividad (30 s) ─────────────────────────────────────────
   inactividadRestante = 30;
@@ -244,6 +255,9 @@ export class TableroComponent implements OnInit, OnDestroy {
     // Registrar eventos WS en el historial (solo los que vienen de otros jugadores —
     // los propios ya se registran en atacarDesdeModal / reagruparDesdeModal)
     this.tableroEventService.currentEvent$.subscribe(event => {
+      // Pausa el timer de turno y el de inactividad mientras haya un evento en
+      // cola. Se reactiva (false) cuando la cola queda vacía (event === null).
+      this.timerPausado = event !== null;
       if (!event) return;
       // ATAQUE_INICIADO: solo UI local, sin historial
       // RESULTADO_DADOS y CONQUISTA propios: ya los registra atacarDesdeModal
@@ -293,8 +307,7 @@ export class TableroComponent implements OnInit, OnDestroy {
           this.wsPartidaSuscripto = true;
           this.wsService.asegurarConexion();
           this.wsService.suscribirseEventosPartida(result.idPartida, evento => {
-            const esJugadorLocal = evento.jugadorNombre === this.jugadorUsuario?.nombre;
-            this.tableroEventService.enqueueFromWs(evento, esJugadorLocal);
+            this.tableroEventService.enqueueFromWs(evento, this.jugadorUsuario?.nombre);
           });
 
           // Suscribir al topic personal de progreso de objetivo
@@ -311,12 +324,18 @@ export class TableroComponent implements OnInit, OnDestroy {
         if (!this.revelacionMostrada && this.jugadorUsuario?.objetivo) {
           this.revelacionMostrada = true;
           this.showRevelacion = true;
+          this.sobreObjetivoVisible = false;  // se re-muestra al confirmar/aterrizar
           // Cargar progreso inicial desde REST
           const jId = this.jugadorUsuario.idJugador;
           this.tableroServicio.obtenerProgresoObjetivo(jId).subscribe({
             next: p => { this.progresoObjetivo = p; },
             error: () => {}
           });
+        } else if (!this.showRevelacion && this.jugadorUsuario?.objetivo) {
+          // Partida ya en curso (sin revelación pendiente): asegurar sobre visible
+          // y arrancar el timer si todavía no arrancó (recargas, reconexión, etc.).
+          this.sobreObjetivoVisible = true;
+          if (!this.timerIniciado) this.iniciarTimer();
         }
 
         const turnoAnteriorNum = this.lastTurnoActual;
@@ -381,7 +400,9 @@ export class TableroComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.iniciarTimer();
+    // El timer NO arranca acá: espera a que el jugador confirme la revelación
+    // del objetivo (o al auto-close del sobre). Ver onRevelacionConfirmada y el
+    // branch else-if de "partida en curso" para los puntos de arranque.
   }
 
   ngOnDestroy() {
@@ -393,8 +414,18 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.detenerInactividad();
   }
 
+  /** Disparado cuando el usuario confirma (o el timer expira) y empieza el vuelo.
+   *  Mostramos el sobre-objetivo con fade-in para que "aterrice" el sobre grande. */
+  onRevelacionCerrandoStart(): void {
+    this.sobreObjetivoVisible = true;
+  }
+
   onRevelacionConfirmada(): void {
     this.showRevelacion = false;
+    // Idempotente — por si el vuelo se saltó (dev hot-reload, etc.)
+    this.sobreObjetivoVisible = true;
+    // Recién ahora el jugador ya vio su objetivo — arrancar el timer de turno.
+    if (!this.timerIniciado) this.iniciarTimer();
   }
 
   // ── HostListeners para detectar actividad ─────────────────────
@@ -436,8 +467,11 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Timer ──────────────────────────────────────────────────
   iniciarTimer() {
     if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerIniciado = true;
     this.tiempoRestante = 300;
     this.timerInterval = setInterval(() => {
+      // Pausa mientras haya notificaciones en cola: no robar tiempo al jugador.
+      if (this.timerPausado) return;
       if (this.tiempoRestante > 0) {
         this.tiempoRestante--;
       } else {
@@ -457,6 +491,8 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.inactividadRestante = 60;
     this.showInactividad = false;
     this.inactividadInterval = setInterval(() => {
+      // Pausa mientras haya notificaciones: no marcar al jugador como inactivo.
+      if (this.timerPausado) return;
       if (this.inactividadRestante > 0) {
         this.inactividadRestante--;
         if (this.inactividadRestante <= 15) this.showInactividad = true;
@@ -591,8 +627,25 @@ export class TableroComponent implements OnInit, OnDestroy {
     const mapaEl = document.querySelector('.mapa-zona') as HTMLElement;
     if (mapaEl) {
       const rect = mapaEl.getBoundingClientRect();
-      this.modalX = Math.max(0, Math.min(event.clientX - rect.left + 12, rect.width - 180));
-      this.modalY = Math.max(0, Math.min(event.clientY - rect.top - 30, rect.height - 220));
+      const MODAL_W = 226; // 210px ancho + 8px padding exterior × 2
+      const MODAL_H = 300; // altura estimada generosa (sin acciones: ~200px, con: ~300px)
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      // Abrir a la izquierda del click si no cabe a la derecha dentro del mapa
+      let x = clickX + 12;
+      if (clickX + MODAL_W + 12 > rect.width) {
+        x = clickX - MODAL_W - 12;
+      }
+
+      // Abrir hacia arriba si el click está en el tercio inferior del mapa
+      let y = clickY - 30;
+      if (clickY + MODAL_H - 30 > rect.height) {
+        y = clickY - MODAL_H;
+      }
+
+      this.modalX = Math.max(0, Math.min(x, rect.width  - MODAL_W));
+      this.modalY = Math.max(0, Math.min(y, rect.height - MODAL_H));
     }
 
     this.tableroServicio.getAllLimites(estadoPais.id).subscribe({
@@ -656,49 +709,33 @@ export class TableroComponent implements OnInit, OnDestroy {
         cantDadosAtacante: cantDados,
       };
 
-      this.tableroServicio.atacarPais(dto).subscribe({
-        next: (response: AtaqueResponseDto) => {
-          // Insertar resultado al FRENTE para que tenga prioridad sobre TARJETA_OBTENIDA del WS
-          this.tableroEventService.enqueueAtFront({
-            tipo: response.conquista ? 'CONQUISTA' : 'RESULTADO_DADOS',
-            titulo: response.conquista ? '¡CONQUISTA!' : 'RESULTADO DEL COMBATE',
-            jugadorActivo: this.jugadorUsuario!.nombre,
-            colorJugador,
-            jugadorDefensor,
-            colorDefensor,
-            paisOrigen: paisOrigenNombre,
-            paisDestino: paisDestinoNombre,
-            dadosAtaque: response.dadosAtaque,
-            dadosDefensor: response.dadosDefensor,
-            conquista: response.conquista,
-            perdidasAtacante: response.perdidasAtacante,
-            perdidasDefensor: response.perdidasDefensor,
-            duracionMs: response.conquista ? 5000 : 4000,
-          });
+      // Flujo dual: iniciarAtaque registra pendiente en backend y dispara WS
+      // ATAQUE_INICIADO. El resultado llega por WS ATAQUE/CONQUISTA.
+      this.tableroServicio.iniciarAtaque(dto).subscribe({
+        next: () => {
           this.tableroEventService.advanceAfterDice();
           this.tableroServicio.forceRefresh();
-
-          this.agregarHistorial(
-            `${this.jugadorUsuario!.nombre} ${response.conquista ? 'conquistó' : 'atacó'} ${paisDestinoNombre}`,
-            response.conquista ? 'ataque' : 'normal'
-          );
         },
         error: err => {
           this.tableroEventService.advanceAfterDice();
           console.error('Error ataque:', err);
-          this.notificationService.error('Error al atacar.');
+          this.notificationService.error('Error al iniciar ataque.');
         }
       });
     });
 
-    // Encolar evento de selección de dados (bloqueante)
+    // Encolar selector de dados LOCAL (solo el atacante lo ve antes de disparar
+    // iniciarAtaque). Sin idAtacante/idDefensor → el componente lo trata como
+    // "atacante-selector" (no como broadcast).
     this.tableroEventService.enqueue({
       tipo: 'ATAQUE_INICIADO',
       titulo: 'ELECCIÓN DE DADOS',
       jugadorActivo: this.jugadorUsuario.nombre,
       colorJugador,
+      colorJugadorKey: (this.jugadorUsuario.color ?? '').toUpperCase(),
       jugadorDefensor,
       colorDefensor,
+      colorDefensorKey: (jugadorDefensorObj?.color ?? '').toUpperCase(),
       paisOrigen: paisOrigenNombre,
       paisDestino: paisDestinoNombre,
       diceSelection: { paisOrigen: paisOrigenNombre, paisDestino: paisDestinoNombre, maxDados, timerSegundos: 5 },
@@ -893,13 +930,13 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   getInsigniaUrl(color: string): string {
     switch (color?.toUpperCase()) {
-      case 'ROJO':     return 'assets/images/insignias/red-insignia.png';
-      case 'AZUL':     return 'assets/images/insignias/blue-insignia.png';
-      case 'VERDE':    return 'assets/images/insignias/green-insignia.png';
-      case 'NARANJA':  return 'assets/images/insignias/orange-insignia.png';
-      case 'AMARILLO': return 'assets/images/insignias/gold-insignia.png';
-      case 'VIOLETA':  return 'assets/images/insignias/purple-insignia.png';
-      default:         return 'assets/images/insignias/red-insignia.png';
+      case 'ROJO':     return 'assets/images/tablero/insignias/red-insignia.png';
+      case 'AZUL':     return 'assets/images/tablero/insignias/blue-insignia.png';
+      case 'VERDE':    return 'assets/images/tablero/insignias/green-insignia.png';
+      case 'NARANJA':  return 'assets/images/tablero/insignias/orange-insignia.png';
+      case 'AMARILLO': return 'assets/images/tablero/insignias/gold-insignia.png';
+      case 'VIOLETA':  return 'assets/images/tablero/insignias/purple-insignia.png';
+      default:         return 'assets/images/tablero/insignias/red-insignia.png';
     }
   }
 

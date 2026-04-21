@@ -12,6 +12,18 @@
   <rect width="1920" height="1080" style="fill:var(--color-claro)"/>
 
   <!--
+    CAPA 1b: Textura grunge/vintage del papel envejecido. Opacidad baja (0.35)
+    y mix-blend-mode: multiply para oscurecer sutilmente sin afectar los colores
+    de los países (que se renderizan encima en la CAPA 2). pointer-events: none
+    para que no intercepte los clicks sobre los países.
+  -->
+  <image href="/assets/images/grunge-vintage-old-paper-texture.jpg"
+         x="0" y="0" width="1920" height="1080"
+         preserveAspectRatio="xMidYMid slice"
+         opacity="0.35"
+         style="mix-blend-mode: multiply; pointer-events: none;"/>
+
+  <!--
     Corrección de centrado: el artwork del mapa tiene ~30 unidades SVG más de
     espacio vacío en el lado derecho que en el izquierdo. Se desplaza todo el
     contenido (capas 2–4) 30 unidades a la derecha para centrar visualmente.

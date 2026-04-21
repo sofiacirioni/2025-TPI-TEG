@@ -164,55 +164,90 @@
   filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
   // perspective para que el hover rotateX de la solapa sea 3D visible
   perspective: 500px;
+  // Fade-in al aterrizar la revelación (cuando reaparece en el tablero)
+  animation: sobre-obj-appear 0.35s ease both;
+
+  // Durante la revelación el elemento permanece en el DOM pero invisible
+  // para que el sobre grande aterrice sobre esta posición.
+  // opacity:0 mantiene bounding-box, evitando problemas con tests e2e
+  // que esperan que .sobre-objetivo exista en el tablero.
+  &.invisible {
+    opacity: 0;
+    pointer-events: none;
+    animation: none;
+  }
 }
 
+@keyframes sobre-obj-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// Sobre del tablero — mismo lenguaje visual que el sobre de revelación
+// (textura sutil tipo papel + sello PNG). Proporciones equivalentes al grande:
+//   grande: 440px ancho, flap 110px, lacre 64px
+//   chico:  200px ancho, flap  50px, lacre 30px
 .sobre-paper {
   background: #C8A96E;
   border: 0.5px solid rgba(100,60,10,0.4);
   border-radius: 1px;
-  padding: 10px 8px 8px;
-  min-height: 100px;
+  padding: 58px 8px 8px;      // deja espacio para flap (50px) + margen
+  min-height: 50px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   position: relative;
-  // Mismo patrón de líneas diagonales que el sobre grande
+  // Textura sutil de papel (match surface-paper mixin)
   &::after {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(100,60,20,0.1) 25%, transparent 25%,
-                transparent 50%, rgba(100,60,20,0.1) 50%, rgba(100,60,20,0.1) 75%,
-                transparent 75%);
-    background-size: 8px 8px;
+    background-image: repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+      transparent 1px, transparent 9px
+    );
     pointer-events: none;
   }
 }
 
 .sobre-solapa {
-  position: absolute; top: 0; left: 0; right: 0; height: 32px;
-  background: #B8934E;
+  position: absolute; top: 0; left: 0; right: 0; height: 50px;
+  background: linear-gradient(180deg, #D0B173 0%, #BE9A5C 70%, #A88340 100%);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.4, 1);
   transform-origin: top center;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
   z-index: 1;
+
+  // Textura sutil también en la solapa
+  &::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+      transparent 1px, transparent 9px
+    );
+    pointer-events: none;
+  }
 }
 
 .sobre-objetivo:hover .sobre-solapa {
   transform: perspective(500px) rotateX(165deg);
 }
 
-// Lacre pequeño en la solapa (mismo estilo que el grande)
-.sobre-lacre-mini {
-  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-  width: 20px; height: 20px;
-  background: #A01515;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 0 2px rgba(160,21,21,0.3), inset 0 1px 2px rgba(0,0,0,0.4);
-  z-index: 2; pointer-events: none;
+.sobre-objetivo:hover .sobre-lacre-mini {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.85);
 }
 
-.lacre-mini-sigla {
-  font-family: var(--font-heading); font-size: 0.45rem;
-  color: #EFE8CE; letter-spacing: 0.03em; user-select: none;
+// Lacre PNG (mismo asset que el sobre grande). Posicionado sobre la punta
+// inferior del triángulo: top = flap-height − lacre/2 → centrado en el vértice.
+.sobre-lacre-mini {
+  position: absolute; top: 35px; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  z-index: 2; pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.3s ease;
 }
 
 .sobre-sello {
@@ -220,7 +255,7 @@
   letter-spacing: 0.1em; color: rgba(160,21,21,0.8);
   border: 0.5px solid rgba(160,21,21,0.5);
   padding: 2px 5px; border-radius: 1px;
-  transform: rotate(-5deg); margin-top: 30px;
+  transform: rotate(-5deg);
 }
 
 .sobre-label {
@@ -386,12 +421,16 @@ app-tablero-event-display {
 }
 
 // Tira del nombre: ocupa el ancho completo del papel (sin padding lateral)
+// box-shadow paralela sin blur = segundo papel sobresaliendo por debajo-derecha.
 .modal-nombre-strip {
   position: relative;
   display: flex; align-items: center; justify-content: center;
   padding: 12px 32px;
   background: darken($color-claro, 22%); // ~#BFB07A — oliva cálido oscurecido del papel
-  margin-left: 10px; margin-right: 10px; 
+  margin-left: 10px; margin-right: 10px;
+  box-shadow:
+    3px 3px 0 0 rgba(90, 60, 28, 0.18),
+    6px 6px 0 0 rgba(90, 60, 28, 0.10);
 }
 
 .modal-nom {
@@ -695,9 +734,11 @@ app-tablero-event-display {
 }
 
 // ── Panel izquierdo ───────────────────────────────────────────────
+// top: 190px deja espacio al sobre-objetivo (12px top + 44px flap + ~110px body + margen).
+// Menor que antes gracias al sobre más compacto → más espacio para historial + tarjetas.
 .panel-izquierdo {
   position: absolute;
-  top: 155px; left: 8px; bottom: 8px;
+  top: 190px; left: 8px; bottom: 8px;
   width: 200px; z-index: calc(var(--z-vignette) + 2);
   display: flex; flex-direction: column; gap: $space-4;
 }
@@ -705,7 +746,8 @@ app-tablero-event-display {
 // Historial
 .historial-panel {
   padding: $space-2;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-height: 180px;
   display: flex; flex-direction: column;
 }
 
@@ -715,12 +757,29 @@ app-tablero-event-display {
   text-transform: uppercase;
   border-bottom: 0.5px solid rgba(198,156,109,0.15);
   padding-bottom: 4px; margin-bottom: 6px;
+  flex: 0 0 auto;
 }
 
 .historial-lista {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column; gap: 3px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(198,156,109,0.25) transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(198,156,109,0.25);
+    border-radius: 2px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(198,156,109,0.45);
+  }
 }
 
 .hist-item {

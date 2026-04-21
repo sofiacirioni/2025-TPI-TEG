@@ -14,11 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Comparator;
@@ -40,6 +42,7 @@ public class TurnoServiceImpl implements TurnoService {
     private final ObjetivoService objetivoService;
     private final LimiteRepository limiteRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AtaquePendienteStore ataquePendienteStore;
 
     /** @Lazy rompe la dependencia circular: TurnoService ↔ BotService */
     @Lazy
@@ -730,9 +733,139 @@ public class TurnoServiceImpl implements TurnoService {
     // return turnoE;
     // }
 
+    /**
+     * Camino "fast-path" usado por BOTS y por tests: ejecuta validación + resolución
+     * en una sola llamada sin pasar por el flujo dual (no almacena AtaquePendiente
+     * ni emite ATAQUE_INICIADO). Mantiene la semántica anterior para no romper a
+     * BotServiceImpl y usa siempre la cantidad máxima de dados por parte del defensor.
+     */
     @Transactional
     @Override
     public AtaqueResponseDto ataque(Ataque ataque) {
+        ContextoAtaque ctx = validarYCalcularAtaque(ataque);
+        return resolverInterno(ctx, ctx.cantidadDefensorMax);
+    }
+
+    @Transactional
+    @Override
+    public AtaqueResponseDto iniciarAtaque(Ataque ataque) {
+        ContextoAtaque ctx = validarYCalcularAtaque(ataque);
+
+        boolean defensorEsBot = ctx.estadoPaisDefensor.getJugador().getTipoJugador() == TipoJugador.BOT;
+        if (defensorEsBot) {
+            // Defensor bot no puede elegir dados: resolvemos directamente con el máximo.
+            return resolverInterno(ctx, ctx.cantidadDefensorMax);
+        }
+
+        // Registrar pendiente para que el defensor confirme; el scheduler resuelve
+        // con máximo si no responde en el timeout.
+        AtaquePendienteStore.AtaquePendiente ap = new AtaquePendienteStore.AtaquePendiente(
+                ctx.partida.getIdPartida(),
+                ctx.jugador.getIdJugador(),
+                ctx.estadoPaisDefensor.getJugador().getIdJugador(),
+                ctx.estadoPaisAtacante.getPais().getIdPais(),
+                ctx.estadoPaisDefensor.getPais().getIdPais(),
+                ctx.cantidadAtacante,
+                ctx.cantidadDefensorMax,
+                Instant.now());
+        ataquePendienteStore.registrar(ap);
+
+        // Emitir ATAQUE_INICIADO: el frontend sabe si el usuario es atacante/defensor
+        // por idAtacante/idDefensor y muestra UI acorde.
+        PartidaEventDto evento = new PartidaEventDto();
+        evento.setTipo("ATAQUE_INICIADO");
+        evento.setJugadorNombre(ctx.jugador.getNombre());
+        evento.setJugadorColor(ctx.jugador.getColor() != null ? ctx.jugador.getColor().name() : "");
+        evento.setPaisOrigen(ctx.estadoPaisAtacante.getPais().getNombre());
+        evento.setPaisDestino(ctx.estadoPaisDefensor.getPais().getNombre());
+        evento.setIdPartida(ctx.partida.getIdPartida());
+        evento.setJugadorDefensor(ctx.defensorNombre);
+        evento.setJugadorColorDefensor(ctx.defensorColor);
+        evento.setCantDadosAtacante(ctx.cantidadAtacante);
+        evento.setMaxDadosDefensor(ctx.cantidadDefensorMax);
+        evento.setTimerSegundos(AtaquePendienteStore.TIMEOUT_SEGUNDOS);
+        evento.setIdAtacante(ctx.jugador.getIdJugador());
+        evento.setIdDefensor(ctx.estadoPaisDefensor.getJugador().getIdJugador());
+        messagingTemplate.convertAndSend("/topic/partida." + ctx.partida.getIdPartida() + ".evento", evento);
+
+        // Response placeholder: el atacante queda esperando el broadcast ATAQUE/CONQUISTA
+        AtaqueResponseDto placeholder = new AtaqueResponseDto();
+        placeholder.setDadosAtaque(new ArrayList<>());
+        placeholder.setDadosDefensor(new ArrayList<>());
+        return placeholder;
+    }
+
+    @Transactional
+    @Override
+    public AtaqueResponseDto resolverAtaque(AtaqueDefender ataqueDefender) {
+        AtaquePendienteStore.AtaquePendiente pendiente = ataquePendienteStore.obtener(ataqueDefender.getIdPartida());
+        if (pendiente == null) {
+            throw new IllegalStateException("No hay un ataque pendiente para la partida " + ataqueDefender.getIdPartida());
+        }
+
+        if (!pendiente.getIdDefensor().equals(ataqueDefender.getIdJugador())) {
+            throw new IllegalArgumentException("Solo el defensor puede resolver este ataque");
+        }
+
+        // Re-construir contexto desde entidades frescas para evitar referencias obsoletas
+        Ataque sinteticoAtaque = new Ataque(
+                pendiente.getIdAtacante(),
+                pendiente.getIdPaisOrigen(),
+                pendiente.getIdPaisDestino(),
+                pendiente.getCantDadosAtacante());
+        ContextoAtaque ctx = validarYCalcularAtaque(sinteticoAtaque);
+
+        int cantidadDefensor;
+        if (ataqueDefender.getCantDadosDefensor() != null && ataqueDefender.getCantDadosDefensor() > 0) {
+            cantidadDefensor = Math.min(ataqueDefender.getCantDadosDefensor(), ctx.cantidadDefensorMax);
+        } else {
+            cantidadDefensor = ctx.cantidadDefensorMax;
+        }
+
+        ataquePendienteStore.remover(ataqueDefender.getIdPartida());
+        return resolverInterno(ctx, cantidadDefensor);
+    }
+
+    /**
+     * Safety net: resuelve con máximo de dados cualquier ataque pendiente cuyo
+     * defensor no haya respondido dentro de TIMEOUT_SEGUNDOS. Corre cada segundo.
+     */
+    @Scheduled(fixedDelay = 1000)
+    public void resolverAtaquesExpirados() {
+        Instant ahora = Instant.now();
+        for (AtaquePendienteStore.AtaquePendiente ap : ataquePendienteStore.todos()) {
+            if (ap.getIniciadoEn() == null) continue;
+            if (Duration.between(ap.getIniciadoEn(), ahora).getSeconds() < AtaquePendienteStore.TIMEOUT_SEGUNDOS) {
+                continue;
+            }
+            try {
+                AtaqueDefender ad = new AtaqueDefender(ap.getIdPartida(), ap.getIdDefensor(), null);
+                resolverAtaque(ad);
+            } catch (Exception e) {
+                // Si falla, remover para no quedar colgado
+                ataquePendienteStore.remover(ap.getIdPartida());
+            }
+        }
+    }
+
+    /** Contexto común compartido entre iniciarAtaque / resolverAtaque / ataque(bot). */
+    private static class ContextoAtaque {
+        JugadorEntity jugador;
+        PartidaEntity partida;
+        TurnoEntity turnoActual;
+        EstadoPaisEntity estadoPaisAtacante;
+        EstadoPaisEntity estadoPaisDefensor;
+        String defensorNombre;
+        String defensorColor;
+        int cantidadAtacante;
+        int cantidadDefensorMax;
+    }
+
+    /**
+     * Valida precondiciones de un ataque (turno, fase, pertenencia, tropas) y calcula
+     * la cantidad de dados del atacante y el máximo del defensor. No modifica estado.
+     */
+    private ContextoAtaque validarYCalcularAtaque(Ataque ataque) {
         JugadorEntity jugador = jugadorRepository.findById(ataque.getIdJugador()).orElseThrow(
                 () -> new EntityNotFoundException("Jugador no encontrado"));
 
@@ -767,17 +900,34 @@ public class TurnoServiceImpl implements TurnoService {
             throw new IllegalArgumentException("No se puede atacar su propio país");
         }
 
-        // Capturar info del defensor ANTES de que cambiarPropietario modifique la entidad
-        // en la primera-caché de JPA (misma sesión @Transactional)
-        String defensorNombre = estadoPaisDefensor.getJugador().getNombre();
-        String defensorColor = estadoPaisDefensor.getJugador().getColor() != null
+        ContextoAtaque ctx = new ContextoAtaque();
+        ctx.jugador = jugador;
+        ctx.partida = partida;
+        ctx.turnoActual = turnoActual;
+        ctx.estadoPaisAtacante = estadoPaisAtacante;
+        ctx.estadoPaisDefensor = estadoPaisDefensor;
+        ctx.defensorNombre = estadoPaisDefensor.getJugador().getNombre();
+        ctx.defensorColor = estadoPaisDefensor.getJugador().getColor() != null
                 ? estadoPaisDefensor.getJugador().getColor().name() : "";
-
-        int cantidadDefensor = calcularCantidadDados(estadoPaisDefensor.getCantidadTropas(), false);
+        ctx.cantidadDefensorMax = calcularCantidadDados(estadoPaisDefensor.getCantidadTropas(), false);
         int maxAtacante = calcularCantidadDados(estadoPaisAtacante.getCantidadTropas(), true);
-        int cantidadAtacante = (ataque.getCantDadosAtacante() != null && ataque.getCantDadosAtacante() > 0)
+        ctx.cantidadAtacante = (ataque.getCantDadosAtacante() != null && ataque.getCantDadosAtacante() > 0)
                 ? Math.min(ataque.getCantDadosAtacante(), maxAtacante)
                 : maxAtacante;
+        return ctx;
+    }
+
+    /**
+     * Tira dados, aplica pérdidas, maneja conquista + tarjeta y emite WS ATAQUE/CONQUISTA.
+     * Compartido por ataque(bot), iniciarAtaque(si defensor bot) y resolverAtaque.
+     */
+    private AtaqueResponseDto resolverInterno(ContextoAtaque ctx, int cantidadDefensor) {
+        EstadoPaisEntity estadoPaisAtacante = ctx.estadoPaisAtacante;
+        EstadoPaisEntity estadoPaisDefensor = ctx.estadoPaisDefensor;
+        JugadorEntity jugador = ctx.jugador;
+        PartidaEntity partida = ctx.partida;
+        TurnoEntity turnoActual = ctx.turnoActual;
+        int cantidadAtacante = ctx.cantidadAtacante;
 
         Random random = new Random();
         AtaqueResponseDto response = new AtaqueResponseDto();
@@ -805,31 +955,26 @@ public class TurnoServiceImpl implements TurnoService {
             if (a > d) {
                 perdidasDefensor++;
             } else {
-                // Empate o gana defensor -> pierde atacante
                 perdidasAtacante++;
             }
         }
 
-        // Aplicar perdidas
         estadoPaisAtacante.setCantidadTropas(estadoPaisAtacante.getCantidadTropas() - perdidasAtacante);
         estadoPaisDefensor.setCantidadTropas(estadoPaisDefensor.getCantidadTropas() - perdidasDefensor);
 
         boolean conquista = false;
         if (estadoPaisDefensor.getCantidadTropas() <= 0) {
-            // Capturar el defensor antes de cambiar propietario
             JugadorEntity defensorEntity = estadoPaisDefensor.getJugador();
 
-            // Conquista
             estadoPaisService.cambiarPropietario(
                     estadoPaisDefensor.getIdEstadoPais(),
                     estadoPaisAtacante.getIdEstadoPais(),
-                    ataque.getIdJugador());
+                    jugador.getIdJugador());
 
             jugador.setConsquisto(true);
             jugadorRepository.save(jugador);
             conquista = true;
 
-            // Verificar si el defensor fue eliminado (0 países restantes)
             List<EstadoPaisEntity> paisesDefensor = estadoPaisRepository
                     .findEstadoPaisEntitiesByJugador_IdJugador(defensorEntity.getIdJugador());
             if (paisesDefensor.isEmpty()) {
@@ -838,17 +983,14 @@ public class TurnoServiceImpl implements TurnoService {
                 jugadorRepository.save(defensorEntity);
             }
 
-            // Emitir progreso de objetivo al jugador atacante (topic personal)
             try {
                 ObjetivoProgresoDto progreso = objetivoService.calcularProgreso(jugador.getIdJugador());
                 messagingTemplate.convertAndSend(
                         "/topic/partida." + partida.getIdPartida() + ".objetivo." + jugador.getIdJugador(),
                         progreso);
             } catch (Exception ignored) {
-                // No interrumpir el flujo de ataque si el progreso falla
             }
 
-            // Asignar tarjeta automáticamente al conquistar (solo una por turno)
             boolean yaObtuvoCarta = estadoTarjetaRepository.findByTurnoId(turnoActual.getIdTurno())
                     .stream().anyMatch(et -> et.getJugador() != null
                             && et.getJugador().getIdJugador().equals(jugador.getIdJugador()));
@@ -883,7 +1025,6 @@ public class TurnoServiceImpl implements TurnoService {
         response.setPerdidasAtacante(perdidasAtacante);
         response.setPerdidasDefensor(perdidasDefensor);
 
-        // Broadcast evento a todos los jugadores de la partida
         PartidaEventDto evento = new PartidaEventDto();
         evento.setTipo(conquista ? "CONQUISTA" : "ATAQUE");
         evento.setJugadorNombre(jugador.getNombre());
@@ -896,8 +1037,10 @@ public class TurnoServiceImpl implements TurnoService {
         evento.setPerdidasAtacante(perdidasAtacante);
         evento.setPerdidasDefensor(perdidasDefensor);
         evento.setIdPartida(partida.getIdPartida());
-        evento.setJugadorDefensor(defensorNombre);
-        evento.setJugadorColorDefensor(defensorColor);
+        evento.setJugadorDefensor(ctx.defensorNombre);
+        evento.setJugadorColorDefensor(ctx.defensorColor);
+        evento.setIdAtacante(jugador.getIdJugador());
+        evento.setIdDefensor(estadoPaisDefensor.getJugador().getIdJugador());
         messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
 
         return response;

@@ -35,7 +35,9 @@ test.beforeEach(async ({ page }) => {
   const btnEntendido = page.locator('.btn-entendido');
   if (await btnEntendido.isVisible({ timeout: 3_000 }).catch(() => false)) {
     await btnEntendido.click();
-    await page.waitForTimeout(800);
+    // Esperar a que el overlay desaparezca del DOM (animación cerrando ~800ms)
+    // antes de permitir interacción con el mapa, para evitar que intercepte clicks.
+    await page.locator('.rev-overlay').waitFor({ state: 'detached', timeout: 3_000 }).catch(() => {});
   }
 });
 
@@ -727,6 +729,159 @@ test.describe('Revelación de objetivo — sobre animado', () => {
     expect(hasItems || hasDesc || hasFallb, 'El panel debe mostrar contenido del objetivo').toBe(true);
 
     await page.screenshot({ path: 'e2e/screenshots/panel-orden-secreta-progreso.png' });
+  });
+
+  test('la solapa del sobre tiene forma triangular (clip-path correcto)', async ({ page }) => {
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    const flap = page.locator('.sobre-flap');
+    await expect(flap).toBeVisible({ timeout: 3_000 });
+
+    // La solapa debe tener altura real (>0) — clip-path en lugar del truco border-trick
+    const box = await flap.boundingBox();
+    expect(box, 'La solapa debe tener bounding box').toBeTruthy();
+    expect(box!.height, 'La solapa debe tener altura > 50px').toBeGreaterThan(50);
+
+    // El clip-path debe estar definido (polygon, no none)
+    const clipPath = await flap.evaluate(el => window.getComputedStyle(el).clipPath);
+    expect(clipPath, 'clip-path debe ser polygon').toMatch(/polygon/i);
+
+    // El lacre (círculo rojo) debe ser visible dentro del triángulo
+    const lacre = page.locator('.sobre-lacre');
+    await expect(lacre).toBeVisible();
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-solapa-triangular.png' });
+  });
+
+  test('animación de cierre vuela hacia el sobre-objetivo (top-left)', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.goto(tableroUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.tablero-container', { timeout: 20_000 });
+    await page.waitForSelector(PAIS_PATH, { timeout: 15_000 });
+
+    const overlay = page.locator('.rev-overlay');
+    const apareció = await overlay.isVisible({ timeout: 6_000 }).catch(() => false);
+    if (!apareció) { test.skip(); return; }
+
+    // Esperar a que aparezca el botón ENTENDIDO
+    const btn = page.locator('.btn-entendido');
+    await expect(btn).toBeVisible({ timeout: 5_000 });
+
+    // Capturar posición del sobre-objetivo ANTES de cerrar
+    const sobreObjetivo = page.locator('.sobre-objetivo');
+    const sobreBox = await sobreObjetivo.boundingBox();
+
+    // Hacer click en ENTENDIDO y capturar inmediatamente durante la animación
+    await btn.click();
+    // La animación dura ~700ms — capturar durante el vuelo (~300ms después)
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-vuelo-cierre.png' });
+
+    // Después de ~800ms, el overlay debe haber desaparecido
+    await page.waitForTimeout(600);
+    await expect(overlay).not.toBeVisible({ timeout: 2_000 });
+
+    // El sobre-objetivo debe seguir visible en el tablero (confirma que "aterrizó" correctamente)
+    await expect(sobreObjetivo).toBeVisible();
+    if (sobreBox) {
+      const sobreBoxFinal = await sobreObjetivo.boundingBox();
+      // El sobre-objetivo NO debe haberse movido de su posición original
+      expect(Math.abs((sobreBoxFinal?.x ?? 0) - sobreBox.x)).toBeLessThan(5);
+    }
+
+    await page.screenshot({ path: 'e2e/screenshots/revelacion-descartada-animacion.png' });
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL DE PAÍS — posicionamiento inteligente
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Modal de país — posicionamiento inteligente', () => {
+
+  test('el modal no sale del área del mapa al clickear países del borde derecho', async ({ page }) => {
+    const mapaZona = page.locator('.mapa-zona');
+    await expect(mapaZona).toBeVisible();
+    const mapaBox = await mapaZona.boundingBox();
+    if (!mapaBox) { test.skip(); return; }
+
+    const paises = page.locator(PAIS_PATH);
+    const total = await paises.count();
+
+    // Buscar un país que esté en la mitad derecha del mapa
+    let testeado = false;
+    for (let i = 0; i < total && !testeado; i++) {
+      const paisBox = await paises.nth(i).boundingBox();
+      if (!paisBox) continue;
+      // País en el 60% derecho del mapa
+      if (paisBox.x + paisBox.width / 2 > mapaBox.x + mapaBox.width * 0.6) {
+        await paises.nth(i).click();
+        const modal = page.locator('.modal-pais');
+        const vis = await modal.isVisible({ timeout: 2_000 }).catch(() => false);
+        if (!vis) continue;
+
+        const modalBox = await modal.boundingBox();
+        if (modalBox) {
+          testeado = true;
+          // El borde derecho del modal debe estar dentro del área del mapa
+          const modalRight = modalBox.x + modalBox.width;
+          const mapaRight  = mapaBox.x + mapaBox.width;
+          expect(modalRight, 'El modal no debe salir por la derecha del mapa').toBeLessThanOrEqual(mapaRight + 4);
+
+          await page.screenshot({ path: 'e2e/screenshots/modal-pais-derecha.png' });
+        }
+        await page.locator('.btn-modal-cerrar').click().catch(() => {});
+        await page.waitForTimeout(200);
+      }
+    }
+
+    if (!testeado) {
+      console.log('No se encontró país en el borde derecho — puede depender del estado del mapa');
+    }
+  });
+
+  test('el modal no sale del área del mapa al clickear países del borde inferior', async ({ page }) => {
+    const mapaZona = page.locator('.mapa-zona');
+    const mapaBox = await mapaZona.boundingBox();
+    if (!mapaBox) { test.skip(); return; }
+
+    const paises = page.locator(PAIS_PATH);
+    const total = await paises.count();
+
+    let testeado = false;
+    for (let i = total - 1; i >= 0 && !testeado; i--) {
+      const paisBox = await paises.nth(i).boundingBox();
+      if (!paisBox) continue;
+      // País en el 65% inferior del mapa
+      if (paisBox.y + paisBox.height / 2 > mapaBox.y + mapaBox.height * 0.65) {
+        await paises.nth(i).click();
+        const modal = page.locator('.modal-pais');
+        const vis = await modal.isVisible({ timeout: 2_000 }).catch(() => false);
+        if (!vis) continue;
+
+        const modalBox = await modal.boundingBox();
+        if (modalBox) {
+          testeado = true;
+          const modalBottom = modalBox.y + modalBox.height;
+          const mapaBottom  = mapaBox.y + mapaBox.height;
+          expect(modalBottom, 'El modal no debe salir por abajo del mapa').toBeLessThanOrEqual(mapaBottom + 4);
+
+          await page.screenshot({ path: 'e2e/screenshots/modal-pais-inferior.png' });
+        }
+        await page.locator('.btn-modal-cerrar').click().catch(() => {});
+        await page.waitForTimeout(200);
+      }
+    }
+
+    if (!testeado) {
+      console.log('No se encontró país en el borde inferior — puede depender del estado del mapa');
+    }
   });
 
 });

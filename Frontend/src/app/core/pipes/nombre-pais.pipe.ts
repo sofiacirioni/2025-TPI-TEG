@@ -30,10 +30,21 @@ const CORRECCIONES: Record<string, string> = {
   'Oceania':           'Oceanía',
 };
 
+// Regex word-boundary precomputado para sustituir los nombres dentro de
+// textos más largos (ej. descripciones de objetivo).
+const REPLACEMENTS: [RegExp, string][] = Object.entries(CORRECCIONES).map(
+  ([from, to]) => [new RegExp(`\\b${from}\\b`, 'g'), to]
+);
+
 @Pipe({ name: 'nombrePais', standalone: true })
 export class NombrePaisPipe implements PipeTransform {
   transform(value: string | null | undefined): string {
     if (!value) return '';
-    return CORRECCIONES[value] ?? value;
+    // Match exacto: resolución rápida para nombres puros ("Mexico").
+    if (CORRECCIONES[value]) return CORRECCIONES[value];
+    // Fallback: sustituir dentro del string ("Conquistar Mexico y Peru").
+    let result = value;
+    for (const [re, to] of REPLACEMENTS) result = result.replace(re, to);
+    return result;
   }
 }

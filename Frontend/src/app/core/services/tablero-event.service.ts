@@ -17,6 +17,7 @@ export class TableroEventService {
 
   private queue: GameEvent[] = [];
   private processing = false;
+  private currentTipo: GameEventTipo | null = null;
 
   private currentEventSubject = new Subject<GameEvent | null>();
   /** Emite el evento actual (null cuando no hay nada mostrando). */
@@ -40,27 +41,84 @@ export class TableroEventService {
 
   /**
    * Convierte un evento WS del backend en un GameEvent y lo encola.
-   * Los eventos WS llegan a todos, incluido el atacante.
-   * Para el atacante local (que ya recibió la respuesta HTTP) ignorar los tipos
-   * ATAQUE / CONQUISTA porque ya los encoló directamente.
+   * Los eventos WS llegan a TODOS los jugadores (incluido el autor). Política:
+   *   - Si el jugador local es el AUTOR de la acción → no se notifica (ya la ejecutó él).
+   *   - Si es el DEFENSOR de un ataque → texto personalizado ("contra ti").
+   *   - En otro caso → texto neutro de observador.
    */
-  enqueueFromWs(ws: PartidaEventWs, esJugadorLocal: boolean): void {
-    const color = COLOR_VAR_MAP[ws.jugadorColor?.toUpperCase()] ?? 'var(--player-rojo)';
+  enqueueFromWs(ws: PartidaEventWs, miNombre: string | undefined): void {
+    const colorKey = ws.jugadorColor?.toUpperCase() ?? '';
+    const colorDefKey = ws.jugadorColorDefensor?.toUpperCase() ?? '';
+    const color = COLOR_VAR_MAP[colorKey] ?? 'var(--player-rojo)';
+    const colorDef = COLOR_VAR_MAP[colorDefKey] ?? '';
+    const esAutor    = !!miNombre && ws.jugadorNombre === miNombre;
+    const esDefensor = !!miNombre && !!ws.jugadorDefensor && ws.jugadorDefensor === miNombre;
+    const esCombate = ws.tipo === 'ATAQUE_INICIADO' || ws.tipo === 'ATAQUE' || ws.tipo === 'CONQUISTA';
+
+    // En combate TODOS los roles ven el modal (atacante en "esperando",
+    // defensor selecciona dados, espectador en modo lectura).
+    if (esAutor && !esCombate) return;
 
     switch (ws.tipo) {
-      case 'ATAQUE':
-      case 'CONQUISTA': {
-        if (esJugadorLocal) return; // el atacante ya encoló su propio resultado
-        const tipo: GameEventTipo = ws.conquista ? 'CONQUISTA' : 'RESULTADO_DADOS';
+      case 'ATAQUE_INICIADO': {
         this.enqueue({
-          tipo,
-          titulo: ws.conquista ? '¡CONQUISTA!' : 'COMBATE',
+          tipo: 'ATAQUE_INICIADO',
+          titulo: 'ATAQUE INICIADO',
           jugadorActivo: ws.jugadorNombre,
           colorJugador: color,
+          colorJugadorKey: colorKey,
           jugadorDefensor: ws.jugadorDefensor ?? '',
-          colorDefensor: COLOR_VAR_MAP[ws.jugadorColorDefensor?.toUpperCase() ?? ''] ?? '',
+          colorDefensor: colorDef,
+          colorDefensorKey: colorDefKey,
           paisOrigen: ws.paisOrigen,
           paisDestino: ws.paisDestino,
+          idAtacante: ws.idAtacante,
+          idDefensor: ws.idDefensor,
+          idPartida: ws.idPartida,
+          diceSelection: {
+            paisOrigen: ws.paisOrigen,
+            paisDestino: ws.paisDestino,
+            maxDados: ws.maxDadosDefensor ?? 3,
+            timerSegundos: ws.timerSegundos ?? 5,
+            cantDadosAtacante: ws.cantDadosAtacante,
+          },
+          duracionMs: 0,
+        });
+        break;
+      }
+      case 'ATAQUE':
+      case 'CONQUISTA': {
+        // Si el modal actual es ATAQUE_INICIADO (todos los roles esperando),
+        // forzamos avance antes de encolar el resultado.
+        if (this.currentTipo === 'ATAQUE_INICIADO') {
+          this.processNext();
+        }
+        const tipo: GameEventTipo = ws.conquista ? 'CONQUISTA' : 'RESULTADO_DADOS';
+        let titulo: string;
+        if (esAutor) {
+          titulo = ws.conquista ? '¡CONQUISTA!' : (ws.perdidasDefensor > ws.perdidasAtacante ? 'ATAQUE EXITOSO' : 'ATAQUE REPELIDO');
+        } else if (esDefensor) {
+          titulo = ws.conquista ? '¡TE CONQUISTARON!' : 'ATAQUE CONTRA TI';
+        } else {
+          titulo = ws.conquista ? '¡CONQUISTA!' : 'COMBATE';
+        }
+        const descripcion = esDefensor
+          ? `${ws.jugadorNombre} atacó ${ws.paisDestino} desde ${ws.paisOrigen}`
+          : undefined;
+        this.enqueue({
+          tipo,
+          titulo,
+          descripcion,
+          jugadorActivo: ws.jugadorNombre,
+          colorJugador: color,
+          colorJugadorKey: colorKey,
+          jugadorDefensor: ws.jugadorDefensor ?? '',
+          colorDefensor: colorDef,
+          colorDefensorKey: colorDefKey,
+          paisOrigen: ws.paisOrigen,
+          paisDestino: ws.paisDestino,
+          idAtacante: ws.idAtacante,
+          idDefensor: ws.idDefensor,
           dadosAtaque: ws.dadosAtaque,
           dadosDefensor: ws.dadosDefensor,
           conquista: ws.conquista,
@@ -91,7 +149,6 @@ export class TableroEventService {
         });
         break;
       case 'REAGRUPAMIENTO':
-        if (esJugadorLocal) return;
         this.enqueue({
           tipo: 'REAGRUPAMIENTO',
           titulo: 'REAGRUPAMIENTO',
@@ -131,7 +188,13 @@ export class TableroEventService {
 
   /** Llamado después de procesar la selección de dados para avanzar la cola. */
   advanceAfterDice(): void {
-    this.processNext();
+    // Solo dismissar si aún estamos en el selector local. En la short-circuit
+    // de bot-defensor, el WS ATAQUE puede llegar ANTES que la respuesta HTTP
+    // y transicionar a RESULTADO_DADOS; en ese caso no debemos descartar el
+    // resultado recién mostrado.
+    if (this.currentTipo === 'ATAQUE_INICIADO') {
+      this.processNext();
+    }
   }
 
   /** Descarta el evento actual y procesa el siguiente. */
@@ -142,24 +205,33 @@ export class TableroEventService {
   private processNext(): void {
     if (this.queue.length === 0) {
       this.processing = false;
+      this.currentTipo = null;
       this.currentEventSubject.next(null);
       return;
     }
     this.processing = true;
     const event = this.queue.shift()!;
+    this.currentTipo = event.tipo;
     this.currentEventSubject.next(event);
 
     if (event.tipo === 'ATAQUE_INICIADO') {
       // El componente maneja el timer y llama resolveDiceSelection()
+      // (o queda esperando el broadcast ATAQUE/CONQUISTA que lo avanza).
       return;
     }
 
     if (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA') {
-      const duration = event.duracionMs ?? 4000;
-      setTimeout(() => this.processNext(), duration);
+      // Eventos de combate siempre con su duración completa
+      setTimeout(() => this.processNext(), event.duracionMs ?? 4000);
       return;
     }
 
-    setTimeout(() => this.processNext(), event.duracionMs ?? 3500);
+    // Notificaciones simples: si hay >2 eventos pendientes (bots actuando en ráfaga),
+    // reducir a 900ms para que el jugador no quede bloqueado esperando notificaciones pasadas
+    const duracion = this.queue.length > 2
+      ? Math.min(event.duracionMs ?? 3500, 900)
+      : event.duracionMs ?? 3500;
+
+    setTimeout(() => this.processNext(), duracion);
   }
 }

@@ -515,6 +515,64 @@ Cinco correcciones de bugs encontrados en pruebas manuales del tablero de juego.
 - **Notificaciones simples más arriba**: `padding-top` del wrapper de eventos reducido de `14%` a `6%` — aparecen en el cuarto superior del mapa en lugar del tercio.
 - **Viñeta menos oscura**: gradiente radial de `tablero.component.scss` expandido — zona transparente de `35%` a `50%`, elipse más amplia (`90%×80%` → `95%×88%`), opacidades reducidas de `0.25/0.55/1.0` a `0.18/0.42/0.7`, el mapa central queda notoriamente más visible.
 
+### Tablero — pulido de animación del sobre, notificaciones y modal de país (sesión 2026-04-16)
+
+Seis mejoras de UX/UI al tablero: corrección de la animación del sobre de objetivo, fluidez de notificaciones con bots, posicionamiento inteligente del modal de país, y nuevos tests e2e.
+
+#### 1. Objetivos — actualización tras conquista (verificación)
+
+El progreso ya se refrescaba por WS y por polling al cambiar de turno. Se confirmó que `tablero.component.ts` también llama a `obtenerProgresoObjetivo()` en cada evento `CONQUISTA` recibido — la actualización es inmediata, no solo al final del turno.
+
+#### 2. Animación del sobre de objetivo — solapa triangular real
+
+**Problema**: `.sobre-flap` usaba el truco CSS border con `width: 460px` en lugar de `width: 0`, produciendo un trapezoide de 920 px de ancho desconectado del cuerpo del sobre.
+
+**Fix** (`objetivo-revelacion.component.scss`):
+- Reemplazado por `height: 110px; clip-path: polygon(0 0, 100% 0, 50% 100%)` — triángulo real apuntando hacia abajo, unido al cuerpo en el layout flexbox.
+- `flex-shrink: 0` para que el flap no colapse.
+- Mismo patrón de líneas diagonales que el cuerpo (via `::before`) para coherencia visual.
+- Lacre reposicionado a `top: 22px` (dentro del área visible del triángulo).
+- Sombra `drop-shadow(0 3px 6px)` proyectada hacia el cuerpo (profundidad correcta).
+
+**Animación de cierre** corregida para que el vuelo hacia el sobre-objetivo sea visible:
+- `scale(0.08)` → `scale(0.43)` — 460 px × 0.43 ≈ 198 px, coincide con el ancho real del sobre-objetivo (200 px).
+- `opacity` ahora hace fade-out solo en los últimos 250 ms (delay `0.5s`) — el sobre es visible durante el vuelo completo.
+
+#### 3. Panel izquierdo — margen sobre el modal de objetivo
+
+`top: 155px` → `top: 230px` en `.panel-izquierdo` (`tablero.component.scss`). Deja espacio libre para que el `objetivo-modal` desplegado (progreso + ítems) no tape el historial ni las tarjetas.
+
+#### 4. Notificaciones — velocidad adaptativa con bots
+
+**Problema**: los bots ejecutan sus turnos sincrónicamente y generan muchos eventos en ráfaga; las notificaciones se encolaban y bloqueaban al jugador durante decenas de segundos esperando que pasaran una por una.
+
+**Fix** (`tablero-event.service.ts`, método `processNext()`):
+- Si `queue.length > 2`, las notificaciones simples (no combate) se muestran máximo **900 ms** en lugar de sus 2500–3500 ms habituales.
+- Los eventos de combate (`RESULTADO_DADOS`, `CONQUISTA`) siempre usan su duración completa para no cortar la animación de dados.
+- El threshold `> 2` garantiza que las primeras 2 notificaciones del jugador activo se muestren a velocidad normal y solo el backlog de bots se acelera.
+
+#### 5. Modal de país — posicionamiento inteligente
+
+**Problema**: el modal siempre abría a la derecha y abajo del click, por lo que países del borde derecho del mapa mostraban el modal fuera del área de juego.
+
+**Fix** (`tablero.component.ts`, método `paisClickeado()`):
+- Si el click está a menos de `MODAL_W + 12 px` del borde derecho del mapa → el modal abre a la **izquierda** del cursor.
+- Si el click está en el tercio inferior del mapa → el modal abre **hacia arriba**.
+- Fallback `Math.max/min` garantiza que nunca salga del rectángulo del mapa.
+
+#### 6. Tests e2e — nuevos tests para los cambios
+
+Agregados en `e2e/tablero-dev.spec.ts`:
+
+| Test | Qué verifica |
+|---|---|
+| `la solapa del sobre tiene forma triangular (clip-path correcto)` | `.sobre-flap` tiene altura > 50 px, `clip-path: polygon(...)`, lacre visible |
+| `animación de cierre vuela hacia el sobre-objetivo (top-left)` | El sobre es visible durante el vuelo, el overlay desaparece en < 800 ms, el `sobre-objetivo` no se mueve de posición |
+| `el modal no sale del área del mapa al clickear países del borde derecho` | `modal.x + modal.width ≤ mapa.x + mapa.width + 4 px` |
+| `el modal no sale del área del mapa al clickear países del borde inferior` | `modal.y + modal.height ≤ mapa.y + mapa.height + 4 px` |
+
+Suite completa: **44/44 passing, 16 skipped** (todos condicionales por estado de sesión/turno).
+
 ### Tablero — mejoras a la revelación de objetivos y coherencia visual (sesión 2026-04-14)
 
 Refinamiento del sistema de objetivos: animación más rápida, sobre más grande, corrección de la solapa 3D, animación de posición final, coherencia visual entre el sobre de revelación y el del tablero, y actualización en tiempo real del progreso.
@@ -549,6 +607,153 @@ El `progresoObjetivo` solo se cargaba una vez al inicio (REST) y actualizaba via
 
 - `'Africa'` → `'África'` en `ObjetivoRevelacionComponent.buildItems()` — corregida la tilde faltante en la cadena de texto mostrada en la hoja de órdenes.
 - Import `ObjetivoItem` sin uso eliminado del componente.
+
+### Tablero — notificaciones personalizadas, scroll en historial y pulido de revelación (sesión 2026-04-18)
+
+Ronda de refinamientos sobre notificaciones del juego, panel lateral y animación del sobre de objetivo, con coherencia visual total entre el sobre animado y el del tablero.
+
+#### 1. Notificaciones de combate — personalizadas por rol
+
+- **`TableroEventService.enqueueFromWs()`** refactorizado: firma cambia de `(ws, esJugadorLocal: boolean)` a `(ws, miNombre: string | undefined)`.
+- **Filtrado global del autor**: si `ws.jugadorNombre === miNombre` el evento se descarta (ya fue encolado por la respuesta HTTP del propio jugador), evitando notificaciones duplicadas.
+- **Texto adaptado para ATAQUE/CONQUISTA** según el rol del receptor:
+  - Defensor: `¡TE CONQUISTARON!` / `ATAQUE CONTRA TI`, con descripción `"X atacó Y desde Z"`.
+  - Observador: `¡CONQUISTA!` / `COMBATE` genérico.
+- `TableroComponent` pasa `this.jugadorUsuario?.nombre` al callback WS.
+
+#### 2. Registro de operaciones — más espacio y scroll vertical
+
+- **`.historial-panel`**: `flex: 0 0 auto` → `flex: 1 1 0` con `min-height: 180px` para que ocupe todo el espacio disponible en el panel izquierdo.
+- **`.historial-lista`**: `overflow-y: auto` + scrollbar custom (`width: 4px`, `thumb: rgba(198,156,109,0.25)`, fallback `scrollbar-width: thin` para Firefox).
+- **`.slice(0, 3)`** eliminado del `@for` — ahora se muestran todas las entradas y el usuario scrollea para consultar historial.
+- `.panel-izquierdo top: 230px → 190px` — el panel aprovecha el espacio extra que antes se dejaba para el sobre-objetivo grande.
+
+#### 3. Revelación de objetivo — sobre más chico y hoja que regresa
+
+**Dimensiones más proporcionadas** (`objetivo-revelacion.component.scss`):
+- `$sobre-width: 460px → 360px`, `$sobre-flap-height: 100px → 80px`, `$sobre-body-min: 210px → 180px`.
+- Lacre PNG `70px → 50px` (coherente con el tamaño del sobre).
+
+**Animación de hoja en dos fases** (nueva keyframe `hoja-emerge-asentarse`):
+- `0%`: `translateY(20px)`, `opacity: 0` (hoja escondida dentro del sobre).
+- `55%`: `translateY(-220px)`, `opacity: 1` (emerge completamente hacia arriba).
+- `100%`: `translateY(-170px)`, `opacity: 1` (desciende 50 px y se asienta sobre el sobre).
+- Resultado: el título y los ítems quedan centrados sobre el sobre en lugar de flotar muy arriba fuera del eje visual.
+
+**Animación de cierre refinada**: `translate(-46vw, -44vh) scale(0.55)` — 360 × 0.55 ≈ 198 px coincide con el ancho real del sobre-objetivo (200 px). Delay `0.18s` para dar tiempo a que la solapa se cierre primero, luego el sobre vuela durante 600 ms.
+
+#### 4. Textura de papel sutil + lacre PNG
+
+**Antes**: patrón diagonal áspero `rgba(0,0,0,0.15)` visible incluso a tamaño normal. **Ahora**: `@mixin papel-textura` con mismos valores que `surface-paper` del login (`44deg, rgba(88,58,24,0.045), 1px líneas, 9px gap`). Aplicado por `::before` en:
+- `.sobre-flap` (solapa del sobre grande)
+- `.sobre-cuerpo` (cuerpo del sobre grande)
+- `.hoja` (hoja de órdenes)
+- `.sobre-paper` (sobre pequeño del tablero)
+- `.sobre-solapa` (solapa del sobre pequeño)
+
+**Lacre PNG**: reemplazado el círculo rojo con texto "TEG" dibujado en CSS por `<img src="assets/images/tablero/teg-wax-seal.png">` en ambos componentes. El elemento se posiciona fuera del `clip-path` del flap (como absolute sobre el sobre-wrap) para evitar que la rotación 3D de apertura lo recorte. Fade-out con `opacity: 0; transform: translateX(-50%) scale(0.85)` cuando la solapa se abre.
+
+#### 5. Insignias — ruta actualizada
+
+Carpeta movida: `assets/images/insignias/` → `assets/images/tablero/insignias/`. Imports actualizados en `tablero.component.ts` (replace_all sobre todas las ocurrencias del mapa de rangos por color).
+
+#### 6. Sobre-objetivo unificado con el sobre de revelación
+
+El sobre pequeño del tablero (`.sobre-objetivo`) reutiliza las mismas variables y proporciones que el grande, con escala 200/360 ≈ 55%:
+
+| Elemento | Grande (revelación) | Chico (tablero) |
+|---|---|---|
+| Ancho total | 360 px | 200 px |
+| Flap (altura) | 80 px | 44 px |
+| Lacre PNG | 50 px | 28 px |
+| Fondo | `#C8A96E` | `#C8A96E` |
+| Gradiente flap | `#D0B173 → #A88340` | `#D0B173 → #A88340` |
+| Textura | Mixin `papel-textura` | Mismas líneas inlined |
+| Hover rotación | 172° (animación) | 165° (hover) |
+
+#### 7. Sobre-objetivo oculto durante revelación
+
+**Problema**: al cargar el tablero el sobre-objetivo aparecía de golpe, se ocultaba cuando arrancaba la revelación, y reaparecía con pop al final → flasheo desagradable.
+
+**Fix**: 
+- `sobreObjetivoVisible = false` por defecto en `TableroComponent`.
+- `ObjetivoRevelacionComponent` emite `@Output cerrandoStart` al iniciar el cierre (antes de que el sobre grande empiece a volar).
+- `TableroComponent.onRevelacionCerrandoStart()` pone `sobreObjetivoVisible = true` → fade-in de 350 ms (`sobre-obj-appear` keyframe) mientras el sobre grande aterriza.
+- Partidas en curso (sin revelación pendiente): else-if en el polling activa `sobreObjetivoVisible = true` inmediatamente.
+
+#### 8. Fix Playwright — `sobre-objetivo` permanece en DOM
+
+**Problema**: el test `'el sobre del objetivo secreto es visible (top-left)'` fallaba cuando el `beforeEach` no lograba descartar el overlay de revelación en 3 s — con `@if (sobreObjetivoVisible)` el elemento no estaba en el DOM y `toBeVisible()` fallaba.
+
+**Fix**:
+- `tablero.component.html`: `@if (sobreObjetivoVisible)` → `[class.invisible]="!sobreObjetivoVisible"` — el elemento siempre está renderizado.
+- `tablero.component.scss`: `.sobre-objetivo.invisible { opacity: 0; pointer-events: none; animation: none; }` — invisible visualmente pero con bounding-box (Playwright `toBeVisible()` pasa con `opacity:0`).
+- `e2e/tablero-dev.spec.ts` `beforeEach`: `waitForTimeout(800)` → `locator('.rev-overlay').waitFor({ state: 'detached', timeout: 3000 })` — elimina flakiness de races con la animación de cierre en el siguiente click.
+
+#### Resultado
+
+Suite completa Playwright: **39 passed, 6 skipped (preexistentes), 0 failed**.
+
+### Tablero — flujo de ataque dual y pulido de UI de combate (sesión 2026-04-19/20)
+
+Continuación del sistema de combate: se migró de un único endpoint sincrónico a un flujo de dos fases (iniciar + defender) para que atacante y defensor humanos colaboren vía WebSocket, y se pulió por completo la UI del modal de combate (`TableroEventDisplayComponent`).
+
+#### 1. Backend — ataque dual y scheduler de timeout
+
+Dos endpoints nuevos en `TurnoController`:
+- `POST /turno/ataque/iniciar` — crea un `AtaquePendiente` en memoria (`ConcurrentHashMap` keyed por `idPartida`), broadcast WS `ATAQUE_INICIADO` con `idAtacante`, `idDefensor`, `cantDadosAtacante`, `maxDadosDefensor`, `timerSegundos: 7`. Short-circuit cuando el defensor es `TipoJugador.BOT`: resuelve inline sin guardar pendiente.
+- `POST /turno/ataque/defender` — el defensor envía `cantDadosDefensor`, busca el pendiente y ejecuta `resolverInterno(ctx, cantDadosDefensor)` (lógica compartida con el fast-path de bots).
+
+Nuevo componente `AtaquePendienteStore` (bean Spring). Nuevo método `@Scheduled(fixedRate = 1000)` `resolverAtaquesExpirados()` que barre pendientes con >7s de antigüedad y los resuelve con defensa máxima (safety net para desconexiones).
+
+El endpoint viejo `/turno/ataque` sigue vivo exclusivamente para el `BotServiceImpl` (fast-path cuando atacante es bot), evitando el round-trip WS.
+
+#### 2. Frontend — `TableroEventDisplayComponent` con roles de combate
+
+Cuatro roles en el modal: `'local'` (lanzado desde botón atacar, antes del WS), `'atacante'` (miId === idAtacante → "ESPERANDO DEFENSOR"), `'defensor'` (miId === idDefensor → selector de dados + LANZAR), `'espectador'` (ni atacante ni defensor → "COMBATE EN CURSO").
+
+Método `computeRol(event)` resuelve el rol comparando `AuthService.getJugadorId()` contra `event.idAtacante` / `event.idDefensor`. `esCombate` excepción en `enqueueFromWs`: los eventos de combate NO se saltan para el autor (se necesita que el atacante vea su propio `ATAQUE_INICIADO` para esperar al defensor).
+
+Sticky queue fix: si llega WS `ATAQUE`/`CONQUISTA` mientras `currentTipo === 'ATAQUE_INICIADO'`, el service llama `processNext()` antes de encolar el resultado, desbloqueando el modal.
+
+Race HTTP vs WS (short-circuit bot-defensor): el WS `ATAQUE` broadcast llega ANTES que la respuesta HTTP del `iniciarAtaque`. `advanceAfterDice()` solo llama `processNext()` si `currentTipo === 'ATAQUE_INICIADO'`, para no dismissear el resultado recién encolado.
+
+Animación slot-machine: 3s de valores random (setInterval 80ms) en `RESULTADO_DADOS` y `CONQUISTA` antes de revelar los dados reales — shake sobre el panel entero con la clase `.slot-shake`.
+
+#### 3. UI de combate — refactor visual completo
+
+**Layout a 3 columnas simétrico:** `.ted-battle-grid` con `grid-template-columns: 1fr auto 1fr`. Columna izquierda contiene info del atacante (Desde: + país + ficha + nombre) + sus dados centrados. Columna derecha lo mismo para el defensor. Columna central tiene la flecha de dirección. Las columnas laterales (`1fr`) se centran por sí mismas, así la asimetría en cantidad de dados no rompe el balance visual.
+
+**Decoración de fondo:** `.ted-battle-bg-icon` — `<span>` con `mask-image: attack-icon.svg` + `background-color: rgba(67, 42, 30, 1)` + `opacity: 0.07`, posicionado `absolute` en el centro del grid. Sirve de decoración de fondo (z-index 0), puede ser cubierto por cualquier elemento.
+
+**Header con iconos en los extremos:** `.ted-combat-header` usa `grid-template-columns: auto 1fr auto`, con título centrado vía `justify-self: center`. Los attack-icons quedan pegados a los bordes del modal. `margin-bottom: -10px` pega el divider al título.
+
+**Etiquetas semánticas:** `ATACA` → `Desde:`, `DEFIENDE` → `Hacia:`. Tipografía Roboto Slab italic (misma estética que `Resultado:`). Se eliminaron las repeticiones de labels sobre los dados (ya no hacen falta).
+
+**Ficha en lugar de chip de color:** `.ted-player-ficha` — SVG 18px desde `/assets/vectors/tablero/fichas/{color}-player.svg`. Mapa `FICHA_MAP: Color → filename` en el componente. Nombre del jugador coloreado con el hex del design system vía `[style.color]="getColorHex(colorKey)"` (mapa `COLOR_HEX_MAP`).
+
+**Flecha sobria:** color `rgba(67, 42, 30, 0.65)` (era rojo sello translúcido); ahora acompaña al resto de la paleta oscura.
+
+**Banderines extendidos al modal entero:** `.ted-result-banner` con `width: calc(100% + 48px); margin: 0 -24px; overflow: hidden` — se sale del padding del panel y recorta el sobrante. `.ted-banderin` es un `<span>` con `mask-image` de los SVG `military-simbol-inline-{l,r}.svg` + `background-color: currentColor`, `flex: 1 1 0`, `height: 0.9em`. El padre setea `--banner-color` inline con `ganadorColor` getter (hex atacante vs defensor según conquista o pérdidas), y cascadea vía `currentColor`.
+
+**Eliminado:** botón X de cierre en el panel grande (ya se cierra clickeando afuera), separador `⚡` emoji entre grupos de dados (reemplazado por el bg-icon), labels redundantes arriba de los dados. Clases obsoletas eliminadas: `.ted-combatants`, `.ted-combatant`, `.ted-dice-locked`, `.ted-dice-side`, `.ted-dice-result`, `.ted-dice-group`, `.ted-dice-sep-icon`.
+
+#### 4. Fix UTF-8 — datos de objetivos corruptos en DB
+
+Las descripciones de `ObjetivoEntity` mostraban mojibake (`OceanÃ­a`, `Ã�frica`, `espaÃ±a`) porque H2 cargaba `data.sql` con el encoding de la plataforma en vez de UTF-8. Fix doble:
+
+- `application.properties`: `spring.sql.init.encoding=UTF-8` bajo la sección JPA → los nuevos inserts respetan UTF-8.
+- `configs/MojibakeFixer.java` (nuevo, `CommandLineRunner` idempotente): al arrancar detecta filas corruptas vía chars `Ã`, `Â`, `\uFFFD` y las reinterpreta con `new String(desc.getBytes(ISO_8859_1), UTF_8)`. Migra la DB ya instalada sin requerir reset del `.mv.db`.
+
+#### 5. Fix modal de objetivos — botón ENTENDIDO no se superpone
+
+`.btn-entendido` en `ObjetivoRevelacionComponent` migrado de layout flex a `position: fixed; bottom: 6vh; left: 50%; transform: translateX(-50%)`. Antes, cuando la hoja tenía texto largo (objetivos de conquista de 6+ países), el botón quedaba pisado por el texto porque `.hoja-wrap` está `position: absolute` dentro de `.sobre-wrap` (no contribuye al alto del contenedor). Anclarlo al viewport lo mantiene siempre visible y separado.
+
+El keyframe `slide-up` se actualizó para incluir el `translateX(-50%)` en ambos estados.
+
+#### 6. Propagación de `colorKey` en `GameEvent`
+
+Nuevos campos en `GameEvent`: `colorJugadorKey?: string`, `colorDefensorKey?: string` (uppercase, ej: `'ROJO'`). Propagados desde `TableroEventService.enqueueFromWs()` y desde `TableroComponent` al encolar eventos locales (ATAQUE_INICIADO). Permiten que `getFichaPath()` y `getColorHex()` en el componente de display resuelvan la ficha SVG y el hex exacto del design system sin duplicar lógica.
 
 ---
 

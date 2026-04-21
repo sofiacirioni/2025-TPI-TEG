@@ -2,6 +2,8 @@
   <app-objetivo-revelacion
     [objetivo]="jugadorUsuario!.objetivo"
     [jugadores]="partida?.jugadores ?? []"
+    [progresoObjetivo]="progresoObjetivo"
+    (cerrandoStart)="onRevelacionCerrandoStart()"
     (confirmado)="onRevelacionConfirmada()">
   </app-objetivo-revelacion>
 }
@@ -59,21 +61,24 @@
     }
   </div>
 
-  <!-- ══ SOBRE DEL OBJETIVO (top-left) ════════════════════════════ -->
-  <div class="sobre-objetivo" (click)="objetivoVisible = !objetivoVisible">
+  <!-- ══ SOBRE DEL OBJETIVO (top-left) ════════════════════════════
+       Durante la revelación inicial queda invisible (opacity 0) pero permanece
+       en el DOM para que el sobre grande "aterrice" sobre esta posición. -->
+  <div class="sobre-objetivo"
+       [class.invisible]="!sobreObjetivoVisible"
+       (click)="objetivoVisible = !objetivoVisible">
     <div class="sobre-paper">
-      <div class="sobre-solapa">
-        <div class="sobre-lacre-mini">
-          <span class="lacre-mini-sigla">TEG</span>
-        </div>
-      </div>
+      <div class="sobre-solapa"></div>
+      <img class="sobre-lacre-mini"
+           src="assets/images/tablero/teg-wax-seal.png"
+           alt="Sello TEG" />
       <div class="sobre-sello">SECRETO</div>
       <div class="sobre-label">MI OBJETIVO</div>
     </div>
   </div>
 
   @if (objetivoVisible) {
-    <div class="objetivo-modal" (click)="objetivoVisible = false">
+    <div class="objetivo-modal paper-grunge--v5" (click)="objetivoVisible = false">
       <div class="objetivo-titulo">ORDEN SECRETA</div>
 
       @if (progresoObjetivo) {
@@ -133,7 +138,7 @@
            [style.background-color]="getColorSolidoPaisModal()">
 
         <!-- Papel interior: la strip del nombre va ADENTRO del papel -->
-        <div class="modal-papel">
+        <div class="modal-papel paper-grunge--v3">
 
           <!-- Tira del nombre con chinchetas: full-width, recortada por overflow:hidden del papel -->
           <div class="modal-nombre-strip">
@@ -245,7 +250,7 @@
   <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
   @if (showAtaqueResultado && ataqueResultado) {
     <div class="ataque-overlay" (click)="cerrarResultadoAtaque()">
-      <div class="ataque-modal" (click)="$event.stopPropagation()">
+      <div class="ataque-modal paper-grunge--v6" (click)="$event.stopPropagation()">
         <div class="ataque-titulo">RESULTADO DEL ATAQUE</div>
         <div class="ataque-info">
           <span class="ataque-desde">{{ paisOrigenNombreModal }}</span>
@@ -348,7 +353,7 @@
     <div class="historial-panel">
       <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
       <div class="historial-lista">
-        @for (item of historial.slice(0, 3); track $index) {
+        @for (item of historial; track $index) {
           <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
             {{ item.texto }}
           </div>

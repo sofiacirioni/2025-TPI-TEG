@@ -41,6 +41,7 @@
 }
 
 // ── Viñeta para modo combate — cubre el host completo ────────────
+// .clickable habilita pointer-events para que se pueda cerrar clickeando afuera
 .ted-vignette {
   position: absolute; inset: 0; pointer-events: none;
   background: rgba(0, 0, 0, 0.52);
@@ -49,12 +50,36 @@
   &.conquista-vignette {
     background: rgba(80, 10, 10, 0.62);
   }
+
+  &.clickable { pointer-events: all; cursor: pointer; }
+}
+
+// ── Botón X de cierre — esquina superior derecha de paneles grandes ─
+// Estilo minimal tipo "documento tachado": sin fondo, tinta sepia tenue.
+.ted-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(67, 42, 30, 0.35);
+  cursor: pointer;
+  transition: color 0.15s;
+  z-index: 2;
+
+  &:hover { color: var(--color-sello); }
+  &:focus-visible { outline: 1px dashed rgba(160, 21, 21, 0.5); outline-offset: 2px; }
 }
 
 // ── Paneles de combate ────────────────────────────────────────────
 .ted-combat-panel,
 .ted-result-panel {
   pointer-events: all;
+  position: relative;
   background: var(--color-claro);
   background-image: repeating-linear-gradient(
     44deg,
@@ -79,54 +104,118 @@
 }
 
 // ── Header con icono espadas ──────────────────────────────────────
+// Grid de 3 columnas: icono a la IZQUIERDA extremo | título centrado | icono DERECHO extremo.
 .ted-combat-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
-  border-bottom: 0.5px solid rgba(67, 42, 30, 0.15);
-  padding-bottom: 10px;
   width: 100%;
-  justify-content: center;
+  margin-bottom: -10px; // divider pegado al título
+
+  .ted-combat-title { justify-self: center; }
 }
 
-.ted-combat-icon {
-  font-size: 14px;
-  color: rgba(160, 21, 21, 0.65);
+// Attack icon SVG — a ambos lados del título, tamaño ≤ texto
+.ted-attack-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.45;
+  filter: drop-shadow(0 1px 0 rgba(67, 42, 30, 0.15));
+  flex-shrink: 0;
+}
+
+// Línea divisoria horizontal debajo del header
+.ted-combat-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(67, 42, 30, 0.28) 18%,
+    rgba(67, 42, 30, 0.28) 82%,
+    transparent 100%
+  );
 }
 
 .ted-combat-title {
   font-family: var(--font-heading);
   font-size: $text-sm;
   letter-spacing: 0.18em;
-  color: rgba(67, 42, 30, 0.55);
+  color: rgba(67, 42, 30, 0.6);
   text-transform: uppercase;
 }
 
-// ── Frente a frente: países ───────────────────────────────────────
-.ted-combatants {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+// ── Frente a frente: grid simétrico de 3 columnas ────────────────
+// IZQ: atacante (info + dados) | CENTRO: flecha + icono decorativo fondo | DER: defensor.
+// Las columnas laterales (1fr) se centran por sí mismas, así la asimetría en
+// la cantidad de dados no rompe el balance visual.
+.ted-battle-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 10px;
   width: 100%;
-  justify-content: center;
 }
 
-.ted-country {
+// Icono attack-icon como decoración de fondo en el centro del grid.
+// Posición fija en el centro, puede ser cubierto por otros elementos (z-index 0).
+.ted-battle-bg-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 170px;
+  height: 170px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.07;
+  background-color: rgba(67, 42, 30, 1);
+  -webkit-mask-image: url('/assets/vectors/tablero/icons/attack-icon.svg');
+          mask-image: url('/assets/vectors/tablero/icons/attack-icon.svg');
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+  -webkit-mask-position: center;
+          mask-position: center;
+}
+
+.ted-battle-col {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  flex: 1;
+  gap: 4px;
+  min-width: 0;
 
   &.atk .ted-country-name { font-weight: 700; }
+  &.def .ted-country-name { font-weight: 600; }
+
+  .ted-dice-row {
+    margin-top: 6px;
+    justify-content: center;
+  }
 }
 
+.ted-battle-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  align-self: center;
+}
+
+// "Desde:" / "Hacia:" — mismo estilo que "Resultado:"
 .ted-country-lbl {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: $text-caption;
-  letter-spacing: 0.14em;
-  color: rgba(67, 42, 30, 0.4);
-  text-transform: uppercase;
+  color: rgba(67, 42, 30, 0.7);
+  font-style: italic;
 }
 
 .ted-country-name {
@@ -136,18 +225,39 @@
   text-align: center;
 }
 
+// Fila jugador: chip de color + nombre
+.ted-player-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+// Ficha SVG del jugador (reemplaza al chip de color)
+.ted-player-ficha {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
 .ted-player-name {
   font-family: var(--font-body);
   font-size: $text-caption;
-  color: inherit; // hereda el colorJugador del parent
   font-style: italic;
+  font-weight: 600; // más legibilidad con color saturado
 }
 
-.ted-vs {
+// Flecha grande entre combatientes — estilo sobrio, color oscuro.
+.ted-arrow {
   font-family: var(--font-heading);
-  font-size: $text-lead;
-  color: rgba(160, 21, 21, 0.55);
+  font-size: $text-h3;
+  color: rgba(67, 42, 30, 0.65);
   flex-shrink: 0;
+  line-height: 1;
+  padding: 0 4px;
 }
 
 // ── Selector de dados ─────────────────────────────────────────────
@@ -200,12 +310,15 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
-  transition: color 0.3s;
+  transition: opacity 0.3s, color 0.3s;
 
   &.urgente .ted-timer-val {
     color: var(--color-sello);
     animation: parpadeo-timer 0.5s ease-in-out infinite alternate;
   }
+
+  // Estado pausado: el jugador ya lanzó, el timer se desatiende
+  &.pausado { opacity: 0.4; }
 }
 
 .ted-timer-val {
@@ -242,53 +355,86 @@
   &:hover { background: rgba(160, 21, 21, 0.92); }
 }
 
-// ── Resultado de dados ────────────────────────────────────────────
-.ted-dice-result {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.ted-dice-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
+// ── Fila de dados (dentro de cada columna atk/def) ───────────────
 .ted-dice-row {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.ted-dado {
-  font-size: 28px;
-  line-height: 1;
+// Dados PNG (white = atacante, black = defensor). Se usan tanto en el panel
+// de combate (bloqueado por defensor) como en el resultado.
+.ted-dice-png {
+  width: 44px;
+  height: 44px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
   opacity: 0;
   transform: rotate(-20deg) scale(0.5);
   transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 1.4, 0.5, 1);
   position: relative;
+
+  // Estado inicial bloqueado (panel de combate) — visible sin animación
+  &:not(.animado):not(.slot):not(.giro) {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
 
   &.animado {
     opacity: 1;
     transform: rotate(0deg) scale(1);
   }
 
+  // Dado rotando mientras se espera a que el rol lance
+  &.giro {
+    opacity: 0.85;
+    transform: rotate(0deg) scale(1);
+    animation: dice-giro 1.1s linear infinite;
+  }
+
+  // Dado durante el slot-machine: leve blur + shake
+  &.slot {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    animation: dice-slot-shake 0.12s ease-in-out infinite alternate;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)) blur(0.4px);
+  }
+
+  // Marca de dado perdedor: sello rojo semitransparente superpuesto
+  &.perdedor {
+    position: relative;
+  }
   &.perdedor::after {
     content: '';
     position: absolute;
     inset: -2px;
-    background: rgba(160, 21, 21, 0.35);
-    border-radius: 2px;
+    background: rgba(160, 21, 21, 0.32);
+    border-radius: 3px;
     pointer-events: none;
   }
 }
 
-.ted-dice-sep {
-  font-size: 18px;
-  color: rgba(67, 42, 30, 0.35);
-  margin-top: 22px;
+@keyframes dice-giro {
+  from { transform: rotate(0deg) scale(1); }
+  to   { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes dice-slot-shake {
+  from { transform: translateY(-1px) rotate(-2deg); }
+  to   { transform: translateY(1px) rotate(2deg); }
+}
+
+// Modo slot-machine: suave efecto de cámara lenta sobre el panel entero.
+// Se aplica a `.ted-result-panel.slot-shake` cuando slotMachineActive es true.
+.ted-result-panel.slot-shake {
+  animation: slot-machine-shake 0.2s ease-in-out infinite alternate;
+}
+
+@keyframes slot-machine-shake {
+  from { transform: translateY(-1px); }
+  to   { transform: translateY(1px); }
 }
 
 .ted-perdidas {
@@ -298,16 +444,87 @@
   font-weight: 600;
 }
 
-.ted-result-label {
-  font-family: var(--font-heading);
+// Label "Resultado:" sobre el banner (mismo estilo que "Desde:"/"Hacia:")
+.ted-resultado-lbl {
+  font-family: var(--font-body);
+  font-size: $text-caption;
+  color: rgba(67, 42, 30, 0.7);
+  font-style: italic;
+  align-self: center;
+  margin-bottom: -8px;
+}
+
+// Banner de resultado: banderines militares a ambos lados, extendidos hasta
+// los extremos del modal. El banner se saca del padding del panel con
+// `margin: 0 -24px` y recorta cualquier desborde con `overflow: hidden`.
+// `--banner-color` se setea inline en el template y colorea el texto central
+// y los banderines a la vez vía `currentColor`.
+.ted-result-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: calc(100% + 48px);
+  margin: 0 -24px;
+  padding-top: 2px;
+  overflow: hidden;
+  color: var(--banner-color, var(--color-oscuro));
   font-size: $text-h3;
-  letter-spacing: 0.1em;
-  color: rgba(30, 122, 80, 0.85);
+}
+
+// Banderines: <span> con máscara SVG teñida por currentColor. Se expanden
+// al espacio disponible y el contenedor recorta el sobrante por overflow.
+.ted-banderin {
+  display: block;
+  height: 0.9em;
+  flex: 1 1 0;
+  min-width: 0;
+  opacity: 0.5;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-size: auto 100%;
+          mask-size: auto 100%;
+
+  &.banderin-l {
+    -webkit-mask-image: url('/assets/vectors/tablero/military-simbol-inline-l.svg');
+            mask-image: url('/assets/vectors/tablero/military-simbol-inline-l.svg');
+    -webkit-mask-position: right center;
+            mask-position: right center;
+  }
+  &.banderin-r {
+    -webkit-mask-image: url('/assets/vectors/tablero/military-simbol-inline-r.svg');
+            mask-image: url('/assets/vectors/tablero/military-simbol-inline-r.svg');
+    -webkit-mask-position: left center;
+            mask-position: left center;
+  }
+}
+
+.ted-result-text {
+  font-family: var(--font-heading);
+  font-size: 1em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: currentColor;
+  text-align: center;
+  flex-shrink: 0;
+  padding: 0 8px;
 
   &.conquista {
-    color: var(--color-sello);
     animation: conquista-pulse 0.5s ease-in-out 2;
   }
+}
+
+// Label "ESPERANDO..." / "COMBATE EN CURSO" — usado cuando el rol actual
+// no puede lanzar (espectador, atacante esperando defensor, etc.)
+.ted-espectador-lbl {
+  font-family: var(--font-heading);
+  font-size: $text-sm;
+  letter-spacing: 0.16em;
+  color: rgba(67, 42, 30, 0.55);
+  text-transform: uppercase;
+  text-align: center;
+  padding: 6px 0;
 }
 
 @keyframes conquista-pulse {
@@ -319,6 +536,7 @@
 // ── Panel conquista ───────────────────────────────────────────────
 .ted-conquista-panel {
   pointer-events: all;
+  position: relative;
   background: var(--color-claro);
   background-image: repeating-linear-gradient(
     44deg,
@@ -376,11 +594,15 @@
   pointer-events: none;
   background: radial-gradient(ellipse 70% 45% at 50% 0%, rgba(0, 0, 0, 0.42) 0%, transparent 100%);
   z-index: 0;
+
+  &.clickable { pointer-events: all; cursor: pointer; }
 }
 
 // ── Notificación simple ───────────────────────────────────────────
+// pointer-events: all para que la cruz sea clickeable. El cuerpo no captura
+// el click — lo delega al backdrop via stopPropagation en el botón X.
 .ted-notif {
-  pointer-events: none;
+  pointer-events: all;
   display: flex;
   align-items: stretch;
   background: var(--color-claro);
@@ -439,4 +661,21 @@
   font-size: $text-caption;
   color: rgba(67, 42, 30, 0.65);
   line-height: 1.5;
+}
+
+// Cruz de cierre en notificaciones simples — alineada al tope derecho
+.ted-notif-close {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  margin-left: auto;
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(67, 42, 30, 0.3);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover { color: var(--color-sello); }
 }

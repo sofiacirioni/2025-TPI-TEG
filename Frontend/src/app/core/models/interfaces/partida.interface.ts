@@ -142,6 +142,13 @@ export interface AtaqueDto {
   cantDadosAtacante?: number;
 }
 
+export interface AtaqueDefenderDto {
+  idPartida: number;
+  idJugador: number;
+  /** Cantidad de dados elegidos por el defensor (1-3). Opcional; null = máximo. */
+  cantDadosDefensor?: number | null;
+}
+
 export interface MoverFichas {
   idJugador: number;
   idPaisOrigen: number;

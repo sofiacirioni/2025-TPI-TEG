@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, interval, NEVER, Observable, startWith, Subscription, switchMap } from 'rxjs';
-import { AtaqueDto, AtaqueResponseDto, CanjeTarjetasDto, EstadoPaisDto, ObjetivoProgreso, PartidaDto, TarjetaDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../models/interfaces/partida.interface';
+import { AtaqueDefenderDto, AtaqueDto, AtaqueResponseDto, CanjeTarjetasDto, EstadoPaisDto, ObjetivoProgreso, PartidaDto, TarjetaDto, UsarTarjetaEnPaisDto, VerificacionObjetivo } from '../models/interfaces/partida.interface';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -103,6 +103,22 @@ export class TableroServicio {
   atacarPais(body: AtaqueDto): Observable<AtaqueResponseDto> {
     return this.http.put<AtaqueResponseDto>(`${this.apiUrl}/turno/ataque`, body
     );
+  }
+
+  /**
+   * Paso 1 flujo dual: registra la intención de ataque. El backend emite WS
+   * ATAQUE_INICIADO y el frontend aguarda la resolución por WS (salvo que
+   * el defensor sea bot, en cuyo caso la resolución llega en el response).
+   */
+  iniciarAtaque(body: AtaqueDto): Observable<AtaqueResponseDto> {
+    return this.http.put<AtaqueResponseDto>(`${this.apiUrl}/turno/ataque/iniciar`, body);
+  }
+
+  /**
+   * Paso 2 flujo dual: el defensor confirma dados y dispara la resolución.
+   */
+  defenderAtaque(body: AtaqueDefenderDto): Observable<AtaqueResponseDto> {
+    return this.http.put<AtaqueResponseDto>(`${this.apiUrl}/turno/ataque/defender`, body);
   }
 
   // Cambiar de turno
