@@ -52,25 +52,6 @@
   }
 
   <!--
-    CAPA 2b: Bordes de continente.
-    Stroke fino en el color del continente (opacidad ~0.55) para distinguir
-    visualmente cada región del mapa. Se renderiza sobre los rellenos pero
-    debajo del SVG estático, de modo que las etiquetas y decoraciones siempre
-    queden encima.
-  -->
-  @for (p of mapaPais; track p.id) {
-    @if (p.forma) {
-      <path
-        [attr.d]="p.forma"
-        fill="none"
-        [attr.stroke]="p.colorBorde"
-        stroke-width="1.2"
-        pointer-events="none"
-      />
-    }
-  }
-
-  <!--
     CAPA 3: SVG original como imagen estática.
     Renderiza con todos sus estilos, capas y decoraciones originales:
     decoraciones (sol, brújula, barcos, logos), bordes de países con

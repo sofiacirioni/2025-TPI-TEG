@@ -36,6 +36,9 @@ interface ChatMensaje {
   actor: string;
   texto: string;
   colorSolido: string;
+  colorVar: string;
+  timestamp: Date;
+  esPropio: boolean;
 }
 
 interface HistorialItem {
@@ -101,6 +104,25 @@ export class TableroComponent implements OnInit, OnDestroy {
   paisOrigenNombreModal = '';
   paisDestinoNombreModal = '';
 
+  // ── Vista de continentes ───────────────────────────────────
+  modoContinente = false;
+
+  /** Referencias para la leyenda inferior cuando el modo overlay está activo.
+   *  Los colores se mantienen sincronizados con CONTINENT_FILL_COLORS de
+   *  mapa-svg.component.ts — si cambian allá, actualizar aquí también. */
+  readonly leyendaContinentes: ReadonlyArray<{ nombre: string; color: string }> = [
+    { nombre: 'América del Norte', color: 'rgba(191,104,0,0.55)' },
+    { nombre: 'América del Sur',   color: 'rgba(160,21,21,0.55)' },
+    { nombre: 'Europa',            color: 'rgba(26,64,128,0.55)' },
+    { nombre: 'África',            color: 'rgba(107,76,0,0.55)' },
+    { nombre: 'Asia',              color: 'rgba(107,36,144,0.55)' },
+    { nombre: 'Oceanía',           color: 'rgba(30,122,80,0.55)' },
+  ];
+
+  toggleContinentes(): void {
+    this.modoContinente = !this.modoContinente;
+  }
+
   // ── Zoom / Pan ─────────────────────────────────────────────
   scale = 1;
   translateX = 0;
@@ -151,6 +173,9 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Chat ───────────────────────────────────────────────────
   chatMensajes: ChatMensaje[] = [];
   chatInput = '';
+  @ViewChild('chatMensajesRef') private chatMensajesRef?: ElementRef<HTMLDivElement>;
+  /** true si el scroll del chat está pegado al fondo — controla el auto-scroll */
+  private chatPegadoAlFondo = true;
 
   // ── Getters ────────────────────────────────────────────────
   private getTurnoActual(): TurnoDto | undefined {
@@ -872,13 +897,45 @@ export class TableroComponent implements OnInit, OnDestroy {
   enviarChat() {
     if (!this.chatInput.trim()) return;
     const usuario = this.authService.getCurrentUser();
+    const color = this.jugadorUsuario?.color ?? '';
     this.chatMensajes.push({
-      actor: usuario?.usuario ?? 'Yo',
+      actor: usuario?.usuario ?? this.jugadorUsuario?.nombre ?? 'Yo',
       texto: this.chatInput.trim(),
-      colorSolido: this.getColorSolido(this.jugadorUsuario?.color ?? '')
+      colorSolido: this.getColorSolido(color),
+      colorVar: this.getColorVarJugador(color),
+      timestamp: new Date(),
+      esPropio: true,
     });
     this.chatInput = '';
+    // Al enviar un mensaje propio siempre vamos al fondo
+    this.chatPegadoAlFondo = true;
+    this.scrollChatAlFondoSiCorresponde();
     // TODO: WebSocket chat no implementado — sin topic en backend
+  }
+
+  formatearHora(d: Date): string {
+    if (!(d instanceof Date)) d = new Date(d);
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  onChatMensajesScroll(): void {
+    const el = this.chatMensajesRef?.nativeElement;
+    if (!el) return;
+    // Margen de 6px para tolerar redondeos de subpíxeles
+    this.chatPegadoAlFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 6;
+  }
+
+  /** Auto-scroll al último mensaje, respetando si el usuario ya estaba en el fondo.
+   *  Se invoca diferido (microtask) para esperar el render del nuevo mensaje. */
+  private scrollChatAlFondoSiCorresponde(): void {
+    queueMicrotask(() => {
+      if (!this.chatPegadoAlFondo) return;
+      const el = this.chatMensajesRef?.nativeElement;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    });
   }
 
   // ── Helpers de color / UI ──────────────────────────────────

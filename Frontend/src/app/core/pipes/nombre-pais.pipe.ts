@@ -28,6 +28,13 @@ const CORRECCIONES: Record<string, string> = {
   'America del Sur':   'América del Sur',
   'Africa':            'África',
   'Oceania':           'Oceanía',
+  // Palabras comunes en descripciones de objetivos (fallback encoding H2/Windows)
+  'paises':            'países',
+  'limitrofes':        'limítrofes',
+  'ejercito':          'ejército',
+  'destruccion':       'destrucción',
+  'ocupacion':         'ocupación',
+  'eliminacion':       'eliminación',
 };
 
 // Regex word-boundary precomputado para sustituir los nombres dentro de

@@ -61,53 +61,149 @@
     }
   </div>
 
-  <!-- ══ SOBRE DEL OBJETIVO (top-left) ════════════════════════════
-       Durante la revelación inicial queda invisible (opacity 0) pero permanece
-       en el DOM para que el sobre grande "aterrice" sobre esta posición. -->
-  <div class="sobre-objetivo"
-       [class.invisible]="!sobreObjetivoVisible"
-       (click)="objetivoVisible = !objetivoVisible">
-    <div class="sobre-paper">
-      <div class="sobre-solapa"></div>
-      <img class="sobre-lacre-mini"
-           src="assets/images/tablero/teg-wax-seal.png"
-           alt="Sello TEG" />
-      <div class="sobre-sello">SECRETO</div>
-      <div class="sobre-label">MI OBJETIVO</div>
+  <!-- ══ COLUMNA IZQUIERDA ═════════════════════════════════════════
+       Layout flex column única: sobre/objetivo arriba, luego panel con
+       historial + tarjetas + chat abajo. El sobre y el modal del objetivo
+       son hermanos en el wrapper; el modal crece según contenido y empuja
+       al panel hacia abajo (las secciones internas tienen scroll propio si
+       se quedan sin espacio). El sobre se oculta visualmente cuando el
+       modal está abierto, así uno reemplaza al otro sin saltos de layout. -->
+  <div class="columna-izquierda">
+
+  <div class="sobre-wrapper">
+    <div class="sobre-objetivo"
+         [class.invisible]="!sobreObjetivoVisible || objetivoVisible"
+         (click)="objetivoVisible = !objetivoVisible">
+      <div class="sobre-paper">
+        <div class="sobre-solapa"></div>
+        <img class="sobre-lacre-mini"
+             src="assets/images/tablero/teg-wax-seal.png"
+             alt="Sello TEG" />
+        <div class="sobre-sello">SECRETO</div>
+        <div class="sobre-label">MI OBJETIVO</div>
+      </div>
     </div>
-  </div>
 
-  @if (objetivoVisible) {
-    <div class="objetivo-modal paper-grunge--v5" (click)="objetivoVisible = false">
-      <div class="objetivo-titulo">ORDEN SECRETA</div>
+    @if (objetivoVisible) {
+      <div class="objetivo-modal paper-grunge--v5" (click)="objetivoVisible = false">
+        <div class="objetivo-titulo">ORDEN SECRETA</div>
 
-      @if (progresoObjetivo) {
-        <p class="objetivo-desc">{{ progresoObjetivo.descripcion }}</p>
-        <div class="objetivo-divider"></div>
-        <ul class="objetivo-items">
-          @for (item of progresoObjetivo.items; track item.descripcion) {
-            <li class="objetivo-item" [class.completado]="item.completado">
-              <span class="obj-check">{{ item.completado ? '■' : '□' }}</span>
-              <span class="obj-texto">
-                {{ item.descripcion }}
-                @if (item.valorObjetivo > 0) {
-                  <span class="obj-cuenta">{{ item.valorActual }}/{{ item.valorObjetivo }}</span>
-                } @else {
-                  <!-- objetivo de eliminación: mostrar países restantes del enemigo -->
-                  <span class="obj-cuenta">{{ item.valorActual }} restantes</span>
-                }
-              </span>
-            </li>
+        <div class="objetivo-cuerpo">
+          @if (progresoObjetivo) {
+            <p class="objetivo-desc">{{ progresoObjetivo.descripcion }}</p>
+            <div class="objetivo-divider"></div>
+            <ul class="objetivo-items">
+              @for (item of progresoObjetivo.items; track item.descripcion) {
+                <li class="objetivo-item" [class.completado]="item.completado">
+                  <span class="obj-check">{{ item.completado ? '■' : '□' }}</span>
+                  <span class="obj-texto">
+                    {{ item.descripcion }}
+                    @if (item.valorObjetivo > 0) {
+                      <span class="obj-cuenta">{{ item.valorActual }}/{{ item.valorObjetivo }}</span>
+                    } @else {
+                      <!-- objetivo de eliminación: mostrar países restantes del enemigo -->
+                      <span class="obj-cuenta">{{ item.valorActual }} restantes</span>
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+            @if (progresoObjetivo.objetivoConvertido) {
+              <p class="objetivo-convertido">⚑ Objetivo original convertido</p>
+            }
+          } @else {
+            <div class="objetivo-texto">{{ objetivoTexto || 'Cargando...' }}</div>
           }
-        </ul>
-        @if (progresoObjetivo.objetivoConvertido) {
-          <p class="objetivo-convertido">⚑ Objetivo original convertido</p>
+        </div>
+      </div>
+    }
+  </div><!-- .sobre-wrapper -->
+
+  <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
+  <div class="panel-izquierdo">
+
+    <!-- Historial de operaciones -->
+    <div class="historial-panel">
+      <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
+      <div class="historial-lista">
+        @for (item of historial; track $index) {
+          <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
+            {{ item.texto }}
+          </div>
         }
-      } @else {
-        <div class="objetivo-texto">{{ objetivoTexto || 'Cargando...' }}</div>
+        @if (historial.length === 0) {
+          <div class="hist-item" style="opacity:0.35">Sin eventos registrados.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Tarjetas obtenidas -->
+    <div class="tarjetas-panel">
+      <div class="tarjetas-titulo">TARJETAS</div>
+      <div class="tarjetas-contenido">
+        @for (t of cartasJugador; track t.idEstadoTarjeta) {
+          <div class="tarjeta-mini" [class.canjeada]="t.canjeada" [title]="t.tarjeta?.pais?.nombre ?? ''">
+            <span class="tarjeta-simbolo">{{ t.tarjeta?.simbolo?.charAt(0) ?? '?' }}</span>
+            <span class="tarjeta-pais">{{ t.tarjeta?.pais?.nombre | nombrePais }}</span>
+          </div>
+        }
+        @if (cartasJugador.length === 0) {
+          <div class="tarjetas-empty">Sin tarjetas.</div>
+        }
+      </div>
+      @if (puedeCanjear && esMiTurno && faseActual === 'INCORPORACION') {
+        <button class="btn-canjear" (click)="abrirModalCanje()">· CANJEAR ·</button>
       }
     </div>
-  }
+
+    <!-- Conversaciones — estilo bloc de notas de campo -->
+    <div class="chat-panel">
+      <!-- Espiral superior -->
+      <div class="chat-spiral" aria-hidden="true">
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+      </div>
+      <!-- Barra de título -->
+      <div class="chat-title-bar">CONVERSACIONES</div>
+      <!-- Área de mensajes sobre papel rayado con margen rojo -->
+      <div #chatMensajesRef class="chat-mensajes" (scroll)="onChatMensajesScroll()">
+        @for (msg of chatMensajes; track $index) {
+          <div class="chat-msg">
+            <span class="chat-time">{{ formatearHora(msg.timestamp) }}</span>
+            <div class="chat-msg-header">
+              <span class="chat-sender" [style.color]="msg.colorVar">{{ msg.actor }}</span>
+            </div>
+            <div class="chat-text" [class.own]="msg.esPropio">{{ msg.texto }}</div>
+          </div>
+        }
+        @if (chatMensajes.length === 0) {
+          <div class="chat-empty">Sin mensajes.</div>
+        }
+      </div>
+      <!-- Input -->
+      <div class="chat-input-row">
+        <input class="chat-input" type="text"
+               placeholder="escribir..."
+               aria-label="Escribir mensaje en el chat"
+               [(ngModel)]="chatInput"
+               (keyup.enter)="enviarChat()" />
+        <button class="chat-send" (click)="enviarChat()" aria-label="Enviar mensaje">▶</button>
+      </div>
+    </div>
+
+  </div><!-- .panel-izquierdo -->
+
+  </div><!-- .columna-izquierda -->
 
   <!-- ══ NOTIFICACIONES DE JUEGO (sobre el mapa) ══════════════════ -->
   <app-tablero-event-display></app-tablero-event-display>
@@ -121,11 +217,13 @@
        (mouseleave)="onMouseUpMapa()">
 
     <div class="mapa-svg-wrap"
+    
          [style.transform]="mapTransform"
          [style.cursor]="isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default')">
       <app-mapa-svg
         [paises]="partida.estadoPaises ?? []"
         [jugadores]="partida.jugadores ?? []"
+        [modoContinente]="modoContinente"
         (paisClickeado)="paisClickeado($event)">
       </app-mapa-svg>
     </div>
@@ -245,7 +343,28 @@
         <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
     </button>
+    <button class="btn-teg-dark ctrl-btn"
+            [class.ctrl-btn--activo]="modoContinente"
+            (click)="toggleContinentes()"
+            title="Ver continentes">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 4h5v3H2zM9 4h5v3H9zM2 9h5v3H2zM9 9h5v3H9z"
+              stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity="0.4"/>
+      </svg>
+    </button>
   </div>
+
+  <!-- ── Leyenda de continentes (visible solo en modo overlay) ── -->
+  @if (modoContinente) {
+    <div class="leyenda-continentes" aria-label="Referencia de continentes">
+      @for (c of leyendaContinentes; track c.nombre) {
+        <div class="leyenda-item">
+          <span class="leyenda-color" [style.background]="c.color"></span>
+          {{ c.nombre }}
+        </div>
+      }
+    </div>
+  }
 
   <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
   @if (showAtaqueResultado && ataqueResultado) {
@@ -304,14 +423,20 @@
     <div class="panel-jugadores">
       @for (jugador of partida.jugadores ?? []; track jugador.idJugador) {
         <div class="ficha-jugador" [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
-          <div class="ficha-avatar-circle"
-               [style.background-color]="getColorSolido(jugador.color)">
-            @if (!esEsBot(jugador) && jugador.url) {
-              <img class="ficha-avatar-img"
-                   [src]="jugador.url"
-                   [alt]="jugador.nombre"
-                   (error)="$event.target.style.display='none'" />
-            }
+          <div class="ficha-avatar-wrapper">
+            <div class="ficha-avatar-circle"
+                 [style.background-color]="getColorSolido(jugador.color)">
+              @if (!esEsBot(jugador) && jugador.url) {
+                <img class="ficha-avatar-img"
+                     [src]="jugador.url"
+                     [alt]="jugador.nombre"
+                     (error)="$event.target.style.display='none'" />
+              }
+            </div>
+            <img class="ficha-turn-frame"
+                 src="assets/images/tablero/player-turn-indicator-frame.png"
+                 alt=""
+                 aria-hidden="true" />
           </div>
           <div class="ficha-info">
             <div class="ficha-nombre">
@@ -344,67 +469,6 @@
         </div>
       }
     </div>
-  </div>
-
-  <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
-  <div class="panel-izquierdo">
-
-    <!-- Historial de operaciones -->
-    <div class="historial-panel">
-      <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
-      <div class="historial-lista">
-        @for (item of historial; track $index) {
-          <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
-            {{ item.texto }}
-          </div>
-        }
-        @if (historial.length === 0) {
-          <div class="hist-item" style="opacity:0.35">Sin eventos registrados.</div>
-        }
-      </div>
-    </div>
-
-    <!-- Tarjetas obtenidas -->
-    <div class="tarjetas-panel">
-      <div class="tarjetas-titulo">TARJETAS</div>
-      <div class="tarjetas-contenido">
-        @for (t of cartasJugador; track t.idEstadoTarjeta) {
-          <div class="tarjeta-mini" [class.canjeada]="t.canjeada" [title]="t.tarjeta?.pais?.nombre ?? ''">
-            <span class="tarjeta-simbolo">{{ t.tarjeta?.simbolo?.charAt(0) ?? '?' }}</span>
-            <span class="tarjeta-pais">{{ t.tarjeta?.pais?.nombre | nombrePais }}</span>
-          </div>
-        }
-        @if (cartasJugador.length === 0) {
-          <div class="tarjetas-empty">Sin tarjetas.</div>
-        }
-      </div>
-      @if (puedeCanjear && esMiTurno && faseActual === 'INCORPORACION') {
-        <button class="btn-canjear" (click)="abrirModalCanje()">· CANJEAR ·</button>
-      }
-    </div>
-
-    <!-- Conversaciones (esquina inferior) -->
-    <div class="chat-panel">
-      <div class="chat-titulo">CONVERSACIONES</div>
-      <div class="chat-mensajes">
-        @for (msg of chatMensajes; track $index) {
-          <div class="chat-msg">
-            <span class="chat-msg-actor" [style.color]="msg.colorSolido">{{ msg.actor }}</span>:
-            {{ msg.texto }}
-          </div>
-        }
-        @if (chatMensajes.length === 0) {
-          <div class="chat-msg" style="opacity:0.3">Sin mensajes.</div>
-        }
-      </div>
-      <div class="chat-input-row">
-        <input class="chat-input" type="text" placeholder="Escribir..."
-               [(ngModel)]="chatInput"
-               (keyup.enter)="enviarChat()" />
-        <button class="chat-send" (click)="enviarChat()">▶</button>
-      </div>
-    </div>
-
   </div>
 
 </div><!-- .tablero-container -->

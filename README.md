@@ -755,6 +755,98 @@ El keyframe `slide-up` se actualizó para incluir el `translateX(-50%)` en ambos
 
 Nuevos campos en `GameEvent`: `colorJugadorKey?: string`, `colorDefensorKey?: string` (uppercase, ej: `'ROJO'`). Propagados desde `TableroEventService.enqueueFromWs()` y desde `TableroComponent` al encolar eventos locales (ATAQUE_INICIADO). Permiten que `getFichaPath()` y `getColorHex()` en el componente de display resuelvan la ficha SVG y el hex exacto del design system sin duplicar lógica.
 
+### Tablero — reorganización del layout izquierdo y pulido visual (sesión 2026-04-21)
+
+Sesión enfocada en limpiar la columna izquierda del tablero (el sobre del objetivo tapaba el registro de operaciones), reforzar el indicador de turno con un marco visual sobre el avatar del jugador activo, y completar la vista por continentes del mapa.
+
+#### 1. Columna izquierda unificada — sobre + objetivo + panel
+
+Se introdujo un contenedor `.columna-izquierda` (position: absolute; top: 12px; left: 8px; bottom: 8px; width: 200px; flex column) que agrupa `sobre-objetivo`, `objetivo-modal` y `panel-izquierdo` (historial + tarjetas + chat). Así el historial queda siempre debajo del sobre sin solapes, y el ancho pasa a ser consistente (200px).
+
+#### 2. Objetivo se despliega encima del sobre, no debajo
+
+`.objetivo-modal` cambió a `position: absolute; top: 0; left: 0; z-index: 2` dentro de la columna, superponiéndose al sobre cuando se abre. El click en el sobre sigue abriendo el modal; el click en el modal lo cierra. El panel inferior (historial/tarjetas/chat) queda intacto en ambos estados — antes, al abrir el objetivo, empujaba todo hacia abajo.
+
+#### 3. Marco de turno sobre el avatar del jugador activo
+
+Nuevo asset `assets/images/tablero/player-turn-indicator-frame.png` (838×708 — corona de laureles con sol encima). Se renderiza con `.ficha-turn-frame` dentro de `.ficha-avatar-wrapper`, oculto por defecto (`opacity: 0`) y visible solo cuando `.ficha-jugador.activo` (`opacity: 1` con transición de 300ms).
+
+Dimensiones calculadas para que el hueco de la corona contenga al avatar de 44px: marco `90×76px` con offsets `left: -23px; top: -20px`. El sol sobresale ~20px por encima del avatar; el corte inferior del sol coincide con el borde superior del avatar.
+
+Se reemplazó el outline dorado previo sobre `.ficha-insignia` por este indicador mucho más visible.
+
+#### 4. Pipe de nombres — fallback para tildes en descripciones de objetivos
+
+`NombrePaisPipe` ahora corrige también palabras comunes que aparecen en descripciones de objetivos y llegan sin tilde desde la DB (encoding Windows/H2 residual tras el `MojibakeFixer`):
+
+```
+paises → países, limitrofes → limítrofes, ejercito → ejército,
+destruccion → destrucción, ocupacion → ocupación, eliminacion → eliminación
+```
+
+El pipe ya manejaba nombres de continentes; estas son entradas adicionales al mismo `CORRECCIONES` record.
+
+#### 5. Vista por continentes — modo overlay del mapa
+
+Nuevo modo `modoContinente` en `MapaSvgComponent` (`@Input`, default `false`). Cuando está activo, el mapa pinta cada país con el color de su continente (`CONTINENT_FILL_COLORS` export — rgba 0.35 por continente) en lugar del color del dueño. El botón toggle (`.ctrl-btn--activo`) vive en `.mapa-controles` junto a los de zoom; cuando el modo está on, aparece `.leyenda-continentes` en el borde inferior del mapa con los 6 continentes.
+
+`ngOnChanges` ahora escucha `modoContinente` además de `paises` para reconstruir `mapaPais` cuando se toggle. Se eliminó `CONTINENT_BORDER_COLORS` (los bordes por continente se reemplazaron por el relleno).
+
+### Tablero — chat bloc de notas, objetivo flexible y cableado de features pendientes (sesión 2026-04-25)
+
+Sesión enfocada en (a) rediseñar las conversaciones como bloc de notas militar, (b) terminar de cablear las features que en la sesión 2026-04-21 se habían diseñado pero no instanciado en el HTML (marco de turno, toggle de continentes), y (c) reorganizar el objetivo secreto para que se vea completo sin recortes y empuje al panel inferior según su largo.
+
+#### 1. Chat rediseñado como bloc de notas militar
+
+`.chat-panel` pasó de panel transparente a papel físico con espiral metálica superior, barra "CONVERSACIONES" en beige claro, hoja con renglones azules tenues vía `repeating-linear-gradient`, y margen rojo vertical a 52px. Cada mensaje muestra:
+
+- Hora `HH:mm` en monospace dentro del margen izquierdo (color `#9A7850`).
+- Nombre del remitente en color del jugador (`var(--player-X)`, asignado dinámicamente).
+- Texto del mensaje en italic Roboto Slab (`var(--color-oscuro)`); mensajes propios en `var(--player-azul)`.
+- Auto-scroll al último mensaje **solo si** el usuario ya estaba al fondo — `chatPegadoAlFondo` se calcula en `onChatMensajesScroll()` con tolerancia de 6px y se respeta en `scrollChatAlFondoSiCorresponde()`.
+
+Input con underline dashed `var(--color-oscuro)`, placeholder "escribir...", `aria-label` para accesibilidad.
+
+#### 2. Objetivo flexible — se ve completo y empuja al panel
+
+`.objetivo-modal` ya no usa `inset: 0` (que lo recortaba al alto del sobre). Ahora es `position: relative; width: 100%; box-sizing: border-box; max-height: calc(100vh - 280px); display: flex column`. El sobre se quita del flujo cuando aparece el modal vía:
+
+```scss
+.sobre-wrapper:has(.objetivo-modal) .sobre-objetivo { display: none; }
+```
+
+Resultado: el modal toma el alto natural de su contenido y empuja al `.panel-izquierdo` hacia abajo. El panel se compacta — `.historial-panel` (flex 1 con scroll), `.tarjetas-panel` (grid fijo 3×2 = 136px para 6 tarjetas máximo), `.chat-panel` (height: 160px fijo para 2-3 mensajes + scroll). Si el objetivo excede 280px de alto, `.objetivo-cuerpo` (flex 1 + overflow-y: auto) hace scroll interno como fallback.
+
+#### 3. Marco de turno cableado en HTML
+
+El asset `player-turn-indicator-frame.png` y las reglas SCSS `.ficha-avatar-wrapper` / `.ficha-turn-frame` existían desde la sesión 2026-04-21, pero el HTML solo renderizaba `.ficha-avatar-circle` directo — el wrapper y el `<img>` del marco nunca se instanciaron. Esta sesión envuelve `.ficha-avatar-circle` en `.ficha-avatar-wrapper` (con `overflow: visible` porque el marco 90×76 desborda al wrapper 44×44) y agrega `<img class="ficha-turn-frame" src="...player-turn-indicator-frame.png">` como hermano. Marco visible solo en `.ficha-jugador.activo`.
+
+El glow previo sobre `.ficha-insignia` se mantiene pero con opacidades muy bajas (0.35 / 0.20 / 0.10 en lugar de 0.65 / 0.40 / 0.20) — el marco es ahora el indicador principal y el glow solo aporta calidez sin competir.
+
+#### 4. Toggle de continentes y leyenda cableados
+
+`MapaSvgComponent` aceptaba `@Input modoContinente` y el SCSS definía `.ctrl-btn--activo` y `.leyenda-continentes` desde 2026-04-21, pero no había botón toggle, ni paso del input al `<app-mapa-svg>`, ni render de la leyenda. Esta sesión agrega:
+
+- Método `toggleContinentes()` en `TableroComponent`.
+- Propiedad `leyendaContinentes: ReadonlyArray<{nombre, color}>` con los 6 continentes y sus colores rgba 0.55 (más saturados que el relleno del mapa para legibilidad).
+- Botón en `.mapa-controles` con `[class.ctrl-btn--activo]` y `(click)="toggleContinentes()"`.
+- `[modoContinente]="modoContinente"` pasado al `<app-mapa-svg>`.
+- Render condicional `@if (modoContinente) { .leyenda-continentes }` con `@for` sobre el array.
+
+#### 5. Línea roja del chat persistente al scrollear
+
+El pseudo-elemento del margen rojo estaba en `.chat-mensajes::before` con `position: absolute; top: 0; bottom: 0`. Como `.chat-mensajes` es el scroll container, el sistema de coordenadas absolutas se resolvía contra el top del **contenido** (no del viewport visible) y la línea se desplazaba al scrollear.
+
+Solución: mover el pseudo-elemento a `.chat-panel::after` (parent que NO scrollea) con `top: 40px; bottom: 30px` calculados a partir del alto de `.chat-spiral + .chat-title-bar` arriba y `.chat-input-row` abajo. La línea ahora persiste sobre la zona de mensajes mientras el contenido se desplaza por debajo.
+
+#### 6. Columna izquierda — flex column real
+
+`.columna-izquierda` ahora envuelve **ambos** `.sobre-wrapper` y `.panel-izquierdo` como hermanos en flujo flex column (antes el panel quedaba como sibling absoluto del wrapper). Esto es lo que permite que el modal del objetivo empuje al panel — `flex: 1 1 0; min-height: 0` en el panel hace que se compacte cuando el modal crece.
+
+**Trampa encontrada y corregida**: el primer intento envolvió todo el resto del tablero (mapa, controles, panel-derecho) dentro de `.columna-izquierda` por error en la posición del `</div>` de cierre. Resultado: `.mapa-controles` con `position: absolute; right: 225px` resolvía respecto a la columna de 200px y aparecía en `x = -45` (off-screen). Fix: cerrar la columna inmediatamente después de `.panel-izquierdo`, no al final del `.tablero-container`.
+
+También se removió el `pointer-events: none` que se había puesto en `.columna-izquierda` con la idea de dejar pasar clicks al mapa en dead-space — rompía el hit-test del sobre. Como la columna solo cubre 200px del lado izquierdo, no hay necesidad de pasar clicks a través.
+
 ---
 
 ## Equipo
