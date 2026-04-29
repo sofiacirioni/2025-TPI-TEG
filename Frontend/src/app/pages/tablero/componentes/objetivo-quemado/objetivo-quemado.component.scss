@@ -1,0 +1,50 @@
+// Componente posicionado encima del panel del objetivo. El padre lo coloca
+// con position absolute / inset 0 dentro del wrapper del sobre.
+
+:host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.quemado-host {
+  position: absolute;
+  inset: 0;
+  // El radial-gradient mask es animado desde el .ts vía GSAP
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0%, black 5%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, black 5%);
+  will-change: mask-image, filter, opacity;
+}
+
+// Fondo carbonizado — visible "detrás" del recorte de la máscara mientras el
+// papel se quema. Color del plan: #1a0a00.
+.quemado-paper-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255, 244, 208, 0.0) 0%,
+      rgba(255, 149, 0, 0.18) 18%,
+      rgba(255, 58, 0, 0.32) 32%,
+      rgba(26, 10, 0, 0.85) 55%,
+      rgba(26, 10, 0, 1) 70%);
+  mix-blend-mode: multiply;
+}
+
+.quemado-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// El <svg> que contiene el filtro de turbulencia vive fuera del flujo
+.quemado-svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}

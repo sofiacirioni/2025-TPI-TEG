@@ -133,9 +133,9 @@ async function atacarPais(page: import('@playwright/test').Page): Promise<'ataca
     const apareció   = await panelDados.isVisible({ timeout: 4_000 }).catch(() => false);
     if (!apareció) continue;
 
-    // Confirmar con 1 dado (mínimo)
+    // Confirmar con 1 dado (mínimo). El click en la cantidad lanza directo:
+    // ya no existe un botón LANZAR independiente.
     await page.locator('.ted-dice-btn').first().click();
-    await page.locator('.ted-attack-btn').click();
 
     // Esperar resultado
     const resultado = page.locator('.ted-result-panel, .ted-conquista-panel');

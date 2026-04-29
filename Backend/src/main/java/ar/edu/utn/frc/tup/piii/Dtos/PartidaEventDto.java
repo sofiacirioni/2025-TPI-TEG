@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PartidaEventDto {
-    /** ATAQUE_INICIADO | ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA */
+    /** ATAQUE_INICIADO | ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA | FIN_PARTIDA */
     private String tipo;
     private String jugadorNombre;
     private String jugadorColor;
@@ -40,4 +40,7 @@ public class PartidaEventDto {
     /** IDs útiles para que el frontend identifique rol sin depender de nombres. */
     private Long idAtacante;
     private Long idDefensor;
+
+    /** Payload solo para tipo = FIN_PARTIDA. */
+    private FinPartidaDto finPartida;
 }

@@ -170,3 +170,20 @@ export interface CanjeTarjetasDto {
   idTarjetas: number[];
   idJugador: number;
 }
+
+export interface JugadorResultado {
+  id: number;
+  nombre: string;
+  color: string;
+  avatarUrl?: string;
+  cantidadPaises: number;
+  cantidadEjercitos: number;
+  eliminado: boolean;
+}
+
+export interface FinPartida {
+  ganador: JugadorDto;
+  objetivoCumplido: ObjetivoProgreso;
+  clasificacion: JugadorResultado[];
+  momentoFin: string;
+}

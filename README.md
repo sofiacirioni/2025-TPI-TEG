@@ -847,6 +847,217 @@ Solución: mover el pseudo-elemento a `.chat-panel::after` (parent que NO scroll
 
 También se removió el `pointer-events: none` que se había puesto en `.columna-izquierda` con la idea de dejar pasar clicks al mapa en dead-space — rompía el hit-test del sobre. Como la columna solo cubre 200px del lado izquierdo, no hay necesidad de pasar clicks a través.
 
+### Tablero — ajustes de iconografía y refactor visual de tarjetas (sesión 2026-04-26)
+
+Sesión enfocada en (a) tres ajustes finos de la UI del tablero (icono de continentes, distribución de la leyenda, alineación de la columna izquierda con el borde del mapa) y (b) refactor visual completo de las tarjetas: chips compactos en el panel + modal de detalle con selección manual conectado al canje existente.
+
+#### 1. Icono de continentes — globo terráqueo
+
+`tablero.component.html` reemplaza el SVG inline del botón "Ver continentes" en `.mapa-controles`: la grilla 2×2 anterior pasa a un mundito (círculo + meridiano elíptico + ecuador + dos paralelos sutiles, todos con `currentColor`).
+
+#### 2. Leyenda de continentes — distribución a lo ancho del mapa
+
+`.leyenda-continentes` cambia `justify-content: center; gap: 18px` por `justify-content: space-between; gap: $space-2`, manteniendo `left: 280px / right: 267px` (mismos límites que `.mapa-zona`). Los 6 items quedan repartidos uniformemente borde a borde del mapa en lugar de aglomerados al centro.
+
+#### 3. Conversaciones alineadas con el borde inferior del mapa
+
+`.columna-izquierda` (ambas declaraciones) cambia `bottom: 8px` por `bottom: 48px` para coincidir con el `.mapa-zona { bottom: 48px }`. Como `.historial-panel` es `flex: 1`, absorbe los 40px de diferencia y empuja `.tarjetas-panel` y `.chat-panel` hacia arriba sin alterar sus alturas fijas.
+
+#### 4. Refactor visual de tarjetas — vista mini
+
+`tablero.component.{ts,html,scss}` reemplaza el chip placeholder anterior (44×64, una letra del símbolo) por un chip de papel 60×72 en grilla 2 columnas, hasta 3 filas con scroll. Estructura: zona superior 60% con SVG del símbolo coloreado (32×32) sobre fondo `rgba(67,42,30,0.05)` y línea separadora; zona inferior 40% con nombre del país en Special Elite 8px truncado.
+
+Los SVGs disponibles (`Frontend/src/assets/vectors/tablero/warship-symbol.svg`, `warplane-symbol.svg`, `war-tank-symbol.svg`) usan `fill: #432a1e` fijo; como no usan `currentColor`, se aplican vía `mask-image` + `background-color` mediante un mixin local `simbolo-mask($url, $color)`. Variables locales del componente:
+
+```scss
+$card-canion : #2A6B4A;  // verde militar — tanque/cañón
+$card-galeon : #2A5F8F;  // azul marino  — barco
+$card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
+```
+
+Los símbolos del backend son `CANION | GALEON | GLOBO | COMODIN` (helper `getSimboloKey()` normaliza). Para `COMODIN` se renderizan los 3 SVGs en miniatura (14×14) en el chip y (32×32) en el modal.
+
+#### 5. Modal de detalle "CARTAS EN MANO"
+
+Reemplaza el `canje-modal` anterior (lista de combinaciones precomputadas) por un overlay de pantalla completa (`backdrop-filter: blur(4px)`, `rgba(4,2,1,0.75)`) con un contenedor de papel diagonal de `min(90vw, 700px)`. Borde rojo decorativo via `inset` shadows (`inset 0 0 0 12px var(--color-claro), inset 0 0 0 13.5px rgba(160,21,21,0.4)`) y sello rotado (`<app-stamp type="clasificado" [rotation]="-12">`) en la esquina superior derecha.
+
+Las tarjetas se muestran en grilla 130×180 con rotación leve alterna (`±1°/0.8°`) para sugerir cartas apoyadas sobre la mesa. Si es turno del jugador y fase = `INCORPORACION`, las tarjetas son seleccionables (hasta 3); selección con borde verde (`var(--color-secondary)`) + overlay `rgba(55,94,65,0.15)`. Cuando los 3 ítems forman combinación válida (3 iguales o 3 distintas — replica la regla de `calcularCombinacionesCanje()`), aparece el botón `· CANJEAR ·`. Si no es turno o la fase es otra, las tarjetas son no seleccionables y se muestra el texto "El canje sólo está disponible durante tu turno, en la fase de Incorporar."
+
+Animaciones por keyframes: `tarjetas-overlay-in` (fade-in 250ms ease-out) y `tarjetas-modal-in` (scale 0.92→1 + fade 250ms ease-out). Accesibilidad: `role="dialog"`, `aria-modal="true"`, `aria-label`, cierre con click en backdrop, click en `✕`, o `Escape` (`HostListener('document:keydown.escape')`).
+
+#### 6. Conexión al canje existente — sin reimplementar lógica
+
+Estado refactorizado en `TableroComponent`: `combinacionSeleccionada: number | null` reemplazado por `tarjetasSeleccionadasIds: Set<number>`. Nuevos miembros: `toggleTarjetaCanje(t)`, `estaSeleccionada(t)`, getter `combinacionValida` (3 ids con `set.size === 1 || set.size === 3`), getter `canjeHabilitado` (`esMiTurno && faseActual === INCORPORACION`), helper `getSimboloKey()`. El método `confirmarCanje()` sigue llamando a `tableroServicio.realizarCanje(dto)` y a `tableroEventService.enqueue({tipo: 'TARJETA_CANJEADA', ...})` igual que antes — sólo cambia que `idTarjetas` se construye desde `tarjetasSeleccionadasIds` en lugar de `combinacionesPosibles[combinacionSeleccionada]`. La auto-apertura del modal en INCORPORACION + ≥5 cartas se preserva.
+
+El click en cualquier chip mini (o sobre el botón "TARJETAS") dispara `abrirModalCanje()` (que ahora resetea el `Set`).
+
+#### 7. Renombre de assets de banderines militares
+
+Los archivos `assets/vectors/tablero/military-simbol-inline-{l,r}.svg` se renombraron a `military-symbol-inline-{l,r}.svg` (corrección ortográfica). Imports en `tablero-event-display.component.scss` actualizados a las 4 ocurrencias.
+
+#### 8. Verificación con Playwright
+
+`e2e/tablero-dev.spec.ts` extiende el bloque "Tarjetas — vista mini y modal de detalle" con 5 tests: existencia del panel, screenshot del panel sin cartas, dimensiones 60×72 de los chips, apertura del modal con Escape, y un test que **inyecta tarjetas mock vía `ng.getComponent(host)`** sobre la instancia real de `TableroComponent` — con `setInterval(250ms)` para resistir el polling de la partida que de otra forma sobrescribiría `cartasJugador`. Captura `tarjetas-{panel-mini, panel-con-cartas, modal-detalle, modal-con-cartas}.png` para inspección visual. 6 tests pasan; build de Angular sin errores (sólo deprecation warnings preexistentes de Sass `darken()`).
+
+### Tablero — fixes funcionales y refinamientos visuales (sesión 2026-04-28)
+
+Sesión larga con dos bloques: (a) ajustes de UX del registro/tarjetas/chat, (b) bug-fixes de combate y backlog de bots, (c) iteración fina sobre marco de turno, botón AVANZAR FASE y tipografía de chips.
+
+#### Bug — registro de operaciones no mostraba nada
+
+`historial-panel` usaba `flex: 0 1 auto` con `max-height: clamp(...)`, pero `historial-lista` interno tiene `flex: 1 1 0` que pide al padre todo el espacio remanente; sin alto resuelto en el padre el contenedor colapsaba a la altura del título y los items quedaban renderizados pero invisibles. **El historial sí se poblaba** (verificado con instrumentación: 25 entradas en el array, 20 en el DOM). Fix: `flex: 0 0 clamp(80px, 12vh, 110px)` (alto fijo, suficiente para 2-3 entradas), lo que además libera espacio para que `chat-panel` (flex: 1) crezca hasta el borde inferior del mapa.
+
+#### Bug — tarjeta entregada antes del resultado de combate
+
+En `TurnoServiceImpl.atacar()` el evento WS `TARJETA_OBTENIDA` se emitía dentro del bloque `if (conquista)`, **antes** del evento `CONQUISTA/ATAQUE`. Refactor: la asignación de la carta en DB queda en su lugar (atomicidad transaccional), pero el `convertAndSend("TARJETA_OBTENIDA")` se mueve fuera del bloque, **después** del envío de `CONQUISTA`. El frontend ahora muestra primero el resultado del combate y recién entonces la nueva carta.
+
+#### Canal de historial separado del de notificaciones
+
+`TableroEventService` agrega un segundo Subject `historialEvent$: Observable<HistorialEvento>` que se emite **antes** del filtro `if (esAutor && !esCombate) return` de `enqueueFromWs`. El componente subscribe a este canal para poblar el registro y deja `currentEvent$` exclusivamente para pausar el timer y refrescar el progreso de objetivo. Resultado: las acciones del propio jugador (incorporar, reagrupar, conquistar, obtener tarjeta, canjear) entran al registro sin alterar la política de notificaciones efímeras (que sigue ocultando el banner al autor de la acción). El método privado `emitirHistorialDesdeWs(ws)` mapea cada `PartidaEventWs` a `{ texto, tipo: 'ataque' | 'ok' | 'normal' }`.
+
+#### Combate — duración recortada + modo rápido en backlog
+
+- `duracionMs` por evento WS: `5000 / 4000` → `3000 / 2700` (CONQUISTA / RESULTADO_DADOS).
+- Slot machine de dados: `3000ms` → `1600ms` en flujo normal, `600ms` cuando el componente recibe `event.fastMode === true`.
+- Nuevo flag `fastMode?: boolean` en `GameEvent`: el servicio lo inyecta en `processNext()` cuando `queue.length > 2`. Para combates aplica reducción adicional (`duracion = 1500ms` en lugar de 3000) y para notificaciones simples ya existía la regla análoga (900ms tope). Click en backdrop sigue funcionando como skip-to-next.
+
+#### Eliminación del botón LANZAR
+
+El botón `· LANZAR ·` en `TableroEventDisplayComponent` se eliminó: ahora `seleccionarDados(n)` setea la cantidad **y dispara** el ataque vía `lanzarSegunRol()` (refactor del antiguo `lanzar()`). El timeout del countdown sigue auto-disparando con la selección vigente. Removidos del componente: método público `lanzar()`, método `puedeLanzar()`, regla SCSS `.ted-attack-btn`. HTML simplificado a 3 labels condicionales (`COMBATE EN CURSO` / `ESPERANDO DEFENSOR` / `ESPERANDO RESULTADO`). Tests E2E (`tablero-dev.spec.ts`, `flujo-completo.spec.ts`) actualizados al nuevo flujo (click en cantidad lanza directo).
+
+#### Tarjetas — textura grunge + marco lineal + tipografía
+
+Tanto `.tarjeta-mini` (58×87, proporción 2:3) como `.tarjeta-detalle` (140×210) ganan dos pseudo-elementos:
+
+- `::before` con `background-image: url('grunge-vintage-old-paper-texture.jpg')`, `mix-blend-mode: multiply`, `opacity: 0.7`, `z-index: -1`. Aplica el papel envejecido del design system (definido en `_surfaces.scss` como `paper-grunge`).
+- `::after` con `inset: 3px` (mini) o `6px` (detalle), `border: 1px solid rgba(67,42,30,0.45/0.5)`. Es el marco lineal interior estilo carta de juego clásica.
+
+El nombre del país se renderiza como `· {{ nombre | nombrePais | uppercase }} ·` (uppercase con puntos medios). En `.tarjeta-mini-pais` la tipografía baja a `font-size: 7px` con `letter-spacing: 0.02em` y `padding: 0 6px` para no invadir el marco interior.
+
+#### Distribución de chips en el panel
+
+`tarjetas-contenido` cambia de `display: grid; grid-template-columns: repeat(2, 60px)` a `display: flex; flex-wrap: wrap; justify-content: flex-start; column-gap: $space-2`. Las cartas fluyen de izquierda a derecha en orden de obtención, sin separarse a los bordes (versión inicial usaba `space-between` que dejaba huecos extraños con 2 cartas). El padding del `tarjetas-panel` queda solo vertical (`$space-2 0`) para que entren los 3 chips de 58px (3 × 58 + 2 × 8 = 190 < 200).
+
+#### Modal "CARTAS EN MANO" — fondo oscuro y combinaciones posibles
+
+Refactor completo del modal: se elimina el contenedor de papel + sello rotado + borde rojo decorativo. El overlay (`rgba(4,2,1,0.82)` + `backdrop-filter: blur(5px)`) es el único fondo y las tarjetas flotan directamente sobre él. Título `CARTAS EN MANO` y subtítulos en `var(--color-claro)` con `text-shadow`. Botón cerrar circular en la esquina superior derecha del overlay. Botón `· CANJEAR ·` con clase `btn-teg-dark` (variante apropiada para fondo oscuro).
+
+Indicador de combinaciones posibles agregado **debajo de la grilla**, siempre visible con 3+ cartas: `· N combinaciones posibles ·` o `· Sin combinaciones posibles ·`. Lee de `combinacionesPosibles.length` que ya se calculaba en el componente.
+
+#### Chat — margen, límite, anti-spam, color uniforme
+
+- Línea roja `::after`: `left: 52 → 28px`. `chat-msg padding-left: 60 → 34px`. `chat-time width: 48 → 26px` con `font-size: 9 → 8px` (5 chars `HH:mm` × ~4.8px monospace = 24px, entra en 26px).
+- Input acepta máximo 120 caracteres (`maxlength="120"` + slice defensivo en `enviarChat`).
+- Anti-spam: tras 4 mensajes en 10s, cooldown de 15s con countdown visible (`.chat-cooldown` 9px sans-serif rojo sello), input y botón `disabled` durante el bloqueo.
+- Color de mensajes uniforme: `.chat-text` y `.chat-input` cambiados de `var(--player-azul)` a `var(--color-oscuro)` — el azul colisionaba con el jugador azul; la identificación del autor ya está en `.chat-sender` (coloreado).
+
+#### Chat — alto extendido al borde inferior del mapa
+
+`chat-panel` cambia de `height: 160px` fijo a `flex: 1 1 0; min-height: 200px; max-height: 380px`. Toma todo el espacio sobrante de `panel-izquierdo` hasta el `bottom: 48px` de la columna izquierda, que ya coincide con el `bottom: 48px` de `mapa-zona`. Verificado: `chat-bottom: 852px === map-bottom: 852px`.
+
+#### Marco de turno del avatar — bajar y evitar recorte izquierdo
+
+El marco PNG (90×76 con corona/sol que sobresale del wrapper 44×44 del avatar) usaba `top: -20px; left: -23px`. Dos problemas:
+
+1. El sol quedaba demasiado arriba — la usuaria pidió que el corte inferior coincida con la curva superior del marco circular del avatar. Ajuste fino: `top: -20 → -17px` (3px más abajo).
+2. El borde izquierdo del marco se recortaba. Causa: `panel-derecho` tenía `overflow: hidden` y `panel-jugadores` tenía `overflow-y: auto` — la spec **CSS Overflow Module 3** computa `overflow-x: visible` a `auto` cuando el otro eje no es visible, recortando el contenido horizontal. Fix triple: `panel-derecho { overflow: visible }`, `panel-jugadores { overflow-x: visible; padding-left: $space-6 }` (24px de padding-left para alojar los -23 del marco).
+
+#### Botón AVANZAR FASE — visibilidad y centrado vertical
+
+El botón existía y estaba renderizado pero pasaba desapercibido por contraste insuficiente (`background: rgba(160,21,21,0.35)`, `font-size: 8px`, `border: 0.5px translúcido`). Tras feedback de la usuaria (que prefería el rojo discreto), se mantiene la paleta original pero se aplica el patrón de centrado vertical de `%btn-teg-base`:
+
+```scss
+padding: 7px 12px 4px;  // top > bottom para compensar baseline alto de Special Elite
+line-height: 1;
+```
+
+El truco — visible en todo el design system (`%btn-teg-base { padding: 14px 28px 10px; line-height: 1 }`) — corrige la sensación de texto "subido" propia de la fuente Special Elite, que asienta su baseline más arriba del centro óptico del bbox.
+
+#### Notas finas
+
+- Cada `EstadoTarjetaDto` se renderiza como un chip individual (`@for (t of cartasJugador; track t.idEstadoTarjeta)`). No hay agrupador por símbolo + badge contador — verificado por grep, no hay código residual de versiones previas.
+- Comentario explícito agregado en `agregarHistorial`: `unshift` inserta al índice 0 → el evento más reciente queda arriba, sin necesidad de scrollear.
+- Verificación visual con scripts Playwright temporales en `C:/Users/sofia/AppData/Local/Temp/teg-verify/`: `verify2.js` (vista general + modal + chat), `verify-frame.js` (marco de turno), `verify-avanzar.js` (botón AVANZAR FASE en distintos viewports), `diagnose-historial.js` (instrumenta `enqueueFromWs` y `agregarHistorial` con spies para diagnosticar el bug del registro).
+
+### Fin de partida — detección inmediata + animación de papel quemado + overlay de resultado (sesión 2026-04-28)
+
+Antes de esta sesión la partida solo terminaba al cerrar la fase de REAGRUPACIÓN (vía `verificarGanador` en `cambiarFaseTurno`) y el frontend saltaba directo a `/estadisticas` sin anunciar al ganador. Esta sesión implementa la detección inmediata, una animación cinematográfica solo para el ganador y un overlay sincronizado entre todos los jugadores con el resultado final.
+
+#### Backend — detección inmediata y broadcast de fin de partida
+
+- **`Dtos/JugadorResultadoDto.java`** y **`Dtos/FinPartidaDto.java`** (nuevos): payload con ganador (`JugadorDto`), `objetivoCumplido` (`ObjetivoProgresoDto`), clasificación ordenada por `cantidadPaises` desc y `momentoFin`.
+- **`PartidaEventDto`** extendido: nuevo tipo `FIN_PARTIDA` y campo opcional `finPartida: FinPartidaDto`. Decisión clave: **reusamos el topic existente** `/topic/partida.{idPartida}.evento` en lugar de crear `/topic/partida/{id}/fin` — el frontend ya estaba suscripto, así que evitamos duplicar canales y desuscripciones.
+- **`ObjetivoServiceImpl.construirFinPartida(Long idJugadorGanador)`**: arma el DTO completo iterando los jugadores de la partida, recolectando países desde `EstadoPaisRepository`, y derivando `eliminado` cuando `cantidadPaises === 0 && perdio`.
+- **`TurnoServiceImpl.resolverInterno()`** — punto crítico: tras una conquista (línea ~983, dentro del bloque `cantidadDefensorTropas <= 0`), llama a `objetivoService.verificarObjetivos(jugador.getIdJugador())` **antes** de emitir el WS `CONQUISTA`. Si gana, fija `victoriaInmediata = true`. Después del `CONQUISTA` se emite `FIN_PARTIDA` (orden visual: combate → fin). Si hubo victoria inmediata, se omite el `TARJETA_OBTENIDA` (la partida ya terminó, no tiene sentido).
+- **`TurnoServiceImpl.cambiarFaseTurno()`**: chequeo temprano `if (partida.estadoPartida != EN_JUEGO) return false;` — frena al bot ganador y al siguiente bot del loop, que de otra forma seguían con sus `Thread.sleep` entre fases ignorando el fin.
+- **`ObjetivoService` interface**: agregado `construirFinPartida(Long)`.
+
+#### Frontend — interfaces TypeScript y servicios
+
+- **`partida.interface.ts`**: nuevas interfaces `JugadorResultado` y `FinPartida` espejando los DTOs Java.
+- **`game-event.interface.ts`**: `FIN_PARTIDA` agregado a `GameEventTipo` y campo `finPartida?: FinPartida` en `PartidaEventWs`.
+- **`tablero-event.service.ts`**: `enqueueFromWs` ignora explícitamente `FIN_PARTIDA` (no se encola como notificación efímera) — el `TableroComponent` lo captura directo desde el callback WS para evitar latencia adicional.
+
+#### Frontend — `ObjetivoQuemadoComponent` (animación de papel quemándose)
+
+Componente standalone montado dentro de `.sobre-wrapper` con `position: absolute; inset: 0`. Solo se monta para el jugador ganador. **Estrategia A** (preferida en el plan): GSAP + `mask-image: radial-gradient` + filtro SVG `feTurbulence`/`feDisplacementMap` + canvas con partículas — todo sin librerías nuevas (GSAP 3.14.2 ya estaba en `package.json`).
+
+5 fases temporales (3000ms total), encadenadas con `gsap.timeline`:
+
+| Tiempo | Fase | Cambios |
+|---|---|---|
+| 0–200ms | Encendido | glow naranja sube a 0.2 |
+| 200–800ms | Propagación inicial | mask `transparente: 0→30%`, glow 0.2→0.6 |
+| 800–1800ms | Combustión activa | mask 30→80%, glow al máximo (1.0), `displacementMap.scale: 8→14→8` con `yoyo` para que el borde "respire" |
+| 1800–2500ms | Consumición | mask 80→110%, glow decrece a 0.4 |
+| 2500–3000ms | Desvanecimiento | host `opacity: 1→0`, glow a 0 |
+
+Detalles técnicos:
+- La **máscara radial** se reescribe en cada frame de GSAP vía `onUpdate` — es la forma confiable de animar mask-image en Chromium (no usa CSS variables porque `mask-image` no las consume).
+- El **filtro SVG** se inyecta inline (no en `:host` SCSS) con `id` único por instancia (`burnEdge_<random>`), para evitar colisiones si llegara a haber dos componentes montados.
+- El **canvas de brasas** corre con `requestAnimationFrame` propio (no GSAP — es más simple para un bucle de partículas). 25 partículas máximo, spawn rate variable según fase (pico durante combustión activa: ~1.2/frame), spawn desde el borde del círculo de combustión (`radioActual` derivado de `maskState.transparente`), gravedad leve (+0.05 vy/frame), vida -0.015/frame, render con `fillRect` (más rápido que `arc()/fill()` para 25 partículas).
+- El canvas se sincroniza con `devicePixelRatio` (clamp a 2x) para que se vea nítido en HiDPI sin reventar performance.
+- `ngOnDestroy` limpia el timeline GSAP, `cancelAnimationFrame` y el `setTimeout` de fallback (3100ms) por si GSAP fuera matado externamente.
+
+#### Frontend — `FinPartidaOverlayComponent` (overlay de resultado)
+
+5 zonas verticales sobre fondo `rgba(4,2,1,0.92)` con `backdrop-filter: blur(6px)`, z-index `calc(var(--z-vignette) + 2)`:
+
+1. **Insignia + medalla**: insignia del ganador (110px, color del player) + medalla TEG (60px, encajada al pie inferior derecho). Reusa los assets existentes `assets/images/tablero/insignias/{color}-insignia.png` y `assets/images/tablero/teg-wax-seal.png`. TODO comments para los SVGs dedicados (`insignia-ganador.svg`, `medalla-teg-oro.svg`) cuando estén listos. Halo dorado vía `drop-shadow(0 0 24px rgba(244,204,64,0.4))`.
+2. **Identidad**: avatar circular 80px, nombre del ganador en Special Elite 32px en color del player, subtítulo "COMANDANTE VICTORIOSO" 11px letter-spacing 0.3em.
+3. **Objetivo cumplido**: separadores 1px arriba/abajo, "MISIÓN CUMPLIDA", descripción del objetivo en italic, lista de items con check verde `■` y "actual/objetivo ✓".
+4. **Bajas en combate**: cards horizontales por jugador no-ganador con avatar 40px, nombre coloreado, "X países", `· ELIMINADO ·` en `var(--color-sello)` con opacidad 0.5 si fue eliminado.
+5. **Botón** `· VER ESTADÍSTICAS ·` (clase `btn-teg-dark`): aparece a los 3500ms desde el inicio del overlay con `pointer-events: none` antes de eso.
+
+Animación de entrada escalonada con `gsap.timeline` (consistente con el quemado, en lugar de `animation-delay` CSS): overlay 0–800ms, insignia 400ms (back.out, scale 0.4→1), identidad 900ms (slide-up + fade), subtítulo 1200ms, objetivo 1600ms, ítems 1800+N×120ms con stagger, bajas 2300ms, botón 3500ms.
+
+#### Frontend — integración en `TableroComponent`
+
+- **Suscripción WS**: en el callback de `suscribirseEventosPartida`, si `evento.tipo === 'FIN_PARTIDA' && evento.finPartida`, se invoca `alRecibirFinPartida(evento.finPartida)` directamente y se hace `return` antes de pasar el evento al `TableroEventService`.
+- **`alRecibirFinPartida(dto)`**: idempotente (ignora si ya hubo fin), congela la UI (`partidaFinalizada = true`), corta `tableroServicio.stopPolling()`, todos los timers (`timerInterval`, `inactividadInterval`) y pausa el `tableroEventService` (`timerPausado = true`). Si el jugador local **es** el ganador → `mostrarAnimacionQuemado = true` (el overlay esperará a `animacionCompleta`). Si **no** es → `setTimeout(() => mostrarFinPartida = true, 3000)` para que la pantalla quede congelada el mismo tiempo que dura la animación del ganador. **Esto sincroniza la pantalla de resultado entre todos los jugadores** — sin la espera, los espectadores verían el overlay ~3s antes que el ganador, spoileando el resultado durante su animación.
+- **Lógica anterior reemplazada**: el `if (result.estado === EstadoPartida.TERMINADA)` que saltaba a `/estadisticas` se simplificó a "detener polling silenciosamente y esperar el WS" — el overlay ya no depende del polling REST.
+- **Template**: `<app-objetivo-quemado>` se monta dentro de `.sobre-wrapper` con `@if (mostrarAnimacionQuemado)`, y `<app-fin-partida-overlay>` al final del template fuera del `.tablero-container` con `@if (mostrarFinPartida && datosFinPartida)`.
+- `irAEstadisticas()` navega a `/estadisticas` (ruta ya existente).
+- `ngOnDestroy` agregó cleanup del `finPartidaTimeout`.
+
+#### Verificación visual con Playwright
+
+Script en `C:/Users/sofia/AppData/Local/Temp/fin-partida-visual.js` (siguiendo memoria: scripts ad-hoc en `/tmp/`, no archivos en `e2e/`). Usa el `storageState` guardado por `tablero-dev.setup.ts`, accede al componente Angular vía `window.ng.getComponent(document.querySelector('app-tablero'))` y llama directamente `alRecibirFinPartida(dto)` con datos sintéticos. Para que esto funcione fuera del flujo WS, el método se cambió de `private` a public (sin riesgo: ya era idempotente y un punto de entrada de evento).
+
+Capturas resultantes en `e2e/screenshots/`:
+- `fin-00-baseline.png`: tablero normal antes del evento
+- `fin-quemado-zoom-{A-E}.png`: zoom sobre `.sobre-wrapper` a 400/900/1500/2200/2800ms — muestran encendido → núcleo amarillo con halo radial → pico con anillo dorado intenso → consumición → fade out
+- `fin-03-overlay-ganador.png`: overlay del ganador (insignia roja, avatar, nombre del player en color rojo, "COMANDANTE VICTORIOSO", objetivo cumplido)
+- `fin-04-perdedor-congelado.png`: a 1.5s del evento del perdedor — el overlay aún NO aparece, valida el delay de 3s
+- `fin-05-overlay-perdedor.png`: overlay del bot ganador (insignia azul) con las 3 cards de "BAJAS EN COMBATE", el bot eliminado en opacidad 0.5 con `· ELIMINADO ·` en rojo, y el botón "VER ESTADÍSTICAS" habilitado
+
+#### Notas finas
+
+- El error de presupuesto en `tablero.component.scss` (29.40 kB > 24 kB) es **preexistente** a esta sesión (modificación previa al commit base). La compilación TypeScript del frontend pasa limpio; el backend compila con `./mvnw compile` sin warnings nuevos.
+- La carta no se otorga si la conquista fue la victoria — `cartaOtorgada && !victoriaInmediata`. Si se otorgara igual, el evento `TARJETA_OBTENIDA` llegaría después del `FIN_PARTIDA` y rompería el orden visual.
+- El `ataquePendienteStore` no se purga explícitamente cuando termina la partida; si hubiera un ataque pendiente, el scheduler `resolverAtaquesExpirados` (cada 1s) intentará resolverlo, y `validarYCalcularAtaque` fallará con `IllegalStateException` que se atrapa en el catch del scheduler. Es aceptable — no genera efectos visibles.
+- El pre-existing `partida.estado === EstadoPartida.TERMINADA` flow del polling se dejó como **fallback silencioso**: detiene polling y timers sin navegar — para casos de recarga después del fin sin haber recibido el WS (el overlay no se muestra porque tampoco hay datos del DTO; esos casos quedan en un estado neutro hasta que el usuario navegue).
+
 ---
 
 ## Equipo

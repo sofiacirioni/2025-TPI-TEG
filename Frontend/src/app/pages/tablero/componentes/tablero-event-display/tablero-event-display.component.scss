@@ -339,22 +339,6 @@
   to   { opacity: 0.35; }
 }
 
-// ── Botón atacar ──────────────────────────────────────────────────
-.ted-attack-btn {
-  font-family: var(--font-heading);
-  font-size: $text-sm;
-  letter-spacing: 0.14em;
-  color: var(--color-claro);
-  background: rgba(160, 21, 21, 0.75);
-  border: 1px solid rgba(160, 21, 21, 0.85);
-  border-radius: $radius-pill;
-  padding: 8px 24px;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover { background: rgba(160, 21, 21, 0.92); }
-}
-
 // ── Fila de dados (dentro de cada columna atk/def) ───────────────
 .ted-dice-row {
   display: flex;
@@ -487,14 +471,14 @@
           mask-size: auto 100%;
 
   &.banderin-l {
-    -webkit-mask-image: url('/assets/vectors/tablero/military-simbol-inline-l.svg');
-            mask-image: url('/assets/vectors/tablero/military-simbol-inline-l.svg');
+    -webkit-mask-image: url('/assets/vectors/tablero/military-symbol-inline-l.svg');
+            mask-image: url('/assets/vectors/tablero/military-symbol-inline-l.svg');
     -webkit-mask-position: right center;
             mask-position: right center;
   }
   &.banderin-r {
-    -webkit-mask-image: url('/assets/vectors/tablero/military-simbol-inline-r.svg');
-            mask-image: url('/assets/vectors/tablero/military-simbol-inline-r.svg');
+    -webkit-mask-image: url('/assets/vectors/tablero/military-symbol-inline-r.svg');
+            mask-image: url('/assets/vectors/tablero/military-symbol-inline-r.svg');
     -webkit-mask-position: left center;
             mask-position: left center;
   }

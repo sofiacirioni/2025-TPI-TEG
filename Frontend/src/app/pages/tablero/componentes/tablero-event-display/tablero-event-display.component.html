@@ -92,15 +92,12 @@
           <span class="ted-timer-lbl">seg.</span>
         </div>
 
-        @if (puedeLanzar()) {
-          <button class="ted-attack-btn" (click)="lanzar()">· LANZAR ·</button>
-        } @else if (rol === 'espectador') {
+        @if (rol === 'espectador') {
           <div class="ted-espectador-lbl">· COMBATE EN CURSO ·</div>
-        } @else {
-          <div class="ted-espectador-lbl">
-            @if (rol === 'atacante') { · ESPERANDO DEFENSOR · }
-            @else if (rol === 'defensor') { · ESPERANDO RESULTADO · }
-          </div>
+        } @else if (rol === 'atacante' && atacanteLanzo) {
+          <div class="ted-espectador-lbl">· ESPERANDO DEFENSOR ·</div>
+        } @else if (rol === 'defensor' && defensorLanzo) {
+          <div class="ted-espectador-lbl">· ESPERANDO RESULTADO ·</div>
         }
 
       </div>

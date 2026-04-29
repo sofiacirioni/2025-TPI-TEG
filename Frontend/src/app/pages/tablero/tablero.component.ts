@@ -7,10 +7,11 @@ import { StompSubscription } from '@stomp/stompjs';
 import { TableroServicio } from '../../core/services/tablero.service';
 import { WebSocketService } from '../../core/services/socket.service';
 import { TableroEventService } from '../../core/services/tablero-event.service';
-import { GameEvent } from '../../core/models/interfaces/game-event.interface';
 import { MapaSvgComponent, PaisClickEvent } from './componentes/mapa-svg/mapa-svg.component';
 import { TableroEventDisplayComponent } from './componentes/tablero-event-display/tablero-event-display.component';
 import { ObjetivoRevelacionComponent } from './componentes/objetivo-revelacion/objetivo-revelacion.component';
+import { ObjetivoQuemadoComponent } from './componentes/objetivo-quemado/objetivo-quemado.component';
+import { FinPartidaOverlayComponent } from './componentes/fin-partida-overlay/fin-partida-overlay.component';
 import {
   AtaqueDto,
   AtaqueResponseDto,
@@ -19,13 +20,13 @@ import {
   EstadoTarjetaDto,
   EstadoPartida,
   FaseTurno,
+  FinPartida,
   JugadorDto,
   MoverFichas,
   ObjetivoProgreso,
   PartidaDto,
   TurnoDto,
   UsarTarjetaEnPaisDto,
-  VerificacionObjetivo,
 } from '../../core/models/interfaces/partida.interface';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -49,7 +50,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent, ObjetivoQuemadoComponent, FinPartidaOverlayComponent],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })
@@ -76,8 +77,20 @@ export class TableroComponent implements OnInit, OnDestroy {
   cartasJugador: EstadoTarjetaDto[] = [];
   puedeCanjear = false;
   combinacionesPosibles: EstadoTarjetaDto[][] = [];
-  combinacionSeleccionada: number | null = null;
   showCanjeModal = false;
+  /** Ids de EstadoTarjeta seleccionados manualmente en el modal de detalle. */
+  tarjetasSeleccionadasIds = new Set<number>();
+
+  // ── Fin de partida ────────────────────────────────────────
+  /** Datos del fin de partida recibidos por WS (visibles para todos los jugadores). */
+  datosFinPartida: FinPartida | null = null;
+  /** true → la partida terminó: se congela la UI hasta el overlay. */
+  partidaFinalizada = false;
+  /** true solo para el jugador ganador: muestra la animación de quemado. */
+  mostrarAnimacionQuemado = false;
+  /** true para todos los jugadores: muestra el overlay con el resultado. */
+  mostrarFinPartida = false;
+  private finPartidaTimeout?: ReturnType<typeof setTimeout>;
 
   // ── Objetivo secreto ───────────────────────────────────────
   objetivoVisible = false;
@@ -173,9 +186,19 @@ export class TableroComponent implements OnInit, OnDestroy {
   // ── Chat ───────────────────────────────────────────────────
   chatMensajes: ChatMensaje[] = [];
   chatInput = '';
+  readonly chatMaxLen = 120;
   @ViewChild('chatMensajesRef') private chatMensajesRef?: ElementRef<HTMLDivElement>;
   /** true si el scroll del chat está pegado al fondo — controla el auto-scroll */
   private chatPegadoAlFondo = true;
+
+  // Anti-spam: tras N mensajes en una ventana corta el usuario queda bloqueado.
+  private mensajesRecientes: number[] = [];
+  private readonly LIMITE_MENSAJES = 4;
+  private readonly VENTANA_MS = 10_000;
+  private readonly COOLDOWN_MS = 15_000;
+  enCooldown = false;
+  cooldownRestanteSeg = 0;
+  private cooldownInterval: ReturnType<typeof setInterval> | null = null;
 
   // ── Getters ────────────────────────────────────────────────
   private getTurnoActual(): TurnoDto | undefined {
@@ -277,25 +300,13 @@ export class TableroComponent implements OnInit, OnDestroy {
 
     this.clockInterval = setInterval(() => { this.horaActual = new Date(); this.updateClockHands(); }, 1000);
 
-    // Registrar eventos WS en el historial (solo los que vienen de otros jugadores —
-    // los propios ya se registran en atacarDesdeModal / reagruparDesdeModal)
+    // currentEvent$: pausa el timer mientras haya una notificación efímera en
+    // curso, y refresca el progreso del objetivo cuando hay una conquista.
+    // El registro del historial vive en otro canal (historialEvent$) que recibe
+    // TODAS las acciones, incluidas las propias.
     this.tableroEventService.currentEvent$.subscribe(event => {
-      // Pausa el timer de turno y el de inactividad mientras haya un evento en
-      // cola. Se reactiva (false) cuando la cola queda vacía (event === null).
       this.timerPausado = event !== null;
       if (!event) return;
-      // ATAQUE_INICIADO: solo UI local, sin historial
-      // RESULTADO_DADOS y CONQUISTA propios: ya los registra atacarDesdeModal
-      // REAGRUPAMIENTO propio: ya lo registra reagruparDesdeModal
-      // Los demás (FIN_TURNO, INCORPORACION, TARJETA_*, ataques de otros) sí se registran
-      const esPropioYaRegistrado =
-        event.jugadorActivo === this.jugadorUsuario?.nombre &&
-        (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA' || event.tipo === 'REAGRUPAMIENTO');
-      if (esPropioYaRegistrado || event.tipo === 'ATAQUE_INICIADO') return;
-      const texto = this.textoHistorialEvento(event);
-      if (texto) this.agregarHistorial(texto, this.tipoHistorialEvento(event));
-
-      // Refrescar progreso del objetivo tras cada conquista (puede cambiar avance de continentes)
       if (event.tipo === 'CONQUISTA') {
         const jId = this.jugadorUsuario?.idJugador;
         if (jId) {
@@ -307,24 +318,27 @@ export class TableroComponent implements OnInit, OnDestroy {
       }
     });
 
+    // historialEvent$: una entrada por cada acción del juego (todos los jugadores,
+    // incluido el local). Lo emite el TableroEventService antes del filtro por
+    // autor para que las acciones propias también queden registradas.
+    this.tableroEventService.historialEvent$.subscribe(({ texto, tipo }) => {
+      this.agregarHistorial(texto, tipo);
+    });
+
     this.tableroServicio.partidaObservable.subscribe({
       next: (result: PartidaDto | null) => {
         if (!result) return;
 
-        if (result.estado === EstadoPartida.TERMINADA) {
-          this.tableroServicio.consultarMotivoGanador(result.ganador!.idJugador).subscribe({
-            next: (verificacion: VerificacionObjetivo) => {
-              if (verificacion.gano) {
-                this.tableroServicio.stopPolling();
-                this.notificationService.success(
-                  `¡${result.ganador!.color} ganó la partida! Objetivo: ${verificacion.objetivoCumplido}`
-                );
-                this.router.navigate(['/estadisticas']);
-              }
-            },
-            error: err => console.error('Error consultarMotivoGanador:', err)
-          });
-          return;
+        // La partida ya terminó pero no recibimos el WS (recarga, llegamos tarde):
+        // detenemos el polling silenciosamente y esperamos al evento si llega.
+        // El overlay se muestra cuando llega el WS FIN_PARTIDA, que dispara
+        // alRecibirFinPartida(). No navegamos aquí — eso era el comportamiento
+        // viejo que saltaba a estadísticas sin mostrar al ganador.
+        if (result.estado === EstadoPartida.TERMINADA && !this.partidaFinalizada) {
+          this.tableroServicio.stopPolling();
+          this.partidaFinalizada = true;
+          this.detenerInactividad();
+          if (this.timerInterval) clearInterval(this.timerInterval);
         }
 
         // Suscribir al topic WS de la partida la primera vez que cargue
@@ -332,6 +346,11 @@ export class TableroComponent implements OnInit, OnDestroy {
           this.wsPartidaSuscripto = true;
           this.wsService.asegurarConexion();
           this.wsService.suscribirseEventosPartida(result.idPartida, evento => {
+            // Capturamos FIN_PARTIDA acá: no es una notificación efímera.
+            if (evento.tipo === 'FIN_PARTIDA' && evento.finPartida) {
+              this.alRecibirFinPartida(evento.finPartida);
+              return;
+            }
             this.tableroEventService.enqueueFromWs(evento, this.jugadorUsuario?.nombre);
           });
 
@@ -436,6 +455,8 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.objetivoWsSub?.unsubscribe();
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (this.clockInterval) clearInterval(this.clockInterval);
+    if (this.cooldownInterval) clearInterval(this.cooldownInterval);
+    if (this.finPartidaTimeout) clearTimeout(this.finPartidaTimeout);
     this.detenerInactividad();
   }
 
@@ -453,11 +474,63 @@ export class TableroComponent implements OnInit, OnDestroy {
     if (!this.timerIniciado) this.iniciarTimer();
   }
 
+  // ── Fin de partida ────────────────────────────────────────────
+  /**
+   * Disparado cuando llega el evento WS FIN_PARTIDA. Congela la UI, frena
+   * polling/timers y muestra el overlay (con animación de quemado previa para
+   * el ganador). Para sincronizar la pantalla de resultado entre todos los
+   * jugadores, los no-ganadores también esperan ~3s antes de ver el overlay
+   * (lo que dura la animación de quemado del ganador) — así nadie ve antes
+   * el resultado.
+   */
+  alRecibirFinPartida(dto: FinPartida): void {
+    if (this.partidaFinalizada && this.datosFinPartida) return; // idempotente
+
+    this.partidaFinalizada = true;
+    this.datosFinPartida = dto;
+
+    // Detener polling REST y todos los timers — la partida terminó.
+    this.tableroServicio.stopPolling();
+    if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+    this.detenerInactividad();
+    this.timerPausado = true;
+
+    const idLocal = this.authService.getJugadorId() ?? this.jugadorUsuario?.idJugador;
+    const esGanador = idLocal != null && Number(dto.ganador.idJugador) === Number(idLocal);
+
+    if (esGanador) {
+      this.mostrarAnimacionQuemado = true;
+      // El overlay se mostrará cuando la animación emita animacionCompleta.
+    } else {
+      // Los demás ven la pantalla congelada durante la duración de la animación
+      // del ganador (3s) y luego el overlay — así llega sincronizado.
+      this.finPartidaTimeout = setTimeout(() => {
+        this.mostrarFinPartida = true;
+      }, 3000);
+    }
+  }
+
+  /** Disparado por ObjetivoQuemadoComponent al terminar (~3s). */
+  alCompletarseAnimacionQuemado(): void {
+    this.mostrarAnimacionQuemado = false;
+    this.mostrarFinPartida = true;
+  }
+
+  irAEstadisticas(): void {
+    this.router.navigate(['/estadisticas']);
+  }
+
   // ── HostListeners para detectar actividad ─────────────────────
   @HostListener('click')
   @HostListener('keydown')
   onActivityEvent(): void {
     this.registrarActividad();
+  }
+
+  /** Cierra el modal de canje al presionar Escape. */
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.showCanjeModal) this.cerrarModalCanje();
   }
 
   @HostListener('mousemove', ['$event'])
@@ -606,23 +679,65 @@ export class TableroComponent implements OnInit, OnDestroy {
   }
 
   abrirModalCanje(): void {
-    this.combinacionSeleccionada = null;
+    this.tarjetasSeleccionadasIds = new Set<number>();
     this.showCanjeModal = true;
   }
 
   cerrarModalCanje(): void {
     this.showCanjeModal = false;
+    this.tarjetasSeleccionadasIds = new Set<number>();
   }
 
-  seleccionarCombinacion(index: number): void {
-    this.combinacionSeleccionada = index;
+  /** Indica si una tarjeta puede ser seleccionada para canje en el modal. */
+  get canjeHabilitado(): boolean {
+    return this.esMiTurno && this.faseActual === FaseTurno.INCORPORACION;
+  }
+
+  /** Toggle de selección de una tarjeta en el modal (máx. 3, no canjeadas). */
+  toggleTarjetaCanje(t: EstadoTarjetaDto): void {
+    if (!this.canjeHabilitado || t.canjeada) return;
+    const id = t.idEstadoTarjeta;
+    if (this.tarjetasSeleccionadasIds.has(id)) {
+      this.tarjetasSeleccionadasIds.delete(id);
+      return;
+    }
+    if (this.tarjetasSeleccionadasIds.size >= 3) return;
+    this.tarjetasSeleccionadasIds.add(id);
+  }
+
+  estaSeleccionada(t: EstadoTarjetaDto): boolean {
+    return this.tarjetasSeleccionadasIds.has(t.idEstadoTarjeta);
+  }
+
+  /**
+   * Combinación válida: 3 tarjetas y los símbolos son todos iguales (size 1)
+   * o todos distintos (size 3). Replica la regla aplicada en
+   * calcularCombinacionesCanje() para validar la selección manual.
+   */
+  get combinacionValida(): boolean {
+    if (this.tarjetasSeleccionadasIds.size !== 3) return false;
+    const seleccionadas = this.cartasJugador.filter(c => this.tarjetasSeleccionadasIds.has(c.idEstadoTarjeta));
+    if (seleccionadas.length !== 3) return false;
+    const simbolos = seleccionadas.map(c => c.tarjeta?.simbolo).filter(Boolean) as string[];
+    if (simbolos.length !== 3) return false;
+    const set = new Set(simbolos);
+    return set.size === 1 || set.size === 3;
+  }
+
+  /** Devuelve la clave normalizada del símbolo para selección de SVG/clase CSS. */
+  getSimboloKey(simbolo: string | undefined | null): 'galeon' | 'globo' | 'canion' | 'comodin' {
+    const s = (simbolo ?? '').toUpperCase();
+    if (s === 'GALEON') return 'galeon';
+    if (s === 'GLOBO')  return 'globo';
+    if (s === 'CANION') return 'canion';
+    return 'comodin';
   }
 
   confirmarCanje(): void {
-    if (this.combinacionSeleccionada === null) return;
-    const cartasSeleccionadas = this.combinacionesPosibles[this.combinacionSeleccionada];
+    if (!this.combinacionValida) return;
+    const ids = Array.from(this.tarjetasSeleccionadasIds);
     const dto: CanjeTarjetasDto = {
-      idTarjetas: cartasSeleccionadas.map(c => c.idEstadoTarjeta),
+      idTarjetas: ids,
       idJugador: this.jugadorId
     };
     this.tableroServicio.realizarCanje(dto).subscribe({
@@ -803,7 +918,6 @@ export class TableroComponent implements OnInit, OnDestroy {
     this.tableroServicio.reagruparFichas(dto).subscribe({
       next: resultado => {
         if (resultado) {
-          this.agregarHistorial(`${this.jugadorUsuario!.nombre} reagrupó tropas`, 'ok');
           this.cerrarModalPais();
           this.tableroEventService.enqueue({
             tipo: 'REAGRUPAMIENTO',
@@ -869,48 +983,68 @@ export class TableroComponent implements OnInit, OnDestroy {
   resetZoom() { this.scale = 1; this.translateX = 0; this.translateY = 0; }
 
   // ── Historial ──────────────────────────────────────────────
+  // unshift inserta al principio: el evento más reciente queda en el índice 0
+  // y por ende aparece arriba en la lista renderizada — el jugador siempre lee
+  // lo último sin necesidad de scrollear. Los eventos viejos caen al final y
+  // se descartan al superar 20 entradas.
   agregarHistorial(texto: string, tipo: 'ataque' | 'ok' | 'normal' = 'normal') {
     this.historial.unshift({ texto, tipo });
     if (this.historial.length > 20) this.historial.pop();
   }
 
-  private textoHistorialEvento(event: GameEvent): string {
-    switch (event.tipo) {
-      case 'CONQUISTA':       return `${event.jugadorActivo} conquistó ${event.paisDestino}`;
-      case 'RESULTADO_DADOS': return `${event.jugadorActivo} atacó ${event.paisDestino} desde ${event.paisOrigen}`;
-      case 'FIN_TURNO':       return event.descripcion ?? `Fin de turno de ${event.jugadorActivo}`;
-      case 'INCORPORACION':   return event.descripcion ?? `${event.jugadorActivo} incorporó ejércitos`;
-      case 'REAGRUPAMIENTO':  return event.descripcion ?? `${event.jugadorActivo} reagrupó tropas`;
-      case 'TARJETA_OBTENIDA': return event.descripcion ?? `${event.jugadorActivo} obtuvo una tarjeta`;
-      case 'TARJETA_CANJEADA': return event.descripcion ?? `${event.jugadorActivo} canjeó tarjetas`;
-      default: return '';
-    }
-  }
-
-  private tipoHistorialEvento(event: GameEvent): 'ataque' | 'ok' | 'normal' {
-    if (event.tipo === 'CONQUISTA') return 'ataque';
-    if (event.tipo === 'RESULTADO_DADOS') return 'normal';
-    return 'ok';
-  }
-
   // ── Chat ───────────────────────────────────────────────────
   enviarChat() {
-    if (!this.chatInput.trim()) return;
+    if (this.enCooldown) return;
+    const texto = this.chatInput.trim();
+    if (!texto) return;
+    // El maxlength del input es la primera barrera; este recorte protege contra
+    // pegado masivo o manipulación del DOM.
+    const textoAcotado = texto.slice(0, this.chatMaxLen);
+
+    const ahora = Date.now();
+    this.mensajesRecientes = this.mensajesRecientes.filter(t => ahora - t < this.VENTANA_MS);
+
+    if (this.mensajesRecientes.length >= this.LIMITE_MENSAJES) {
+      this.activarCooldown();
+      return;
+    }
+    this.mensajesRecientes.push(ahora);
+
     const usuario = this.authService.getCurrentUser();
     const color = this.jugadorUsuario?.color ?? '';
     this.chatMensajes.push({
       actor: usuario?.usuario ?? this.jugadorUsuario?.nombre ?? 'Yo',
-      texto: this.chatInput.trim(),
+      texto: textoAcotado,
       colorSolido: this.getColorSolido(color),
       colorVar: this.getColorVarJugador(color),
       timestamp: new Date(),
       esPropio: true,
     });
     this.chatInput = '';
-    // Al enviar un mensaje propio siempre vamos al fondo
     this.chatPegadoAlFondo = true;
     this.scrollChatAlFondoSiCorresponde();
     // TODO: WebSocket chat no implementado — sin topic en backend
+  }
+
+  private activarCooldown(): void {
+    this.enCooldown = true;
+    this.cooldownRestanteSeg = Math.ceil(this.COOLDOWN_MS / 1000);
+    this.cooldownInterval = setInterval(() => {
+      this.cooldownRestanteSeg--;
+      if (this.cooldownRestanteSeg <= 0) {
+        this.terminarCooldown();
+      }
+    }, 1000);
+  }
+
+  private terminarCooldown(): void {
+    this.enCooldown = false;
+    this.cooldownRestanteSeg = 0;
+    this.mensajesRecientes = [];
+    if (this.cooldownInterval) {
+      clearInterval(this.cooldownInterval);
+      this.cooldownInterval = null;
+    }
   }
 
   formatearHora(d: Date): string {

@@ -98,9 +98,6 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
 
       if (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA') {
         this.startSlotMachine(event);
-        if (event.conquista && event.tipo !== 'CONQUISTA') {
-          setTimeout(() => { this.mostrandoConquista = true; }, 5500);
-        }
       }
     });
   }
@@ -141,10 +138,14 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     return pre ?? this.dadosSeleccionados;
   }
 
+  /** Selecciona la cantidad de dados Y lanza inmediatamente.
+   *  Reemplaza al flujo previo de "elegir + presionar LANZAR" por una sola
+   *  acción del usuario. El timeout del countdown sigue auto-disparando con
+   *  la selección actual si no se elige nada. */
   seleccionarDados(n: number): void {
-    if (this.puedeSeleccionarDados() && n >= 1 && n <= this.maxDados) {
-      this.dadosSeleccionados = n;
-    }
+    if (!this.puedeSeleccionarDados() || n < 1 || n > this.maxDados) return;
+    this.dadosSeleccionados = n;
+    this.lanzarSegunRol();
   }
 
   puedeSeleccionarDados(): boolean {
@@ -153,15 +154,9 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
     return false;
   }
 
-  puedeLanzar(): boolean {
-    if (this.rol === 'espectador') return false;
-    if (this.rol === 'local') return true;
-    if (this.rol === 'atacante') return !this.atacanteLanzo;
-    if (this.rol === 'defensor') return !this.defensorLanzo;
-    return false;
-  }
-
-  lanzar(): void {
+  /** Dispara la acción correspondiente al rol. Llamado desde
+   *  `seleccionarDados` y desde el timeout del countdown. */
+  private lanzarSegunRol(): void {
     switch (this.rol) {
       case 'local':
         this.confirmarAtaque();
@@ -222,12 +217,11 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
       this.timerValue--;
       if (this.timerValue <= 0) {
         this.clearCountdown();
-        if (this.rol === 'defensor' && !this.defensorLanzo) {
-          this.lanzarDefensor();
-        } else if (this.rol === 'local') {
-          this.confirmarAtaque();
-        } else if (this.rol === 'atacante' && !this.atacanteLanzo) {
-          this.atacanteLanzo = true;
+        // Auto-lanzar con la selección vigente cuando expira el timer.
+        if ((this.rol === 'defensor' && !this.defensorLanzo)
+            || (this.rol === 'atacante' && !this.atacanteLanzo)
+            || this.rol === 'local') {
+          this.lanzarSegunRol();
         }
       }
     }, 1000);
@@ -253,11 +247,15 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
       this.slotDadosDef = this.slotDadosDef.map(() => 1 + Math.floor(Math.random() * 6));
     }, 80);
 
+    // Slot acortado: 1.6s en flujo normal, 600ms cuando hay ráfaga de bots.
+    // El servicio sigue marcando processNext con duracionMs ≤3s, así el modal
+    // total cierra en torno a 2.7-3s (slot + lectura del resultado).
+    const slotDuration = event.fastMode ? 600 : 1600;
     this.slotTimeout = setTimeout(() => {
       this.clearSlotMachine();
       this.slotMachineActive = false;
       this.animarDados(event);
-    }, 3000);
+    }, slotDuration);
   }
 
   private clearSlotMachine(): void {

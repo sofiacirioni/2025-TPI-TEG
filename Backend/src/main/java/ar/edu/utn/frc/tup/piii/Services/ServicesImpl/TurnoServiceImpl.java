@@ -2,6 +2,7 @@ package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
 import ar.edu.utn.frc.tup.piii.Dtos.*;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.*;
+import ar.edu.utn.frc.tup.piii.Dtos.FinPartidaDto;
 import ar.edu.utn.frc.tup.piii.Dtos.PartidaEventDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.*;
@@ -64,6 +65,12 @@ public class TurnoServiceImpl implements TurnoService {
     public boolean cambiarFaseTurno(Long idPartida) {
         PartidaEntity partidaEntity = partidaRepository.findById(idPartida)
                 .orElseThrow(() -> new RuntimeException("Partida no encontrada"));
+
+        // Si la partida ya terminó (alguien cumplió su objetivo en una conquista previa),
+        // no avanzar fases más. Esto frena al bot ganador / siguiente bot del loop.
+        if (partidaEntity.getEstadoPartida() != EstadoPartida.EN_JUEGO) {
+            return false;
+        }
 
         int turnoActualNro = partidaEntity.getTurnoActual();
 
@@ -963,6 +970,8 @@ public class TurnoServiceImpl implements TurnoService {
         estadoPaisDefensor.setCantidadTropas(estadoPaisDefensor.getCantidadTropas() - perdidasDefensor);
 
         boolean conquista = false;
+        boolean cartaOtorgada = false;
+        boolean victoriaInmediata = false;
         if (estadoPaisDefensor.getCantidadTropas() <= 0) {
             JugadorEntity defensorEntity = estadoPaisDefensor.getJugador();
 
@@ -991,6 +1000,20 @@ public class TurnoServiceImpl implements TurnoService {
             } catch (Exception ignored) {
             }
 
+            // Detección inmediata de victoria: validar el objetivo después de la conquista,
+            // antes de emitir el evento de combate, para que el frontend reciba primero
+            // CONQUISTA y luego FIN_PARTIDA en el orden correcto.
+            try {
+                VerificacionObjetivoDto verif = objetivoService.verificarObjetivos(jugador.getIdJugador());
+                if (verif != null && verif.isGano()) {
+                    victoriaInmediata = true;
+                }
+            } catch (Exception ignored) {
+            }
+
+            // Asignar la carta al ganador en DB. El evento WS TARJETA_OBTENIDA
+            // se emite DESPUÉS del evento CONQUISTA para que el frontend muestre
+            // primero el resultado del combate y recién entonces la nueva carta.
             boolean yaObtuvoCarta = estadoTarjetaRepository.findByTurnoId(turnoActual.getIdTurno())
                     .stream().anyMatch(et -> et.getJugador() != null
                             && et.getJugador().getIdJugador().equals(jugador.getIdJugador()));
@@ -1005,14 +1028,7 @@ public class TurnoServiceImpl implements TurnoService {
                     cartaAsignada.setJugador(jugador);
                     cartaAsignada.setTurno(turnoActual);
                     estadoTarjetaRepository.save(cartaAsignada);
-
-                    PartidaEventDto evtTarjeta = new PartidaEventDto();
-                    evtTarjeta.setTipo("TARJETA_OBTENIDA");
-                    evtTarjeta.setJugadorNombre(jugador.getNombre());
-                    evtTarjeta.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
-                    evtTarjeta.setDescripcion(jugador.getNombre() + " obtuvo una tarjeta");
-                    evtTarjeta.setIdPartida(partida.getIdPartida());
-                    messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evtTarjeta);
+                    cartaOtorgada = true;
                 }
             }
         } else {
@@ -1042,6 +1058,37 @@ public class TurnoServiceImpl implements TurnoService {
         evento.setIdAtacante(jugador.getIdJugador());
         evento.setIdDefensor(estadoPaisDefensor.getJugador().getIdJugador());
         messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evento);
+
+        // TARJETA_OBTENIDA después del CONQUISTA: respeta el orden visual.
+        // Si hubo victoria inmediata, omitimos la tarjeta — la partida terminó.
+        if (cartaOtorgada && !victoriaInmediata) {
+            PartidaEventDto evtTarjeta = new PartidaEventDto();
+            evtTarjeta.setTipo("TARJETA_OBTENIDA");
+            evtTarjeta.setJugadorNombre(jugador.getNombre());
+            evtTarjeta.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+            evtTarjeta.setDescripcion(jugador.getNombre() + " obtuvo una tarjeta");
+            evtTarjeta.setIdPartida(partida.getIdPartida());
+            messagingTemplate.convertAndSend("/topic/partida." + partida.getIdPartida() + ".evento", evtTarjeta);
+        }
+
+        // FIN_PARTIDA: orden = CONQUISTA → FIN_PARTIDA. El frontend muestra primero
+        // el resultado del combate y luego la animación + overlay de fin de partida.
+        if (victoriaInmediata) {
+            try {
+                FinPartidaDto finDto = objetivoService.construirFinPartida(jugador.getIdJugador());
+                PartidaEventDto evtFin = new PartidaEventDto();
+                evtFin.setTipo("FIN_PARTIDA");
+                evtFin.setJugadorNombre(jugador.getNombre());
+                evtFin.setJugadorColor(jugador.getColor() != null ? jugador.getColor().name() : "");
+                evtFin.setDescripcion(jugador.getNombre() + " ganó la partida");
+                evtFin.setIdPartida(partida.getIdPartida());
+                evtFin.setFinPartida(finDto);
+                messagingTemplate.convertAndSend(
+                        "/topic/partida." + partida.getIdPartida() + ".evento", evtFin);
+            } catch (Exception e) {
+                // Si falla la construcción del DTO, al menos la partida quedó marcada como TERMINADA
+            }
+        }
 
         return response;
     }

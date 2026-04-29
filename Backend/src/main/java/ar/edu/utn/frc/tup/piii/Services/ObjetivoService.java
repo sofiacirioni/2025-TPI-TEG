@@ -1,5 +1,6 @@
 package ar.edu.utn.frc.tup.piii.Services;
 
+import ar.edu.utn.frc.tup.piii.Dtos.FinPartidaDto;
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoDto;
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoProgresoDto;
 import ar.edu.utn.frc.tup.piii.Dtos.VerificacionObjetivoDto;
@@ -23,5 +24,8 @@ public interface ObjetivoService {
 
     //progreso en tiempo real
     ObjetivoProgresoDto calcularProgreso(Long idJugador);
+
+    /** Arma el DTO completo de fin de partida (ganador + clasificación de los demás) cuando ya se sabe quién ganó. */
+    FinPartidaDto construirFinPartida(Long idJugadorGanador);
 
 }

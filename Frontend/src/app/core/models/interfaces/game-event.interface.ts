@@ -1,3 +1,5 @@
+import { FinPartida } from './partida.interface';
+
 export type GameEventTipo =
   | 'INCORPORACION'
   | 'ATAQUE_INICIADO'
@@ -7,7 +9,8 @@ export type GameEventTipo =
   | 'TARJETA_OBTENIDA'
   | 'TARJETA_CANJEADA'
   | 'REAGRUPAMIENTO'
-  | 'FIN_TURNO';
+  | 'FIN_TURNO'
+  | 'FIN_PARTIDA';
 
 export interface DiceSelectionParams {
   paisOrigen: string;
@@ -47,6 +50,9 @@ export interface GameEvent {
   idPartida?: number;
   // Parámetros de selección de dados (ATAQUE_INICIADO)
   diceSelection?: DiceSelectionParams;
+  /** true cuando la cola tiene backlog (>2 eventos pendientes). El componente
+   *  acorta el slot-machine y la duración del modal para no acumular delay. */
+  fastMode?: boolean;
 }
 
 /** DTO que llega via WebSocket desde el backend */
@@ -71,4 +77,6 @@ export interface PartidaEventWs {
   timerSegundos?: number;
   idAtacante?: number;
   idDefensor?: number;
+  /** Payload cuando tipo === 'FIN_PARTIDA'. */
+  finPartida?: FinPartida;
 }

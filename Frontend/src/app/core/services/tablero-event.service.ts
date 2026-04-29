@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { GameEvent, GameEventTipo, PartidaEventWs } from '../models/interfaces/game-event.interface';
 
+export interface HistorialEvento {
+  texto: string;
+  tipo: 'ataque' | 'ok' | 'normal';
+}
+
 /** Mapa de var CSS para colores de jugadores */
 const COLOR_VAR_MAP: Record<string, string> = {
   ROJO:    'var(--player-rojo)',
@@ -26,6 +31,12 @@ export class TableroEventService {
   /** Subject interno: la selección de dados emite el número elegido. */
   private diceResultSubject = new Subject<number>();
   readonly diceResult$: Observable<number> = this.diceResultSubject.asObservable();
+
+  /** Canal independiente para el registro/historial: emite TODAS las acciones,
+   *  incluso las del propio jugador. Las notificaciones efímeras siguen
+   *  filtrando al autor (se procesan vía currentEvent$ con su propia política). */
+  private historialEventSubject = new Subject<HistorialEvento>();
+  readonly historialEvent$: Observable<HistorialEvento> = this.historialEventSubject.asObservable();
 
   /** Encola un evento genérico al final de la cola. */
   enqueue(event: GameEvent): void {
@@ -54,6 +65,11 @@ export class TableroEventService {
     const esAutor    = !!miNombre && ws.jugadorNombre === miNombre;
     const esDefensor = !!miNombre && !!ws.jugadorDefensor && ws.jugadorDefensor === miNombre;
     const esCombate = ws.tipo === 'ATAQUE_INICIADO' || ws.tipo === 'ATAQUE' || ws.tipo === 'CONQUISTA';
+
+    // El registro/historial recibe TODAS las acciones (incluso las propias),
+    // antes de cualquier filtro por autor. Las notificaciones efímeras quedan
+    // gobernadas por la lógica de abajo (esAutor && !esCombate => return).
+    this.emitirHistorialDesdeWs(ws);
 
     // En combate TODOS los roles ven el modal (atacante en "esperando",
     // defensor selecciona dados, espectador en modo lectura).
@@ -124,7 +140,7 @@ export class TableroEventService {
           conquista: ws.conquista,
           perdidasAtacante: ws.perdidasAtacante,
           perdidasDefensor: ws.perdidasDefensor,
-          duracionMs: ws.conquista ? 5000 : 4000,
+          duracionMs: ws.conquista ? 3000 : 2700,
         });
         break;
       }
@@ -178,6 +194,10 @@ export class TableroEventService {
           duracionMs: 3500,
         });
         break;
+      case 'FIN_PARTIDA':
+        // No se encola como notificación efímera — el TableroComponent lo
+        // maneja directamente con su animación de quemado + overlay.
+        break;
     }
   }
 
@@ -202,6 +222,53 @@ export class TableroEventService {
     this.processNext();
   }
 
+  /** Convierte un PartidaEventWs en una entrada de historial y la emite.
+   *  Devuelve la cadena vacía / no emite si el tipo no aplica al historial
+   *  (p.ej. ATAQUE_INICIADO, que es solo UI de combate en curso). */
+  private emitirHistorialDesdeWs(ws: PartidaEventWs): void {
+    let texto = '';
+    let tipo: HistorialEvento['tipo'] = 'normal';
+    switch (ws.tipo) {
+      case 'CONQUISTA':
+        texto = ws.conquista
+          ? `${ws.jugadorNombre} conquistó ${ws.paisDestino}`
+          : `${ws.jugadorNombre} atacó ${ws.paisDestino} desde ${ws.paisOrigen}`;
+        tipo = ws.conquista ? 'ataque' : 'normal';
+        break;
+      case 'ATAQUE':
+        texto = `${ws.jugadorNombre} atacó ${ws.paisDestino} desde ${ws.paisOrigen}`;
+        tipo = 'normal';
+        break;
+      case 'FIN_TURNO':
+        texto = ws.descripcion ?? `Fin de turno de ${ws.jugadorNombre}`;
+        tipo = 'ok';
+        break;
+      case 'INCORPORACION':
+        texto = ws.descripcion ?? `${ws.jugadorNombre} incorporó ejércitos`;
+        tipo = 'ok';
+        break;
+      case 'REAGRUPAMIENTO':
+        texto = ws.descripcion ?? `${ws.jugadorNombre} reagrupó tropas`;
+        tipo = 'ok';
+        break;
+      case 'TARJETA_OBTENIDA':
+        texto = ws.descripcion ?? `${ws.jugadorNombre} obtuvo una tarjeta`;
+        tipo = 'ok';
+        break;
+      case 'TARJETA_CANJEADA':
+        texto = ws.descripcion ?? `${ws.jugadorNombre} canjeó tarjetas`;
+        tipo = 'ok';
+        break;
+    }
+    if (texto) this.historialEventSubject.next({ texto, tipo });
+  }
+
+  /** Marca el evento siguiente con flag fastMode si la cola está saturada
+   *  (>2 pendientes). El componente lo usa para acortar el slot machine. */
+  private get backlogActivo(): boolean {
+    return this.queue.length > 2;
+  }
+
   private processNext(): void {
     if (this.queue.length === 0) {
       this.processing = false;
@@ -211,6 +278,8 @@ export class TableroEventService {
     }
     this.processing = true;
     const event = this.queue.shift()!;
+    // Inyectar fastMode al evento — permite al componente decidir cómo abreviar.
+    event.fastMode = this.backlogActivo;
     this.currentTipo = event.tipo;
     this.currentEventSubject.next(event);
 
@@ -221,14 +290,17 @@ export class TableroEventService {
     }
 
     if (event.tipo === 'RESULTADO_DADOS' || event.tipo === 'CONQUISTA') {
-      // Eventos de combate siempre con su duración completa
-      setTimeout(() => this.processNext(), event.duracionMs ?? 4000);
+      // En backlog (ráfaga de bots), reducimos la duración del combate a 1.5s
+      // para que el jugador no quede 3s × N esperando combates ya resueltos.
+      const duracion = event.fastMode
+        ? 1500
+        : event.duracionMs ?? 3000;
+      setTimeout(() => this.processNext(), duracion);
       return;
     }
 
-    // Notificaciones simples: si hay >2 eventos pendientes (bots actuando en ráfaga),
-    // reducir a 900ms para que el jugador no quede bloqueado esperando notificaciones pasadas
-    const duracion = this.queue.length > 2
+    // Notificaciones simples: si hay backlog, reducir a 900ms.
+    const duracion = event.fastMode
       ? Math.min(event.duracionMs ?? 3500, 900)
       : event.duracionMs ?? 3500;
 

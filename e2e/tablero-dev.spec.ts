@@ -459,11 +459,11 @@ test.describe('Sistema de notificaciones — visual y funcional', () => {
         await expect(page.locator('.ted-combat-title')).toBeVisible();
         await expect(page.locator('.ted-combatants')).toBeVisible();
         await expect(page.locator('.ted-dice-btns')).toBeVisible();
-        await expect(page.locator('.ted-attack-btn')).toBeVisible();
         await expect(page.locator('.ted-timer')).toBeVisible();
 
-        // Confirmar ataque
-        await page.locator('.ted-attack-btn').click();
+        // Lanzamiento automático: el primer click en una cantidad de dados
+        // ya dispara el ataque (se eliminó el botón LANZAR explícito).
+        await page.locator('.ted-dice-btn').first().click();
         await page.waitForTimeout(500);
 
         // Debe aparecer el resultado (result-panel o conquista-panel)
@@ -882,6 +882,137 @@ test.describe('Modal de país — posicionamiento inteligente', () => {
     if (!testeado) {
       console.log('No se encontró país en el borde inferior — puede depender del estado del mapa');
     }
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TARJETAS — refactor visual (chips mini + modal de detalle)
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('Tarjetas — vista mini y modal de detalle', () => {
+
+  test('el panel de tarjetas existe y el botón título es interactivo', async ({ page }) => {
+    const panel = page.locator('.tarjetas-panel');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.tarjetas-titulo-btn')).toHaveText(/TARJETAS/);
+  });
+
+  test('screenshot: panel izquierdo con chips mini', async ({ page }) => {
+    // Esperar 2s a que cargue el estado completo
+    await page.waitForTimeout(2_000);
+    const col = page.locator('.columna-izquierda');
+    await expect(col).toBeVisible();
+    await col.screenshot({ path: 'e2e/screenshots/tarjetas-panel-mini.png' });
+  });
+
+  test('click en el título TARJETAS abre el modal de detalle', async ({ page }) => {
+    test.setTimeout(60_000);
+    // Avanzar fases hasta acumular tarjetas (conquistar exige tiempo).
+    // Si no hay cartas todavía, el botón TARJETAS está disabled — saltamos.
+    const btnTitulo = page.locator('.tarjetas-titulo-btn');
+    const disabled = await btnTitulo.evaluate((el: HTMLButtonElement) => el.disabled);
+    if (disabled) {
+      console.log('Sin tarjetas — skip apertura de modal');
+      // Forzar apertura del modal igual: el sistema auto-abre con 5+ cartas en INCORPORACION
+      // Aquí sólo verificamos que el botón tenga el comportamiento adecuado en estado sin cartas
+      return;
+    }
+
+    await btnTitulo.click();
+    const modal = page.locator('.tarjetas-modal');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('.tarjetas-modal-titulo')).toHaveText(/CARTAS EN MANO/);
+
+    await page.screenshot({ path: 'e2e/screenshots/tarjetas-modal-detalle.png' });
+
+    // Cerrar con Escape
+    await page.keyboard.press('Escape');
+    await expect(modal).not.toBeVisible({ timeout: 2_000 });
+  });
+
+  test('los chips mini tienen el tamaño correcto (58×87, proporción 2:3)', async ({ page }) => {
+    const chips = page.locator('.tarjeta-mini');
+    const count = await chips.count();
+    if (count === 0) {
+      console.log('Sin tarjetas — skip verificación dimensiones');
+      return;
+    }
+    const box = await chips.first().boundingBox();
+    expect(box).toBeTruthy();
+    expect(Math.abs(box!.width - 58)).toBeLessThan(2);
+    expect(Math.abs(box!.height - 87)).toBeLessThan(2);
+  });
+
+  // ── Inyección de tarjetas mock vía `ng.getComponent` (Angular dev) ──
+  // Permite validar la presentación del panel y modal con datos reales
+  // sin depender de varios turnos de juego (conquistas). El polling de la
+  // partida sobrescribe cartasJugador cada ciclo, así que reinyectamos
+  // periódicamente durante el test.
+  test('screenshot: panel y modal con tarjetas mock inyectadas', async ({ page }) => {
+    await page.waitForTimeout(1_500);
+
+    const inyectado = await page.evaluate(() => {
+      const ng = (window as any).ng;
+      const host = document.querySelector('app-tablero');
+      if (!ng || !host) return false;
+      const comp: any = ng.getComponent(host);
+      if (!comp) return false;
+
+      const mock = (id: number, simbolo: string, pais: string) => ({
+        idEstadoTarjeta: id,
+        idJugador: comp.jugadorId ?? 1,
+        idTurno: 1,
+        usada: false,
+        canjeada: false,
+        jugadorTienePais: true,
+        tarjeta: { idtarjeta: id, simbolo, pais: { idPais: id, nombre: pais } }
+      });
+      const cartas = [
+        mock(1, 'CANION',  'Argentina'),
+        mock(2, 'GALEON',  'Brasil'),
+        mock(3, 'GLOBO',   'Egipto'),
+        mock(4, 'CANION',  'Japón'),
+        mock(5, 'COMODIN', 'India'),
+      ];
+      comp.cartasJugador = cartas;
+
+      // Reinyectar cada 250ms para resistir el polling de la partida
+      (window as any).__mockTarjetasInterval = setInterval(() => {
+        comp.cartasJugador = cartas;
+        try { comp.applicationRef?.tick?.(); } catch {}
+      }, 250);
+      return true;
+    });
+
+    if (!inyectado) {
+      console.log('No se pudo acceder al componente (ng global no disponible)');
+      return;
+    }
+
+    await page.waitForTimeout(400);
+
+    // Screenshot del panel con chips
+    const col = page.locator('.columna-izquierda');
+    await col.screenshot({ path: 'e2e/screenshots/tarjetas-panel-con-cartas.png' });
+
+    // Abrir el modal de detalle
+    await page.locator('.tarjetas-titulo-btn').click();
+    await page.waitForSelector('.tarjetas-modal', { timeout: 3_000 });
+    await page.waitForTimeout(400); // animación + posible re-inyección
+    await page.screenshot({ path: 'e2e/screenshots/tarjetas-modal-con-cartas.png' });
+
+    // El polling de la partida puede vaciar momentáneamente cartasJugador entre
+    // re-inyecciones; por eso el assertion sólo verifica que el modal esté
+    // visible. La evidencia real del render queda en los screenshots.
+    await expect(page.locator('.tarjetas-modal')).toBeVisible();
+    await expect(page.locator('.tarjetas-modal-titulo')).toHaveText(/CARTAS EN MANO/);
+
+    // Cleanup
+    await page.evaluate(() => {
+      const id = (window as any).__mockTarjetasInterval;
+      if (id) clearInterval(id);
+    });
   });
 
 });

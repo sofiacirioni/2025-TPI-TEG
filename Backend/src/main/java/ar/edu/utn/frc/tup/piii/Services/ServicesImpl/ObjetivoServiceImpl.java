@@ -1,5 +1,8 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
+import ar.edu.utn.frc.tup.piii.Dtos.FinPartidaDto;
+import ar.edu.utn.frc.tup.piii.Dtos.JugadorDto;
+import ar.edu.utn.frc.tup.piii.Dtos.JugadorResultadoDto;
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoDto;
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoItemDto;
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoProgresoDto;
@@ -18,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -392,5 +397,46 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                 .valorObjetivo(requerido)
                 .completado(actual >= requerido)
                 .build());
+    }
+
+    @Override
+    public FinPartidaDto construirFinPartida(Long idJugadorGanador) {
+        JugadorEntity ganador = jugadorRepository.findById(idJugadorGanador)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador ganador no encontrado."));
+
+        PartidaEntity partida = partidaRepository.findById(ganador.getPartida().getIdPartida())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Partida no encontrada."));
+
+        ObjetivoProgresoDto progresoGanador = calcularProgreso(idJugadorGanador);
+
+        JugadorDto ganadorDto = modelMapper.map(ganador, JugadorDto.class);
+        if (ganador.getUsuario() != null) {
+            ganadorDto.setUrl(ganador.getUsuario().getImagen());
+        }
+
+        List<JugadorResultadoDto> clasificacion = partida.getJugadores().stream()
+                .filter(j -> !j.getIdJugador().equals(idJugadorGanador))
+                .map(j -> {
+                    int paises = estadoPaisRepository
+                            .findEstadoPaisEntitiesByJugador_IdJugador(j.getIdJugador()).size();
+                    return JugadorResultadoDto.builder()
+                            .id(j.getIdJugador())
+                            .nombre(j.getNombre())
+                            .color(j.getColor() != null ? j.getColor().name() : null)
+                            .avatarUrl(j.getUsuario() != null ? j.getUsuario().getImagen() : null)
+                            .cantidadPaises(paises)
+                            .cantidadEjercitos(j.getEjercito() != null ? j.getEjercito() : 0)
+                            .eliminado(j.isPerdio() && paises == 0)
+                            .build();
+                })
+                .sorted(Comparator.comparingInt(JugadorResultadoDto::getCantidadPaises).reversed())
+                .collect(Collectors.toList());
+
+        return FinPartidaDto.builder()
+                .ganador(ganadorDto)
+                .objetivoCumplido(progresoGanador)
+                .clasificacion(clasificacion)
+                .momentoFin(LocalDateTime.now())
+                .build();
     }
 }
