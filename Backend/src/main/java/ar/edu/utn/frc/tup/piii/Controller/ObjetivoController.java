@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoDto;
+import ar.edu.utn.frc.tup.piii.Dtos.ObjetivoProgresoDto;
 import ar.edu.utn.frc.tup.piii.Services.ObjetivoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,5 +32,9 @@ public class ObjetivoController {
         return objetivoService.obtenerObjetivoById(id);
     }
 
-
+    /** Progreso en tiempo real del objetivo secreto del jugador. */
+    @GetMapping("/progreso/{idJugador}")
+    public ObjetivoProgresoDto getProgreso(@PathVariable Long idJugador) {
+        return objetivoService.calcularProgreso(idJugador);
+    }
 }

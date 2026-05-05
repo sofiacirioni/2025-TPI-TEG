@@ -1,0 +1,79 @@
+<div #overlayRoot class="fin-overlay" role="dialog" aria-modal="true" aria-label="Fin de partida">
+
+  <!-- Zona 1: Insignia del ganador + medalla TEG -->
+  <div class="zona-insignia">
+    <div class="insignia-wrap">
+      <!-- TODO: reemplazar con asset de insignia ganadora cuando esté disponible en assets/vectors/insignia-ganador.svg -->
+      <img class="insignia"
+           [src]="insigniaUrl"
+           [alt]="'Insignia ' + datos.ganador.color"
+           [style.background-color]="colorGanadorVar" />
+      <!-- TODO: reemplazar con asset de medalla TEG cuando esté disponible en assets/vectors/medalla-teg-oro.svg -->
+      <img class="medalla"
+           src="assets/images/tablero/teg-wax-seal.png"
+           alt="Medalla TEG" />
+    </div>
+  </div>
+
+  <!-- Zona 2: Identidad del ganador -->
+  <div class="zona-identidad">
+    <img class="avatar-ganador"
+         [src]="avatarGanador"
+         [alt]="datos.ganador.nombre" />
+    <div class="nombre-ganador" [style.color]="colorGanadorVar">
+      {{ datos.ganador.nombre }}
+    </div>
+  </div>
+  <div class="subtitulo-comandante">· COMANDANTE VICTORIOSO ·</div>
+
+  <!-- Zona 3: Objetivo cumplido -->
+  <div class="zona-objetivo">
+    <div class="separador"></div>
+    <div class="titulo-mision">· MISIÓN CUMPLIDA ·</div>
+    <p class="objetivo-desc">{{ datos.objetivoCumplido.descripcion }}</p>
+    <ul class="objetivo-items">
+      @for (item of datos.objetivoCumplido.items; track item.descripcion) {
+        <li class="objetivo-item">
+          <span class="check">■</span>
+          <span class="item-texto">{{ item.descripcion }}</span>
+          @if (item.valorObjetivo > 0) {
+            <span class="item-valor">{{ item.valorActual }}/{{ item.valorObjetivo }} ✓</span>
+          } @else {
+            <span class="item-valor">✓</span>
+          }
+        </li>
+      }
+    </ul>
+    <div class="separador"></div>
+  </div>
+
+  <!-- Zona 4: Bajas en combate -->
+  <div class="zona-bajas">
+    <div class="titulo-bajas">· BAJAS EN COMBATE ·</div>
+    <div class="lista-bajas">
+      @for (j of datos.clasificacion; track j.id) {
+        <div class="baja-card" [class.eliminado]="j.eliminado">
+          <img class="baja-avatar" [src]="avatarPara(j)" [alt]="j.nombre" />
+          <div class="baja-info">
+            <div class="baja-nombre" [style.color]="colorVarPara(j.color)">
+              {{ j.nombre }}
+            </div>
+            <div class="baja-paises">{{ j.cantidadPaises }} países</div>
+            @if (j.eliminado) {
+              <div class="baja-estado">· ELIMINADO ·</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Zona 5: Botón estadísticas -->
+  <button type="button"
+          class="btn-teg-dark btn-ver-estadisticas"
+          [class.disponible]="botonHabilitado"
+          [disabled]="!botonHabilitado"
+          (click)="onClickEstadisticas()">
+    · VER ESTADÍSTICAS ·
+  </button>
+</div>

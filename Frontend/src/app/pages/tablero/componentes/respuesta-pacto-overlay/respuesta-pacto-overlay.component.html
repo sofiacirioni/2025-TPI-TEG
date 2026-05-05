@@ -1,0 +1,71 @@
+<div class="resp-pacto-overlay" [class.no-bloqueante]="!esReceptor">
+  <div class="resp-pacto-tratado" (click)="$event.stopPropagation()">
+
+    <img class="resp-pacto-simbolo"
+         [src]="simboloTipo"
+         alt="" aria-hidden="true">
+
+    <div class="resp-pacto-header">
+      <h2 class="resp-pacto-titulo">PROPUESTA DE TRATADO</h2>
+      <p class="resp-pacto-subtitulo">· Documento diplomático ·</p>
+    </div>
+
+    <div class="resp-pacto-jugadores">
+      <div class="resp-jug">
+        @if (avatarJugadorA(); as src) {
+          <img class="resp-avatar resp-avatar--img" [src]="src" alt=""
+               [style.border-color]="colorVar(pacto.colorJugadorA)">
+        } @else {
+          <div class="resp-avatar" [style.background-color]="colorVar(pacto.colorJugadorA)"></div>
+        }
+        <div class="resp-nombre" [style.color]="colorVar(pacto.colorJugadorA)">
+          {{ pacto.nombreJugadorA }}
+        </div>
+      </div>
+      <div class="resp-flecha">⟷</div>
+      <div class="resp-jug">
+        @if (avatarJugadorB(); as src) {
+          <img class="resp-avatar resp-avatar--img" [src]="src" alt=""
+               [style.border-color]="colorVar(pacto.colorJugadorB)">
+        } @else {
+          <div class="resp-avatar" [style.background-color]="colorVar(pacto.colorJugadorB)"></div>
+        }
+        <div class="resp-nombre" [style.color]="colorVar(pacto.colorJugadorB)">
+          {{ pacto.nombreJugadorB }}
+        </div>
+      </div>
+    </div>
+
+    <div class="resp-pacto-tipo">{{ tituloTipo }}</div>
+    <div class="resp-pacto-desc">{{ descripcion }}</div>
+
+    @if (resultado) {
+      <div class="resp-pacto-resultado"
+           [class.resultado-aprobado]="resultado === 'ACEPTADO'"
+           [class.resultado-rechazado]="resultado === 'RECHAZADO'">
+        {{ resultado === 'ACEPTADO' ? 'APROBADO' : 'RECHAZADO' }}
+      </div>
+    } @else if (esReceptor) {
+      <div class="resp-pacto-actions">
+        <button class="btn-teg-primary"
+                [disabled]="enviando"
+                (click)="aceptar()">
+          · ACEPTAR ·
+        </button>
+        <button class="btn-teg-danger"
+                [disabled]="enviando"
+                (click)="rechazar()">
+          · RECHAZAR ·
+        </button>
+      </div>
+      <div class="resp-pacto-countdown">
+        Tiempo restante: <strong>{{ countdown }}s</strong>
+      </div>
+    } @else {
+      <div class="resp-pacto-esperando">
+        Esperando respuesta de
+        <strong [style.color]="colorVar(pacto.colorJugadorB)">{{ pacto.nombreJugadorB }}</strong>...
+      </div>
+    }
+  </div>
+</div>

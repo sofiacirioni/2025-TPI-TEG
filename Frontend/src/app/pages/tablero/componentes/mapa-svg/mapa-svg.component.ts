@@ -8,16 +8,6 @@ export interface PaisClickEvent {
   event: MouseEvent;
 }
 
-/** Colores de borde por continente para distinguir regiones en el mapa */
-const CONTINENT_BORDER_COLORS: Record<string, string> = {
-  'America del norte': 'rgba(191,104,0,0.55)',
-  'America del sur':  'rgba(160,21,21,0.55)',
-  'Europa':           'rgba(26,64,128,0.55)',
-  'Africa':           'rgba(107,76,0,0.55)',
-  'Asia':             'rgba(107,36,144,0.55)',
-  'Oceania':          'rgba(30,122,80,0.55)',
-};
-
 /** Tintes de relleno por continente para países neutros */
 const CONTINENT_NEUTRAL_COLORS: Record<string, string> = {
   'America del norte': 'rgba(191,104,0,0.13)',
@@ -26,6 +16,16 @@ const CONTINENT_NEUTRAL_COLORS: Record<string, string> = {
   'Africa':            'rgba(107,76,0,0.13)',
   'Asia':              'rgba(107,36,144,0.13)',
   'Oceania':           'rgba(30,122,80,0.13)',
+};
+
+/** Colores de relleno por continente para el modo overlay de continentes */
+export const CONTINENT_FILL_COLORS: Record<string, string> = {
+  'America del norte': 'rgba(191,104,0,0.35)',
+  'America del sur':   'rgba(160,21,21,0.35)',
+  'Europa':            'rgba(26,64,128,0.35)',
+  'Africa':            'rgba(107,76,0,0.35)',
+  'Asia':              'rgba(107,36,144,0.35)',
+  'Oceania':           'rgba(30,122,80,0.35)',
 };
 
 @Component({
@@ -37,6 +37,7 @@ const CONTINENT_NEUTRAL_COLORS: Record<string, string> = {
 export class MapaSvgComponent implements OnChanges, OnInit {
   @Input() paises: EstadoPaisDto[] = [];
   @Input() jugadores: JugadorDto[] = [];
+  @Input() modoContinente = false;
   @Output() paisClickeado = new EventEmitter<PaisClickEvent>();
 
   mapaPais: paisSVG[] = [];
@@ -55,7 +56,7 @@ export class MapaSvgComponent implements OnChanges, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['paises'] && this.svgCargado) {
+    if ((changes['paises'] || changes['modoContinente']) && this.svgCargado) {
       this.construirMapaPais();
     }
   }
@@ -116,12 +117,16 @@ export class MapaSvgComponent implements OnChanges, OnInit {
     this.mapaPais = this.paises.map(estadoPais => {
       const centroid = this.svgCentroidsCache.get(estadoPais.pais.idPais) ?? { cx: 0, cy: 0 };
       const continente = this.svgContinentCache.get(estadoPais.pais.idPais) ?? '';
+      const color = this.modoContinente
+        ? (CONTINENT_FILL_COLORS[continente] ?? 'rgba(239,232,206,0.18)')
+        : this.getColorPais(estadoPais, continente);
+
       return {
         id: estadoPais.pais.idPais,
         nombre: estadoPais.pais.nombre,
-        color: this.getColorPais(estadoPais, continente),
+        color,
         colorSolido: this.getColorSolido(estadoPais),
-        colorBorde: CONTINENT_BORDER_COLORS[continente] ?? 'rgba(67,42,30,0.35)',
+        colorBorde: '',
         svgToken: this.getSvgToken(estadoPais),
         tropas: estadoPais.cantidadTropas,
         borde: 1,

@@ -1,0 +1,15 @@
+<button class="boton-pactos"
+        [class.deshabilitado]="!esMiTurno"
+        [attr.aria-label]="ariaLabel"
+        [attr.title]="tooltip"
+        (click)="onClick()">
+  <img class="boton-pactos__hojas"
+       src="assets/images/tablero/players-pacts-pages.png"
+       alt="" />
+  <img class="boton-pactos__pluma"
+       src="assets/images/tablero/players-pacts-pen.png"
+       alt="" />
+  @if (cantidadPactosActivos > 0) {
+    <span class="boton-pactos__badge">{{ cantidadPactosActivos }}</span>
+  }
+</button>

@@ -47,7 +47,9 @@ form {
     0 8px 32px rgba(0, 0, 0, 0.65),
     inset 0 0 40px rgba(50, 28, 8, 0.10);
   overflow: visible;
+  // Grunge vintage → clase global .paper-grunge en el HTML (ver _surfaces.scss).
 }
+
 
 // Borde decorativo SVG (esquinas redondeadas, stroke #a01515)
 // preserveAspectRatio="none" en el SVG permite que se estire al tamaño del card

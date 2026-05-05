@@ -26,9 +26,9 @@
 .tablero-vignette {
   position: absolute; inset: 0; pointer-events: none;
   z-index: calc(var(--z-vignette) + 1);
-  background: radial-gradient(ellipse 90% 80% at 50% 40%,
-    transparent 35%, rgba(4,2,1,0.25) 60%,
-    rgba(4,2,1,0.55) 85%, #040201 100%);
+  background: radial-gradient(ellipse 95% 88% at 50% 42%,
+    transparent 50%, rgba(4,2,1,0.18) 68%,
+    rgba(4,2,1,0.42) 88%, rgba(4,2,1,0.7) 100%);
 }
 
 .tablero-luz {
@@ -100,6 +100,19 @@
   animation: parpadeo 0.8s ease-in-out infinite alternate;
 }
 
+.info-inactividad {
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(198,156,109,0.7);
+  transition: color 0.3s;
+
+  &.inactividad-critica {
+    color: var(--color-sello);
+    animation: parpadeo 0.5s ease-in-out infinite alternate;
+  }
+}
+
 @keyframes parpadeo {
   from { opacity: 1; }
   to   { opacity: 0.5; }
@@ -124,11 +137,16 @@
   background: rgba(198,156,109,0.85); border-color: transparent;
 }
 
+// Botón AVANZAR FASE — pill rojo translúcido, en línea con la barra superior.
+// Padding asimétrico (top mayor que bottom) + line-height:1 replica el patrón
+// del design system %btn-teg-base, que compensa el baseline alto de Special
+// Elite — sin esto el texto se ve "subido" dentro del pill.
 .btn-avanzar {
   font-family: var(--font-heading); font-size: 8px;
   letter-spacing: 0.12em; color: var(--color-claro);
   background: rgba(160,21,21,0.35); border: 0.5px solid rgba(160,21,21,0.6);
-  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+  border-radius: 999px; padding: 7px 12px 4px; cursor: pointer;
+  line-height: 1;
   align-self: center; transition: background 0.15s;
 
   &:hover { background: rgba(160,21,21,0.55); }
@@ -144,62 +162,206 @@
   &:hover { background: rgba(107,76,0,0.55); }
 }
 
-// ── Sobre del objetivo ────────────────────────────────────────────
-.sobre-objetivo {
-  position: absolute; top: 12px; left: 12px;
-  z-index: calc(var(--z-vignette) + 3); cursor: pointer; width: 90px;
-  filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
+// ── Columna izquierda: sobre + objetivo + panel ─────────────────
+.columna-izquierda {
+  position: absolute;
+  top: 12px; left: 8px; bottom: 48px;
+  width: 200px;
+  z-index: calc(var(--z-vignette) + 3);
+  display: flex; flex-direction: column;
+  gap: $space-4;
+  pointer-events: none;         // deja pasar clicks al mapa por defecto
+  > * { pointer-events: auto; } // cada hijo sí captura clicks
 }
 
+// ── Sobre del objetivo + modal ───────────────────────────────────
+// El wrapper es position:absolute en el tablero-container y sirve como
+// contexto relativo para el modal. El modal usa inset:0 dentro del wrapper,
+// por lo tanto ocupa EXACTAMENTE el mismo bounding-box del sobre — no tapa
+// el registro de operaciones ni el resto del panel izquierdo debajo.
+// ── Columna izquierda — flex column única ───────────────────────
+// Contiene el sobre/objetivo (alto natural según contenido) y el panel
+// con historial/tarjetas/chat. El modal del objetivo crece según su
+// contenido y empuja al panel hacia abajo; el panel se ajusta con flex
+// y sus secciones internas tienen scroll si se quedan sin espacio.
+.columna-izquierda {
+  position: absolute;
+  top: 12px; left: 8px; bottom: 48px;
+  width: 200px;
+  z-index: calc(var(--z-vignette) + 2);
+  display: flex; flex-direction: column;
+  gap: $space-3;
+  // No pointer-events:none aquí — interfiere con hit-testing en algunos
+  // navegadores y rompe clicks sobre el sobre. La columna ocupa solo 200px
+  // a la izquierda; el mapa central queda libre para recibir clicks.
+}
+
+.sobre-wrapper {
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  z-index: 1;
+}
+
+.sobre-objetivo {
+  flex-shrink: 0;
+  cursor: pointer; width: 200px;
+  filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.55));
+  // perspective para que el hover rotateX de la solapa sea 3D visible
+  perspective: 500px;
+  // Fade-in al aterrizar la revelación (cuando reaparece en el tablero)
+  animation: sobre-obj-appear 0.35s ease both;
+
+  // Durante la revelación el elemento permanece en el DOM pero invisible
+  // para que el sobre grande aterrice sobre esta posición.
+  // opacity:0 mantiene bounding-box, evitando problemas con tests e2e
+  // que esperan que .sobre-objetivo exista en el tablero.
+  &.invisible {
+    opacity: 0;
+    pointer-events: none;
+    animation: none;
+  }
+}
+
+@keyframes sobre-obj-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// Sobre del tablero — mismo lenguaje visual que el sobre de revelación
+// (textura sutil tipo papel + sello PNG). Proporciones equivalentes al grande:
+//   grande: 440px ancho, flap 110px, lacre 64px
+//   chico:  200px ancho, flap  50px, lacre 30px
 .sobre-paper {
-  background: #EDE5B0;
-  border: 0.5px solid rgba(100,80,20,0.35);
+  background: #C8A96E;
+  border: 0.5px solid rgba(100,60,10,0.4);
   border-radius: 1px;
-  padding: 10px 8px 8px;
-  min-height: 100px;
+  padding: 58px 8px 8px;      // deja espacio para flap (50px) + margen
+  min-height: 50px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   position: relative;
+  // Textura sutil de papel (match surface-paper mixin)
+  &::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+      transparent 1px, transparent 9px
+    );
+    pointer-events: none;
+  }
 }
 
 .sobre-solapa {
-  position: absolute; top: 0; left: 0; right: 0; height: 30px;
-  background: #D4C878;
+  position: absolute; top: 0; left: 0; right: 0; height: 50px;
+  background: linear-gradient(180deg, #D0B173 0%, #BE9A5C 70%, #A88340 100%);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transition: transform 0.3s;
-  transform-origin: top;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.4, 1);
+  transform-origin: top center;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  z-index: 1;
+
+  // Textura sutil también en la solapa
+  &::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+      transparent 1px, transparent 9px
+    );
+    pointer-events: none;
+  }
 }
 
 .sobre-objetivo:hover .sobre-solapa {
-  transform: rotateX(160deg);
+  transform: perspective(500px) rotateX(165deg);
 }
 
-.sobre-sello {
-  font-family: var(--font-heading); font-size: 9px;
-  letter-spacing: 0.1em; color: rgba(160,21,21,0.7);
-  border: 0.5px solid rgba(160,21,21,0.45);
-  padding: 2px 5px; border-radius: 1px;
-  transform: rotate(-5deg); margin-top: 28px;
+.sobre-objetivo:hover .sobre-lacre-mini {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.85);
+}
+
+// Lacre PNG (mismo asset que el sobre grande). Posicionado sobre la punta
+// inferior del triángulo: top = flap-height − lacre/2 → centrado en el vértice.
+.sobre-lacre-mini {
+  position: absolute; top: 35px; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  z-index: 2; pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.3s ease;
+}
+
+// Sello TOP SECRET — SVG en lugar del badge CSS. Aspect ratio 185.24:67.87 ≈ 2.73:1.
+// Width 100px → height ~37px. Rotado 5° para verse "estampado".
+.sobre-stamp {
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+  transform: rotate(-5deg);
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 2px rgba(160, 21, 21, 0.25));
+  // El SVG ya está en rojo #d51218 — mezcla multiply lo asienta sobre el papel
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 .sobre-label {
-  font-family: var(--font-heading); font-size: 7px;
-  letter-spacing: 0.05em; color: rgba(100,80,20,0.5);
+  font-family: var(--font-heading); font-size: $text-caption;
+  letter-spacing: 0.05em; color: rgba(67,42,30,0.7);
 }
 
+// Modal del objetivo secreto — sustituye visualmente al sobre dentro del
+// mismo wrapper (el sobre se quita del flujo via :has() abajo). Posición
+// relativa, altura natural según contenido — empuja al panel inferior y
+// las secciones internas se compactan. Tope (max-height) garantiza que
+// siempre quede ~280px para historial+tarjetas+chat; si excede, el cuerpo
+// interno (.objetivo-cuerpo) hace scroll.
 .objetivo-modal {
-  position: absolute; top: 90px; left: 12px;
-  width: 210px; z-index: calc(var(--z-vignette) + 3);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 2;
   background: var(--color-claro);
   background-image: repeating-linear-gradient(44deg,
     rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
     transparent 1px, transparent 7px);
-  border-radius: 1px; padding: 12px;
+  border-radius: 1px;
+  padding: 10px 12px;
   box-shadow: 2px 2px 14px rgba(0,0,0,0.65);
   animation: popIn 0.2s ease;
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 280px);
+}
+
+// Cuando el modal está renderizado, el sobre se quita del flujo para que
+// el wrapper adopte el alto natural del modal y empuje al panel debajo.
+.sobre-wrapper:has(.objetivo-modal) .sobre-objetivo {
+  display: none;
+}
+
+.objetivo-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67,42,30,0.25) transparent;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(67,42,30,0.25);
+    border-radius: 2px;
+  }
 }
 
 .objetivo-titulo {
-  font-family: var(--font-heading); font-size: 8px;
+  font-family: var(--font-heading); font-size: $text-caption;
   letter-spacing: 0.14em; color: rgba(67,42,30,0.5);
   text-transform: uppercase; margin-bottom: 8px;
   border-bottom: 0.5px solid rgba(160,21,21,0.2);
@@ -208,8 +370,57 @@
 
 .objetivo-texto {
   font-family: var(--font-body); font-weight: 300;
-  font-size: 11px; color: rgba(67,42,30,0.85); line-height: 1.6;
+  font-size: $text-sm; color: var(--color-sello); line-height: 1.6;
   font-style: italic;
+}
+
+.objetivo-desc {
+  font-family: var(--font-body); font-size: $text-sm; color: var(--color-oscuro);
+  margin: 0 0 6px; line-height: 1.4; font-style: italic;
+}
+
+.objetivo-divider {
+  height: 1px; background: rgba(160,21,21,0.25); margin: 4px 0 6px;
+}
+
+.objetivo-items {
+  list-style: none; padding: 0; margin: 0;
+}
+
+.objetivo-item {
+  display: flex; align-items: flex-start; gap: 5px;
+  font-family: var(--font-body); font-size: $text-caption; color: var(--color-oscuro);
+  padding: 2px 0; border-bottom: 1px dashed rgba(67,42,30,0.15);
+  &:last-child { border-bottom: none; }
+  &.completado { color: var(--color-secondary); .obj-check { color: var(--color-secondary); } }
+}
+
+.obj-check {
+  flex-shrink: 0; font-size: 0.65rem; color: var(--color-oscuro); line-height: 1.6;
+}
+
+.obj-texto {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; line-height: 1.5;
+}
+
+.obj-cuenta {
+  font-family: var(--font-heading); font-size: $text-caption;
+  color: var(--color-medio); letter-spacing: 0.06em; white-space: nowrap;
+}
+
+.objetivo-convertido {
+  font-family: var(--font-heading); font-size: $text-caption;
+  color: var(--color-sello); letter-spacing: 0.08em;
+  margin: 6px 0 0; opacity: 0.8;
+}
+
+// ── Notificaciones de juego (overlay sobre el mapa) ──────────────
+app-tablero-event-display {
+  position: absolute;
+  top: 80px; bottom: 48px;
+  left: 280px; right: 267px;
+  z-index: calc(var(--z-vignette) + 6);
+  pointer-events: none;
 }
 
 // ── Mapa central ─────────────────────────────────────────────────
@@ -256,6 +467,19 @@
   opacity: 0.4;
 }
 
+// Botón de pactos: vive dentro de .panel-derecho como último hijo flex-column.
+// margin-top: auto lo empuja al fondo del panel; padding-bottom alinea su base
+// con el borde inferior del mapa (.mapa-zona { bottom: 48px }) — el panel
+// derecho termina a bottom: 8px, así que 40px de padding-bottom dejan el botón
+// a 48px del borde inferior de la viewport.
+.boton-pactos-wrap {
+  margin-top: auto;
+  padding: 0 0 40px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 // Botones circulares de zoom
 .ctrl-btn {
   width: 28px; height: 28px;
@@ -265,6 +489,44 @@
   flex-shrink: 0;
 
   svg { display: block; }
+}
+
+// Botón de continentes activo
+.ctrl-btn--activo {
+  opacity: 1 !important;
+  background: rgba(239,232,206,0.15);
+  outline: 1px solid rgba(239,232,206,0.35);
+  outline-offset: 1px;
+}
+
+// ── Leyenda de continentes ──────────────────────────────────────
+// Se distribuye a lo ancho del mapa (mismo left/right que .mapa-zona) con
+// space-between para que los items queden repartidos uniformemente entre los
+// bordes izquierdo y derecho del mapa.
+.leyenda-continentes {
+  position: absolute;
+  bottom: 24px;
+  left: 280px; right: 267px;
+  z-index: calc(var(--z-vignette) + 3);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: $space-2;
+  padding: 5px 12px;
+  pointer-events: none;
+}
+
+.leyenda-item {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--font-heading);
+  font-size: $text-caption;
+  color: rgba(239,232,206,0.85);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+
+.leyenda-color {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 1px solid rgba(239,232,206,0.4);
 }
 
 // ── Modal de país ─────────────────────────────────────────────────
@@ -295,12 +557,16 @@
 }
 
 // Tira del nombre: ocupa el ancho completo del papel (sin padding lateral)
+// box-shadow paralela sin blur = segundo papel sobresaliendo por debajo-derecha.
 .modal-nombre-strip {
   position: relative;
   display: flex; align-items: center; justify-content: center;
   padding: 12px 32px;
   background: darken($color-claro, 22%); // ~#BFB07A — oliva cálido oscurecido del papel
-  margin-left: 10px; margin-right: 10px; 
+  margin-left: 10px; margin-right: 10px;
+  box-shadow:
+    3px 3px 0 0 rgba(90, 60, 28, 0.18),
+    6px 6px 0 0 rgba(90, 60, 28, 0.10);
 }
 
 .modal-nom {
@@ -377,6 +643,10 @@
 }
 
 .modal-input {
+  // box-sizing: border-box → el width:100% incluye padding y border y respeta
+  // los 12px de padding-right de .modal-cuerpo. Sin esto el input excede el
+  // contenedor por (border + padding) ≈ 11px y se "come" la separación derecha.
+  box-sizing: border-box;
   width: 100%;
   background: rgba(67,42,30,0.06);
   border: 0.5px solid rgba(67,42,30,0.2);
@@ -384,12 +654,49 @@
   font-family: var(--font-body); font-size: 11px;
   color: rgba(67,42,30,0.85); outline: none;
 
+  // Eliminar las flechas spinner del input number — no encajan con la estética
+  // y suelen sobresalir del borde derecho.
+  &[type='number'] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  &[type='number']::-webkit-outer-spin-button,
+  &[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
   &:focus { border-color: rgba(67,42,30,0.45); }
 }
 
 .modal-select {
   @extend .modal-input;
   cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  // Chevron warm-dark + textura papelera para alinearse con .modal-papel
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M1 1l3 3 3-3' stroke='%23432A1E' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
+    repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.05) 0px, rgba(88, 58, 24, 0.05) 1px,
+      transparent 1px, transparent 7px
+    ),
+    linear-gradient(rgba(67, 42, 30, 0.06), rgba(67, 42, 30, 0.06));
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: right 6px center, 0 0, 0 0;
+  background-size: 8px 5px, auto, auto;
+  // Espacio derecho para el chevron sin invadir el texto
+  padding: 4px 18px 3px 5px;
+
+  option {
+    background: var(--color-claro);
+    color: var(--color-oscuro);
+    font-family: var(--font-body);
+    font-size: 11px;
+  }
 }
 
 // Override de tamaño para btn-teg-* dentro del modal de país
@@ -428,12 +735,41 @@
   &:hover { background: rgba(26,64,128,0.3); }
 }
 
-.btn-modal-cerrar {
-  background: none; border: none; cursor: pointer;
-  font-family: var(--font-body); font-size: 8px;
-  color: rgba(67,42,30,0.35); align-self: flex-end;
-  padding: 2px 0; transition: color 0.15s;
-  &:hover { color: var(--color-sello); }
+// Close ✕ minimalista — top-right del modal-pais, sobre el borde de color del jugador.
+// Mismo patrón que .pactos-cerrar (sin recuadro), pero color oscuro para contrastar
+// con el fondo claro del jugador.
+.modal-close-x {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  color: rgba(255, 245, 220, 0.85);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  transition: color 150ms ease, transform 150ms ease;
+
+  &:hover, &:focus-visible {
+    color: var(--color-claro);
+    transform: scale(1.18);
+    outline: none;
+  }
+}
+
+// Aviso pequeño cuando no se puede atacar (1 sola tropa)
+.modal-aviso {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 9px;
+  color: var(--color-sello);
+  text-align: center;
+  line-height: 1.3;
 }
 
 // ── Resultado de ataque ───────────────────────────────────────────
@@ -511,252 +847,889 @@
 }
 
 // ── Panel jugadores (derecha) ─────────────────────────────────────
+// overflow:visible (no hidden) para no recortar el ficha-turn-frame, que se
+// extiende hacia la izquierda (left: -23px del wrapper del avatar).
 .panel-derecho {
   position: absolute;
   top: 130px; right: 6px; bottom: 8px;
   width: 200px; z-index: calc(var(--z-vignette) + 2);
   display: flex; flex-direction: column; gap: 5px;
-  overflow: hidden;
+  overflow: visible;
 }
 
+// padding-left amplio para dejar correr el frame de turno (que sobresale 23px
+// hacia la izquierda del avatar). Si fuese menor, el frame se recortaría — la
+// regla CSS Overflow Module 3 fuerza overflow-x:auto cuando overflow-y:auto.
 .panel-jugadores {
-  display: flex; flex-direction: column; gap: $space-2;
+  display: flex; flex-direction: column; gap: $space-6;
   flex: 1;
   overflow-y: auto;
+  overflow-x: visible;
   scrollbar-width: none;
-  margin-top: $space-2;
+  padding: $space-2 $space-1 $space-2 $space-6;
 }
 
 .ficha-jugador {
-  display: flex; align-items: center; gap: 8px;
-  padding: $space-2;
+  display: flex; align-items: center; gap: 10px;
   transition: opacity 0.2s;
 
+  // Luz difuminada al turno activo — drop-shadow respeta el alfa del PNG de
+  // la insignia, así el resplandor nace del contorno real de la pieza y no
+  // se extiende como un rectángulo sobre el avatar ni los iconos de stats.
+  // Opacidades bajas para que sea sutil — el marco decorativo (ficha-turn-frame)
+  // es el indicador principal del turno, esto solo aporta calidez.
   &.activo .ficha-insignia {
-    filter: drop-shadow(0 0 4px rgba(255,220,80,0.5));
+    filter:
+      drop-shadow(0 0 3px rgba(255, 220, 140, 0.35))
+      drop-shadow(0 0 8px rgba(255, 220, 140, 0.20))
+      drop-shadow(0 0 16px rgba(255, 210, 120, 0.10));
+    transition: filter 0.35s ease;
   }
 }
 
+.ficha-avatar-wrapper {
+  position: relative;
+  width: 44px; height: 44px; flex-shrink: 0;
+  // El marco decorativo (ficha-turn-frame) es 90×76px y se posiciona con
+  // offset negativo — no recortar, dejar que sobresalga del wrapper.
+  overflow: visible;
+}
+
 .ficha-avatar-circle {
-  width: 42px; height: 42px; flex-shrink: 0;
+  width: 44px; height: 44px;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(100,80,60,0.25);
-  border: 1px solid rgba(198,156,109,0.2);
+  background: rgba(100,80,60,0.3);
+  border: 1px solid rgba(198,156,109,0.25);
+}
 
-  img { width: 100%; height: 100%; object-fit: cover; }
+.ficha-turn-frame {
+  // PNG 838×708: hueco de la corona ~410px centrado en (50%, 55% del alto).
+  // Escalado para que el avatar (44px) quede contenido: marco 90×76px con el
+  // hueco en (45, 42) — se posiciona con offset negativo para que el sol
+  // sobresalga por encima del avatar.
+  // top:-17px: ajuste fino para que el corte inferior del sol toque la curva
+  // superior del marco circular del avatar sin invadirlo.
+  position: absolute;
+  width: 90px; height: 76px;
+  left: -23px; top: -17px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  .ficha-jugador.activo & {
+    opacity: 1;
+  }
+}
+
+.ficha-avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
 }
 
 .ficha-info {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 3px;
+  display: flex; flex-direction: column; gap: 4px;
 }
 
 .ficha-nombre {
-  font-family: var(--font-heading); font-size: 8px;
-  letter-spacing: 0.06em; color: rgba(239,232,206,0.8);
+  font-family: var(--font-heading); font-size: $text-sm;
+  letter-spacing: 0.06em; color: rgba(239,232,206,0.9);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 5px;
 }
 
 .ficha-insignia {
   display: block; width: 100%; height: auto;
-  max-height: 28px; object-fit: contain;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.55));
 }
 
 .ficha-stats {
-  font-family: var(--font-body); font-weight: 300;
-  font-size: 6px; color: rgba(198,156,109,0.45);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.ficha-stat-item {
+  display: flex; align-items: center; gap: 3px;
+  cursor: default;
+}
+
+.ficha-stat-icon {
+  width: 12px; height: 12px; flex-shrink: 0;
+  fill: var(--color-claro);
+  opacity: 0.65;
+  transition: opacity 0.15s;
+
+  .ficha-stat-item:hover & {
+    opacity: 1;
+  }
+}
+
+.ficha-stat-val {
+  font-family: var(--font-body); font-weight: 400;
+  font-size: $text-caption; color: var(--color-claro);
+  opacity: 0.65;
+  line-height: 1;
 }
 
 .ficha-bot {
-  font-family: var(--font-heading); font-size: 5px;
-  color: rgba(198,156,109,0.4); letter-spacing: 0.06em;
+  font-family: var(--font-heading); font-size: 7px;
+  color: rgba(198,156,109,0.45); letter-spacing: 0.06em;
 }
 
 // ── Panel izquierdo ───────────────────────────────────────────────
+// El panel vive dentro de .columna-izquierda — flex: 1 absorbe el espacio
+// que sobra entre el sobre (o el modal del objetivo) y el borde inferior.
+// Sus secciones se ordenan: historial (flex 1, scroll interno) → tarjetas
+// (alto fijo para 6 cartas máximo) → chat (alto fijo para 2-3 mensajes).
 .panel-izquierdo {
-  position: absolute;
-  top: 120px; left: 8px; bottom: 8px;
-  width: 200px; z-index: calc(var(--z-vignette) + 2);
-  display: flex; flex-direction: column; gap: 16px;
+  position: relative;
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex; flex-direction: column; gap: $space-4;
+  overflow: hidden;
 }
 
-// Historial
+// Historial — alto compacto que muestra 2-3 movimientos visibles. Los más
+// antiguos quedan accesibles vía scroll interno. Esto libera espacio para que
+// las tarjetas y conversaciones tengan respiración cuando el objetivo es largo.
+// flex-basis fijo es clave para que .historial-lista (flex:1 1 0 interno)
+// tenga un padre con alto definido y distribuya correctamente.
 .historial-panel {
   padding: $space-2;
-  flex: 0 0 auto;
+  flex: 0 0 clamp(80px, 12vh, 110px);
+  min-height: 0;
   display: flex; flex-direction: column;
 }
 
 .historial-titulo {
-  font-family: var(--font-heading); font-size: 7px;
+  font-family: var(--font-heading); font-size: $text-caption;
   letter-spacing: 0.14em; color: rgba(239,232,206,0.55);
   text-transform: uppercase;
   border-bottom: 0.5px solid rgba(198,156,109,0.15);
   padding-bottom: 4px; margin-bottom: 6px;
+  flex: 0 0 auto;
 }
 
 .historial-lista {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column; gap: 3px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(198,156,109,0.25) transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(198,156,109,0.25);
+    border-radius: 2px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(198,156,109,0.45);
+  }
 }
 
 .hist-item {
   font-family: 'Courier Prime', 'Courier New', monospace;
-  font-size: 8px; color: rgba(239,232,206,0.5);
+  font-size: $text-caption; color: rgba(239,232,206,0.5);
   line-height: 1.4; padding-bottom: 3px;
   border-bottom: 0.5px solid rgba(198,156,109,0.05);
 
-  &.hist-ataque { color: rgba(160,21,21,0.75); }
-  &.hist-ok     { color: rgba(55,120,70,0.8); }
+  &.hist-ataque { color: rgba(191,104,0,0.90); }
+  &.hist-ok     { color: rgba(184,216,213,0.85); }
+  &.hist-pacto  { color: rgba(120,160,210,0.90); font-style: italic; }
 }
 
-// Tarjetas
+// ── Tarjetas (panel mini) ────────────────────────────────────────
+// Colores de tinta de grabado para los símbolos. Distintos de los colores
+// de jugador para evitar confusión semántica.
+$card-canion : #2A6B4A;  // verde militar — tanque/cañón
+$card-galeon : #2A5F8F;  // azul marino  — barco
+$card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
+
+// Mixin: aplica un SVG como mask con un color sólido como fondo.
+@mixin simbolo-mask($url, $color) {
+  background-color: $color;
+  -webkit-mask-image: url($url);
+          mask-image: url($url);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+}
+
+// Grid de 3 columnas con scroll vertical limitado para que no domine la
+// columna izquierda cuando el jugador acumula muchas cartas. Padding
+// horizontal para alinear con el resto del panel.
 .tarjetas-panel {
-  padding: $space-2; flex: 1; overflow: hidden;
+  padding: $space-2 0;
+  flex: 0 0 auto;
+  display: flex; flex-direction: column;
+  max-height: 200px;
+  min-height: 0;
 }
 
-.tarjetas-titulo { @extend .historial-titulo; border-bottom: none; padding-bottom: 0; margin-bottom: 4px; }
+.tarjetas-titulo {
+  @extend .historial-titulo;
+  border-bottom: none; padding-bottom: 0; margin-bottom: 6px;
+  padding-left: $space-2; padding-right: $space-2;
+}
 
+// Versión clickable: hereda de .tarjetas-titulo pero comporta como botón.
+// Contiene el texto a la izquierda y la luz indicadora de canjes a la derecha.
+.tarjetas-titulo-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  width: 100%;
+
+  &:hover:not(:disabled) { color: rgba(239,232,206,0.85); }
+  &:disabled { cursor: default; opacity: 0.4; }
+}
+
+.tarjetas-titulo-text {
+  display: inline-block;
+}
+
+// Luz tipo LED a la derecha del título: verde + halo cuando hay canjes posibles,
+// gris oscuro y apagada cuando no hay. La transición de halo es suave para que
+// el cambio de estado al ganar la 3ª carta del set se vea como un "encendido".
+.tarjetas-canje-light {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #2a2a2a;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+
+  &.encendida {
+    background: radial-gradient(circle at 35% 30%, #6dff8a 0%, #25b04a 60%, #0e6a28 100%);
+    border-color: rgba(14, 90, 30, 0.9);
+    box-shadow: 0 0 4px rgba(110, 255, 138, 0.55),
+                0 0 9px rgba(75, 220, 110, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    animation: tarjetas-canje-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tarjetas-canje-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(110, 255, 138, 0.55),
+                0 0 9px rgba(75, 220, 110, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 6px rgba(110, 255, 138, 0.85),
+                0 0 14px rgba(75, 220, 110, 0.55),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+}
+
+// Grid 3 columnas: las cartas se acomodan ordenadas, ancho proporcional al
+// del panel. La altura sigue la proporción 2:3 vía aspect-ratio. Si hay más
+// filas de las que entran en .tarjetas-panel, scrollea verticalmente.
 .tarjetas-contenido {
-  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 2px $space-1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67,42,30,0.25) transparent;
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(67,42,30,0.25); border-radius: 2px; }
 }
 
+// Chip individual — proporción de carta 2:3 (58×87px), zona superior con el
+// símbolo y zona inferior con el nombre del país, separadas por un divider.
+// Capas:
+//   • background-color + repeating-linear-gradient (papel base)
+//   • ::before → textura grunge multiply (papel envejecido del design system)
+//   • ::after  → marco lineal interior (estilo de carta de juego)
 .tarjeta-mini {
-  width: 22px; height: 32px;
-  background: var(--color-claro);
-  border: 0.5px solid rgba(67,42,30,0.3); border-radius: 2px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.35);
-  font-family: var(--font-heading); font-size: 9px;
-  color: rgba(67,42,30,0.6);
-  transition: opacity 0.2s;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  height: auto;
+  padding: 0;
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88,58,24,0.045) 0px, rgba(88,58,24,0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 1px solid rgba(67,42,30,0.30);
+  border-radius: 2px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  display: grid;
+  grid-template-rows: 62% 38%;
+  cursor: pointer;
+  transition: box-shadow 0.15s, filter 0.15s;
+  overflow: hidden;
+  flex: 0 0 auto;
 
+  &::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url('/assets/images/grunge-vintage-old-paper-texture.jpg');
+    background-size: cover;
+    background-position: center;
+    mix-blend-mode: multiply;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: inherit;
+  }
+
+  &::after {
+    content: '';
+    position: absolute; inset: 3px;
+    border: 1px solid rgba(67,42,30,0.45);
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow: 1px 2px 6px rgba(0,0,0,0.35);
+    filter: brightness(1.05);
+  }
+
+  &:disabled { cursor: default; }
   &.canjeada { opacity: 0.4; }
 }
 
-.tarjetas-count {
-  font-family: var(--font-body); font-weight: 700;
-  font-size: 13px; color: var(--color-claro);
+// Zona superior: fondo levemente más oscuro + SVG centrado 32×32.
+.tarjeta-mini-symbol {
+  position: relative;
+  background: rgba(67,42,30,0.05);
+  border-bottom: 0.5px solid rgba(67,42,30,0.18);
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px;
 }
 
-.btn-canjear {
-  display: block; margin-top: 5px; width: 100%;
-  font-family: var(--font-heading); font-size: 7px;
-  letter-spacing: 0.12em; padding: 4px 8px;
-  border-radius: 999px; background: transparent;
-  color: rgba(198,156,109,0.65);
-  border: 0.5px solid rgba(198,156,109,0.25);
-  cursor: pointer; transition: all 0.15s;
+.tarjeta-mini-symbol-img {
+  display: block;
+  width: 32px; height: 32px;
+  flex-shrink: 0;
 
-  &:hover { background: rgba(198,156,109,0.08); }
+  &--canion { @include simbolo-mask('/assets/vectors/tablero/war-tank-symbol.svg',  $card-canion); }
+  &--galeon { @include simbolo-mask('/assets/vectors/tablero/warship-symbol.svg',   $card-galeon); }
+  &--globo  { @include simbolo-mask('/assets/vectors/tablero/warplane-symbol.svg',  $card-globo);  }
 }
 
-// Chat
+// COMODIN: tres miniaturas a 14px en línea
+.tarjeta-mini-symbol[data-simbolo='comodin'] .tarjeta-mini-symbol-img {
+  width: 14px; height: 14px;
+}
+
+// Zona inferior: nombre del país en Special Elite 7px, truncado para que no
+// invada el marco lineal interior (inset:3px). El detalle completo se ve en
+// el modal expandido.
+.tarjeta-mini-pais {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 6px;
+  font-family: var(--font-heading);
+  font-size: 7px;
+  letter-spacing: 0.02em;
+  color: var(--color-oscuro);
+  text-align: center;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.tarjetas-empty {
+  font-family: var(--font-body); font-size: $text-caption;
+  color: rgba(239,232,206,0.2); font-style: italic;
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+// ── Chat — bloc de notas de campo militar ────────────────────────
+// Espiral en la parte superior, barra de título, papel rayado con margen
+// rojo, input con línea punteada. Todos los hex aquí son colores de material
+// (papel/metal de espiral) sin equivalente en la paleta del design system.
+// Chat — alto fijo para mostrar 2-3 mensajes y luego scroll. La línea
+// roja del margen está aquí (no en .chat-mensajes que scrollea), así
+// permanece fija mientras el contenido se desplaza.
 .chat-panel {
-  padding: 8px; flex-shrink: 0;
-  height: 120px; display: flex; flex-direction: column;
-}
-
-.chat-titulo { @extend .historial-titulo; border-bottom: none; padding-bottom: 0; margin-bottom: 4px; }
-
-.chat-mensajes {
-  flex: 1; overflow-y: auto; display: flex;
-  flex-direction: column; gap: 3px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(198,156,109,0.15) transparent;
-}
-
-.chat-msg {
-  font-family: var(--font-body); font-size: 8px;
-  color: rgba(239,232,206,0.55); line-height: 1.4;
-}
-
-.chat-msg-actor {
-  font-weight: 700;
-}
-
-.chat-input-row {
-  display: flex; gap: 4px; align-items: center; margin-top: 4px;
-}
-
-.chat-input {
-  flex: 1; background: transparent; border: none;
-  border-bottom: 0.5px solid rgba(198,156,109,0.25);
-  padding: 2px 3px;
-  font-family: var(--font-body); font-size: 8px;
-  color: rgba(239,232,206,0.8); outline: none;
-
-  &::placeholder { color: rgba(198,156,109,0.25); font-style: italic; }
-}
-
-.chat-send {
-  font-size: 8px; color: rgba(198,156,109,0.55);
-  background: transparent; border: none; cursor: pointer;
-  padding: 2px 3px; transition: color 0.15s;
-
-  &:hover { color: rgba(198,156,109,0.85); }
-}
-
-// ── Modal de canje ────────────────────────────────────────────────
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-  z-index: calc(var(--z-vignette) + 10); display: flex; align-items: center; justify-content: center;
-}
-
-.canje-modal {
+  position: relative;
+  // Alto fijo 200px y `margin-top: auto` para que quede SIEMPRE pegado al
+  // borde inferior de la columna-izquierda (que está alineado con el bottom
+  // del mapa vía .columna-izquierda { bottom: 48px }). Así el chat no crece
+  // ni se mueve aunque el modal de objetivo o las tarjetas cambien de alto.
+  flex: 0 0 200px;
+  margin-top: auto;
+  min-height: 200px;
+  max-height: 200px;
+  display: flex; flex-direction: column;
   background: var(--color-claro);
-  background-image: repeating-linear-gradient(44deg,
-    rgba(88,58,24,0.04) 0px, rgba(88,58,24,0.04) 1px,
-    transparent 1px, transparent 9px);
-  padding: 16px 20px; min-width: 300px; max-width: 440px; width: 90%;
-  border-radius: 1px;
-  box-shadow: 3px 3px 20px rgba(0,0,0,0.7);
-  animation: popIn 0.2s ease;
+  border-radius: 2px;
+  box-shadow: 2px 3px 10px rgba(0,0,0,0.5);
+  overflow: hidden;
+
+  // Margen vertical rojo a 28px del borde izquierdo — más cercano al margen
+  // para liberar espacio al texto del mensaje. Se extiende entre el final del
+  // title-bar y el inicio del input-row, sin scrollear porque el panel no
+  // scrollea. Top/bottom calculados a partir de:
+  //   title-bar (4+10+4 padding + 1 border) ≈ 22px y spiral 18px → top 40
+  //   input-row (1 border-top + 5+7 padding + ~16 input) ≈ 30px → bottom 30
+  &::after {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 40px;
+    bottom: 30px;
+    width: 1px;
+    background: rgba(200,60,60,0.35);
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
-.canje-header {
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 0.5px solid rgba(67,42,30,0.15);
-  padding-bottom: 8px; margin-bottom: 12px;
+.chat-spiral {
+  background: #D0C8B0;
+  height: 18px;
+  border-bottom: 1px solid #B0A880;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 7px;
+  flex-shrink: 0;
 }
 
-.canje-titulo {
-  font-family: var(--font-heading); font-size: 9px;
-  letter-spacing: 0.14em; color: rgba(67,42,30,0.6);
+.chat-spiral-hole {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #888070;
+  border: 1px solid #666050;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.chat-title-bar {
+  background: #E8E0C8;
+  border-bottom: 1px solid #C8B890;
+  padding: 4px 10px;
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #5A4830;
+  flex-shrink: 0;
+  text-align: center;
   text-transform: uppercase;
 }
 
-.canje-body {
-  display: flex; flex-direction: column; gap: 6px;
-  max-height: 260px; overflow-y: auto; margin-bottom: 12px;
+.chat-mensajes {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 0;
+  // Papel rayado: líneas azul tenue cada 22px (simula renglones de bloc).
+  // La línea roja del margen vive en .chat-panel::after para que no scrollee.
+  background: repeating-linear-gradient(
+    0deg,
+    var(--color-claro), var(--color-claro) 22px,
+    rgba(100,140,200,0.20) 22px, rgba(100,140,200,0.20) 23px
+  );
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67,42,30,0.25) transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(67,42,30,0.25); border-radius: 2px; }
 }
 
-.combo-item {
-  padding: 8px 10px;
-  border: 0.5px solid rgba(67,42,30,0.2);
-  border-radius: 1px; cursor: pointer;
-  font-family: var(--font-body); font-size: 10px;
-  color: rgba(67,42,30,0.7);
-  transition: border-color 0.15s, background 0.15s;
-
-  &:hover { border-color: rgba(67,42,30,0.45); background: rgba(67,42,30,0.04); }
-  &.selected { border-color: var(--color-sello); background: rgba(160,21,21,0.04); }
-
-  strong { font-family: var(--font-heading); font-size: 9px; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
-  ul { margin: 0; padding-left: 14px; }
-  li { font-size: 9px; line-height: 1.6; }
+// Cada mensaje: hora absoluta en el margen izquierdo (0–26px), texto a la
+// derecha de la línea roja (padding-left 34px = 28px + 6px respirando).
+.chat-msg {
+  position: relative;
+  padding: 3px 8px 6px 34px;
 }
 
-.canje-footer {
-  display: flex; gap: 8px; justify-content: flex-end;
+.chat-time {
+  position: absolute;
+  left: 0; top: 4px;
+  width: 26px;
+  text-align: right;
+  padding-right: 2px;
+  font-family: 'Courier New', monospace;
+  // 8px en monospace mantiene "HH:mm" (5 chars ~24px) dentro de los 26px de ancho.
+  font-size: 8px;
+  color: #9A7850;
 }
 
-// ── Animaciones compartidas ───────────────────────────────────────
-@keyframes popIn {
-  from { transform: scale(0.87); opacity: 0; }
+.chat-msg-header {
+  margin-bottom: 1px;
+}
+
+.chat-sender {
+  font-size: 9px;
+  font-family: sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  // color se aplica inline con var(--player-*) del jugador correspondiente
+}
+
+// Color oscuro uniforme — el remitente ya se identifica con el nombre
+// coloreado en .chat-sender. Diferenciar el cuerpo por color de jugador
+// chocaba con el jugador azul (mismo tono que la variante "own" anterior).
+.chat-text {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--color-oscuro);
+  word-break: break-word;
+}
+
+.chat-empty {
+  padding: 8px 34px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-style: italic;
+  color: rgba(67,42,30,0.4);
+}
+
+.chat-input-row {
+  display: flex; gap: 6px; align-items: center;
+  border-top: 1px solid #C8B890;
+  padding: 5px 8px 7px 28px;
+  background: var(--color-claro);
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--color-oscuro);
+  padding: 2px 4px;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--color-oscuro);
+  outline: none;
+
+  &::placeholder { color: rgba(67,42,30,0.35); font-style: italic; }
+}
+
+.chat-send {
+  font-size: 10px;
+  color: rgba(67,42,30,0.6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: color 0.15s;
+
+  &:hover:not(:disabled) { color: var(--color-sello); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
+.chat-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Aviso de cooldown anti-spam: aparece debajo del input mientras dura el bloqueo.
+// Especificación de tipografía/color en el prompt — 9px sans-serif rojo sello.
+.chat-cooldown {
+  padding: 2px 8px 6px 28px;
+  background: var(--color-claro);
+  font-family: sans-serif;
+  font-size: 9px;
+  color: var(--color-sello);
+  flex-shrink: 0;
+}
+
+// ── Modal de detalle de tarjetas ──────────────────────────────────
+// Overlay oscuro full-screen con backdrop-filter. Sin contenedor de papel:
+// las tarjetas y el texto flotan directamente sobre el fondo oscuro. El
+// botón de cierre vive en la esquina superior derecha del overlay.
+.tarjetas-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(4, 2, 1, 0.82);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: calc(var(--z-vignette) + 10);
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: 32px 48px;
+  animation: tarjetas-overlay-in 0.25s ease-out;
+}
+
+// Wrapper centrado que contiene todo el contenido del modal. No tiene fondo
+// propio — solo organiza la columna (título → grilla → botón) y captura el
+// stop-propagation del click para que no cierre el overlay accidentalmente.
+.tarjetas-modal-content {
+  position: relative;
+  width: min(92vw, 760px);
+  max-height: 90vh;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px;
+  animation: tarjetas-modal-in 0.25s ease-out;
+}
+
+.tarjetas-modal-titulo {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  letter-spacing: 0.2em;
+  color: var(--color-claro);
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  margin-bottom: 18px;
+}
+
+.tarjetas-modal-subtitulo {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-secondary);
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.tarjetas-modal-info {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: rgba(239,232,206,0.7);
+  font-style: italic;
+  text-align: center;
+}
+
+// Botón de cierre en la esquina superior derecha del overlay (no del contenido).
+.btn-tarjetas-cerrar {
+  position: absolute;
+  top: 16px; right: 20px;
+  width: 36px; height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 0.5px solid rgba(239,232,206,0.4);
+  border-radius: 50%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-claro);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(239,232,206,0.12);
+    border-color: rgba(239,232,206,0.7);
+  }
+}
+
+.tarjetas-modal-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 180px);
+  justify-content: center;
+  gap: 28px 24px;
+  padding: 16px 4px 8px;
+  overflow-y: auto;
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(239,232,206,0.25) transparent;
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: rgba(239,232,206,0.25); border-radius: 3px; }
+}
+
+// Pie informativo: cantidad de combinaciones de canje posibles con las
+// cartas en mano. Aparece sobre el botón CANJEAR (o solo, si no se cumplen
+// las condiciones de canje).
+.tarjetas-modal-combos {
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(239,232,206,0.75);
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+
+  &.sin-combos {
+    color: rgba(239,232,206,0.45);
+    font-style: italic;
+  }
+}
+
+.tarjetas-modal-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  font-family: var(--font-body);
+  color: rgba(239,232,206,0.55);
+  font-style: italic;
+}
+
+// Tarjeta individual en el modal — papel con rotación leve, símbolo grande
+// arriba, divider y nombre del país abajo. Proporción 2:3 (140×210) para
+// que se vea como una carta clásica sobre el fondo oscuro.
+// Capas (igual que .tarjeta-mini): grunge vintage + marco lineal interior.
+.tarjeta-detalle {
+  position: relative;
+  isolation: isolate;
+  width: 180px; height: 270px;
+  padding: 0;
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88,58,24,0.045) 0px, rgba(88,58,24,0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 2px solid rgba(67,42,30,0.4);
+  border-radius: 3px;
+  box-shadow: 2px 4px 14px rgba(0,0,0,0.55);
+  display: grid;
+  grid-template-rows: 70% auto 30%;
+  cursor: default;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+
+  &::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url('/assets/images/grunge-vintage-old-paper-texture.jpg');
+    background-size: cover;
+    background-position: center;
+    mix-blend-mode: multiply;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: inherit;
+  }
+
+  // Marco lineal interior — borde fino a 6px del borde, da el aspecto de
+  // carta clásica con rule rectangular.
+  &::after {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 1px solid rgba(67,42,30,0.5);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  &--impar { transform: rotate(-1.5deg); }
+  &--par   { transform: rotate(1deg); }
+
+  &--seleccionable {
+    cursor: pointer;
+    &:hover {
+      transform: rotate(0deg) translateY(-4px);
+      box-shadow: 3px 7px 18px rgba(0,0,0,0.6);
+      filter: brightness(1.04);
+    }
+  }
+
+  &--canjeada { opacity: 0.45; }
+
+  &--seleccionada {
+    border-color: var(--color-secondary);
+    // Tinte verde como inset box-shadow: pinta sobre el background pero
+    // BAJO el ::after del marco lineal interior, así el marco se mantiene
+    // visible. inset radius enorme cubre toda la card aunque cambie de
+    // tamaño. El tinte queda atenuado por el grunge ::before, pero sigue
+    // dando feedback claro de selección.
+    box-shadow:
+      inset 0 0 0 9999px rgba(55, 94, 65, 0.20),
+      0 0 0 2px var(--color-secondary),
+      3px 7px 18px rgba(0,0,0,0.6);
+
+    // Tintamos el marco lineal en verde para coordinar con la selección,
+    // pero conservamos el inset:6px y el border (NO lo sobreescribimos).
+    &::after {
+      border-color: rgba(40, 90, 55, 0.7);
+    }
+  }
+}
+
+.tarjeta-detalle-symbol-wrap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  background: rgba(67,42,30,0.04);
+}
+
+.tarjeta-detalle-symbol-img {
+  display: block;
+  width: 110px; height: 110px;
+  flex-shrink: 0;
+
+  &--canion { @include simbolo-mask('/assets/vectors/tablero/war-tank-symbol.svg',  $card-canion); }
+  &--galeon { @include simbolo-mask('/assets/vectors/tablero/warship-symbol.svg',   $card-galeon); }
+  &--globo  { @include simbolo-mask('/assets/vectors/tablero/warplane-symbol.svg',  $card-globo);  }
+}
+
+// Comodín: 3 íconos pequeños en lugar de uno grande
+.tarjetas-detalle-symbol-wrap:has(> .tarjeta-detalle-symbol-img:nth-child(2)) .tarjeta-detalle-symbol-img,
+.tarjeta-detalle-symbol-wrap:has(> .tarjeta-detalle-symbol-img:nth-child(2)) .tarjeta-detalle-symbol-img {
+  width: 44px; height: 44px;
+}
+
+.tarjeta-detalle-divider {
+  height: 1px;
+  margin: 0 8px;
+  background: rgba(67,42,30,0.25);
+}
+
+.tarjeta-detalle-pais {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 10px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  letter-spacing: 0.07em;
+  color: var(--color-oscuro);
+  text-align: center;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Botón canjear sobre el overlay oscuro: variante dark del design system.
+.btn-tarjetas-canjear {
+  font-size: 13px;
+  padding: 12px 28px 9px;
+  margin-top: 6px;
+  align-self: center;
+}
+
+// ── Animaciones ───────────────────────────────────────────────────
+@keyframes tarjetas-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes tarjetas-modal-in {
+  from { transform: scale(0.92); opacity: 0; }
   to   { transform: scale(1);    opacity: 1; }
 }

@@ -250,9 +250,23 @@ public class PartidaServiceImpl implements PartidaService {
                                                                 .build())
                                                 .collect(Collectors.toList()));
 
+                java.util.Map<Long, Long> tarjetasPorJugador = partidaEntity.getMazo().stream()
+                                .filter(et -> et.getJugador() != null && !et.isCanjeada())
+                                .collect(Collectors.groupingBy(
+                                                et -> et.getJugador().getIdJugador(),
+                                                Collectors.counting()));
+
                 partida.setJugadores(
                                 partidaEntity.getJugadores().stream()
-                                                .map(j -> modelMapper.map(j, JugadorDto.class))
+                                                .map(j -> {
+                                                        JugadorDto dto = modelMapper.map(j, JugadorDto.class);
+                                                        if (j.getUsuario() != null) {
+                                                                dto.setUrl(j.getUsuario().getImagen());
+                                                        }
+                                                        dto.setCantidadTarjetas(
+                                                                        tarjetasPorJugador.getOrDefault(j.getIdJugador(), 0L).intValue());
+                                                        return dto;
+                                                })
                                                 .collect(Collectors.toList()));
 
                 return partida;

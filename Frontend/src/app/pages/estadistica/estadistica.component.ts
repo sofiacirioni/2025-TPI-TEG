@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EstadisticaService, Estadistica} from '../../core/services/estadistica.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -13,10 +14,11 @@ import { EstadisticaService, Estadistica} from '../../core/services/estadistica.
 export class EstadisticaComponent implements OnInit {
   estadisticas: Estadistica[] = [];
 
-  constructor(private estadisticaService: EstadisticaService) {}
+  private estadisticaService = inject(EstadisticaService);
+  private authService = inject(AuthService);
 
   ngOnInit(): void {
-    const idUsuario = 1;
+    const idUsuario = this.authService.getCurrentUser()?.idUsuario ?? 0;
     this.estadisticaService.getEstadisticasPorUsuario(idUsuario).subscribe({
       next: (data) => {
         this.estadisticas = data;

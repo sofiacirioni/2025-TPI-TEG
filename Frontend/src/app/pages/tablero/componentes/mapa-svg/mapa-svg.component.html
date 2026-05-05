@@ -12,6 +12,18 @@
   <rect width="1920" height="1080" style="fill:var(--color-claro)"/>
 
   <!--
+    CAPA 1b: Textura grunge/vintage del papel envejecido. Opacidad baja (0.35)
+    y mix-blend-mode: multiply para oscurecer sutilmente sin afectar los colores
+    de los países (que se renderizan encima en la CAPA 2). pointer-events: none
+    para que no intercepte los clicks sobre los países.
+  -->
+  <image href="/assets/images/grunge-vintage-old-paper-texture.jpg"
+         x="0" y="0" width="1920" height="1080"
+         preserveAspectRatio="xMidYMid slice"
+         opacity="0.35"
+         style="mix-blend-mode: multiply; pointer-events: none;"/>
+
+  <!--
     Corrección de centrado: el artwork del mapa tiene ~30 unidades SVG más de
     espacio vacío en el lado derecho que en el izquierdo. Se desplaza todo el
     contenido (capas 2–4) 30 unidades a la derecha para centrar visualmente.
@@ -40,25 +52,6 @@
   }
 
   <!--
-    CAPA 2b: Bordes de continente.
-    Stroke fino en el color del continente (opacidad ~0.55) para distinguir
-    visualmente cada región del mapa. Se renderiza sobre los rellenos pero
-    debajo del SVG estático, de modo que las etiquetas y decoraciones siempre
-    queden encima.
-  -->
-  @for (p of mapaPais; track p.id) {
-    @if (p.forma) {
-      <path
-        [attr.d]="p.forma"
-        fill="none"
-        [attr.stroke]="p.colorBorde"
-        stroke-width="1.2"
-        pointer-events="none"
-      />
-    }
-  }
-
-  <!--
     CAPA 3: SVG original como imagen estática.
     Renderiza con todos sus estilos, capas y decoraciones originales:
     decoraciones (sol, brújula, barcos, logos), bordes de países con
@@ -80,13 +73,6 @@
     @if (p.cx > 0 && p.cy > 0 && p.tropas > 0) {
       <g pointer-events="none">
         @if (p.svgToken) {
-          <!-- Sombra bajo la ficha -->
-          <ellipse
-            [attr.cx]="p.cx + 2"
-            [attr.cy]="p.cy + 16"
-            rx="13" ry="4"
-            fill="rgba(0,0,0,0.4)"
-          />
           <!-- Símbolo SVG del jugador (28×28) -->
           <image
             [attr.href]="p.svgToken"

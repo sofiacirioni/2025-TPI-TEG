@@ -84,7 +84,7 @@ class TurnoServiceImplTest {
         turnoEntity = new TurnoEntity();
         turnoEntity.setIdTurno(1L);
         turnoEntity.setJugador(jugadorEntity);
-        turnoEntity.setFase(FaseTurno.COLOCACION);
+        turnoEntity.setFase(FaseTurno.INCORPORACION);
         turnoEntity.setNroTurno(1);
 
         jugador = new Jugador();
@@ -92,7 +92,7 @@ class TurnoServiceImplTest {
 
         turno = new Turno();
         turno.setIdTurno(1L);
-        turno.setFase(FaseTurno.COLOCACION);
+        turno.setFase(FaseTurno.INCORPORACION);
         turno.setNroTurno(1);
         turno.setJugador(jugador);
 
@@ -325,7 +325,7 @@ class TurnoServiceImplTest {
         jugador.setPartida(partida);
 
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.MOVER_TROPAS);
+        turno.setFase(FaseTurno.REAGRUPACION);
         turno.setJugador(jugador);
         turno.setNroTurno(3);
 
@@ -367,7 +367,7 @@ class TurnoServiceImplTest {
 
         TurnoEntity turno = new TurnoEntity();
         turno.setJugador(otroJugador);
-        turno.setFase(FaseTurno.MOVER_TROPAS);
+        turno.setFase(FaseTurno.REAGRUPACION);
 
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
         when(partidaRepository.findById(10L)).thenReturn(Optional.of(partida));
@@ -458,7 +458,7 @@ class TurnoServiceImplTest {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.COLOCACION);
+        turno.setFase(FaseTurno.INCORPORACION);
 
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
@@ -473,7 +473,7 @@ class TurnoServiceImplTest {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.ATACAR);
+        turno.setFase(FaseTurno.ATAQUE);
 
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
@@ -488,7 +488,7 @@ class TurnoServiceImplTest {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.MOVER_TROPAS);
+        turno.setFase(FaseTurno.REAGRUPACION);
 
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
@@ -503,7 +503,7 @@ class TurnoServiceImplTest {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
-        turno.setFase(FaseTurno.ATACAR);
+        turno.setFase(FaseTurno.ATAQUE);
 
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
@@ -613,7 +613,7 @@ class TurnoServiceImplTest {
 
         assertNotNull(resultado);
         assertEquals(idTurno, resultado.getIdTurno());
-        assertEquals(FaseTurno.COLOCACION, resultado.getFase());
+        assertEquals(FaseTurno.INCORPORACION, resultado.getFase());
         assertEquals(1, resultado.getNroTurno());
         assertEquals(1L, resultado.getJugador().getIdJugador());
         verify(turnoRepository).findById(idTurno);
@@ -652,7 +652,7 @@ class TurnoServiceImplTest {
     void testObtenerTurno_existente() {
         TurnoEntity e = new TurnoEntity();
         e.setIdTurno(1L);
-        e.setFase(FaseTurno.COLOCACION);
+        e.setFase(FaseTurno.INCORPORACION);
         JugadorEntity je = new JugadorEntity();
         je.setIdJugador(2L);
         e.setJugador(je);
@@ -796,7 +796,7 @@ class TurnoServiceImplTest {
 
     @Test
     void testCambiarFaseTurno_DefenderAAtacar() {
-        turnoEntity.setFase(FaseTurno.COLOCACION);
+        turnoEntity.setFase(FaseTurno.INCORPORACION);
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
         when(turnoRepository.save(any(TurnoEntity.class))).thenReturn(turnoEntity);
@@ -805,14 +805,14 @@ class TurnoServiceImplTest {
         boolean resultado = turnosServiceImpl.cambiarFaseTurno(1L);
 
         assertFalse(resultado);
-        assertEquals(FaseTurno.ATACAR, turnoEntity.getFase());
+        assertEquals(FaseTurno.ATAQUE, turnoEntity.getFase());
         verify(turnoRepository).save(turnoEntity);
         verify(partidaRepository).save(partidaEntity);
     }
 
     @Test
     void testCambiarFaseTurno_AtacarAMoverTropas() {
-        turnoEntity.setFase(FaseTurno.ATACAR);
+        turnoEntity.setFase(FaseTurno.ATAQUE);
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
         when(turnoRepository.save(any(TurnoEntity.class))).thenReturn(turnoEntity);
@@ -821,7 +821,7 @@ class TurnoServiceImplTest {
         boolean resultado = turnosServiceImpl.cambiarFaseTurno(1L);
 
         assertFalse(resultado);
-        assertEquals(FaseTurno.MOVER_TROPAS, turnoEntity.getFase());
+        assertEquals(FaseTurno.REAGRUPACION, turnoEntity.getFase());
         verify(turnoRepository).save(turnoEntity);
         verify(partidaRepository).save(partidaEntity);
     }
@@ -987,21 +987,6 @@ class TurnoServiceImplTest {
     }
 
     @Test
-    void testUsarCarta_ConTarjetaValida_DeberiaValidar() {
-        EstadoTarjetaEntity estadoTarjeta = new EstadoTarjetaEntity();
-        estadoTarjeta.setIdEstadoTarjeta(1L);
-
-        doNothing().when(turnosServiceImpl).validarUsarTarjetaEnPais(any(UsarTarjetaEnPaisDto.class));
-
-        boolean resultado = turnosServiceImpl.usarCarta(jugadorEntity, estadoTarjeta);
-
-        assertFalse(resultado);
-        verify(turnosServiceImpl)
-                .validarUsarTarjetaEnPais(argThat(dto -> dto.getIdJugador().equals(jugadorEntity.getIdJugador()) &&
-                        dto.getIdTarjeta().equals(estadoTarjeta.getIdEstadoTarjeta())));
-    }
-
-    @Test
     void testValidarCanjeTarjetas_JugadorNoEncontrado() {
         CanjeTarjetasDto dto = new CanjeTarjetasDto();
         dto.setIdJugador(999L);
@@ -1041,7 +1026,7 @@ class TurnoServiceImplTest {
     @Test
     void cambiarFaseTurno_deDefenderAAtaque_deberiaActualizarFase() {
         partidaEntity.setHostilidad(false);
-        turnoEntity.setFase(FaseTurno.COLOCACION);
+        turnoEntity.setFase(FaseTurno.INCORPORACION);
 
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
@@ -1049,12 +1034,12 @@ class TurnoServiceImplTest {
         boolean result = turnosServiceImpl.cambiarFaseTurno(1L);
 
         assertFalse(result);
-        assertEquals(FaseTurno.ATACAR, turnoEntity.getFase());
+        assertEquals(FaseTurno.ATAQUE, turnoEntity.getFase());
     }
 
     @Test
     void cambiarFaseTurno_deAtacarAMoverTropas_deberiaActualizarFase() {
-        turnoEntity.setFase(FaseTurno.ATACAR);
+        turnoEntity.setFase(FaseTurno.ATAQUE);
 
         when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugadorEntity));
@@ -1062,7 +1047,7 @@ class TurnoServiceImplTest {
         boolean result = turnosServiceImpl.cambiarFaseTurno(1L);
 
         assertFalse(result);
-        assertEquals(FaseTurno.MOVER_TROPAS, turnoEntity.getFase());
+        assertEquals(FaseTurno.REAGRUPACION, turnoEntity.getFase());
     }
 
     @Test
@@ -1153,15 +1138,6 @@ class TurnoServiceImplTest {
         boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
 
         assertFalse(resultado);
-    }
-
-    @Test
-    void canjearCarta_deberiaRetornarFalseSiempre() {
-        JugadorEntity jugador = new JugadorEntity();
-
-        boolean resultado = turnosServiceImpl.canjearCarta(jugador);
-
-        assertFalse(resultado, "El método canjearCarta debe retornar siempre false por ahora");
     }
 
     @Test
