@@ -43,4 +43,7 @@ public class PartidaEventDto {
 
     /** Payload solo para tipo = FIN_PARTIDA. */
     private FinPartidaDto finPartida;
+
+    /** Payload para tipos PACTO_PROPUESTO / PACTO_ACEPTADO / PACTO_RECHAZADO / PACTO_ROTO. */
+    private PactoDto pacto;
 }

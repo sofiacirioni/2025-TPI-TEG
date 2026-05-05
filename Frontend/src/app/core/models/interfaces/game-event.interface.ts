@@ -1,4 +1,5 @@
 import { FinPartida } from './partida.interface';
+import { PactoDto } from './pacto.interface';
 
 export type GameEventTipo =
   | 'INCORPORACION'
@@ -10,7 +11,11 @@ export type GameEventTipo =
   | 'TARJETA_CANJEADA'
   | 'REAGRUPAMIENTO'
   | 'FIN_TURNO'
-  | 'FIN_PARTIDA';
+  | 'FIN_PARTIDA'
+  | 'PACTO_PROPUESTO'
+  | 'PACTO_ACEPTADO'
+  | 'PACTO_RECHAZADO'
+  | 'PACTO_ROTO';
 
 export interface DiceSelectionParams {
   paisOrigen: string;
@@ -53,6 +58,8 @@ export interface GameEvent {
   /** true cuando la cola tiene backlog (>2 eventos pendientes). El componente
    *  acorta el slot-machine y la duración del modal para no acumular delay. */
   fastMode?: boolean;
+  /** Payload completo del pacto cuando tipo es PACTO_*. */
+  pacto?: PactoDto;
 }
 
 /** DTO que llega via WebSocket desde el backend */
@@ -79,4 +86,6 @@ export interface PartidaEventWs {
   idDefensor?: number;
   /** Payload cuando tipo === 'FIN_PARTIDA'. */
   finPartida?: FinPartida;
+  /** Payload cuando tipo === 'PACTO_*'. */
+  pacto?: PactoDto;
 }

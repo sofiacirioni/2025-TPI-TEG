@@ -4,7 +4,7 @@ import { GameEvent, GameEventTipo, PartidaEventWs } from '../models/interfaces/g
 
 export interface HistorialEvento {
   texto: string;
-  tipo: 'ataque' | 'ok' | 'normal';
+  tipo: 'ataque' | 'ok' | 'normal' | 'pacto';
 }
 
 /** Mapa de var CSS para colores de jugadores */
@@ -198,6 +198,43 @@ export class TableroEventService {
         // No se encola como notificación efímera — el TableroComponent lo
         // maneja directamente con su animación de quemado + overlay.
         break;
+      case 'PACTO_PROPUESTO':
+        // No se muestra como notificación efímera — el overlay de respuesta
+        // es el feedback principal. Solo va al historial.
+        break;
+      case 'PACTO_ACEPTADO':
+        this.enqueue({
+          tipo: 'PACTO_ACEPTADO',
+          titulo: 'PACTO FIRMADO',
+          descripcion: ws.descripcion,
+          jugadorActivo: ws.jugadorNombre,
+          colorJugador: color,
+          duracionMs: 3000,
+          pacto: ws.pacto,
+        });
+        break;
+      case 'PACTO_RECHAZADO':
+        this.enqueue({
+          tipo: 'PACTO_RECHAZADO',
+          titulo: 'PACTO RECHAZADO',
+          descripcion: ws.descripcion,
+          jugadorActivo: ws.jugadorNombre,
+          colorJugador: color,
+          duracionMs: 2500,
+          pacto: ws.pacto,
+        });
+        break;
+      case 'PACTO_ROTO':
+        this.enqueue({
+          tipo: 'PACTO_ROTO',
+          titulo: 'PACTO ROTO',
+          descripcion: ws.descripcion,
+          jugadorActivo: ws.jugadorNombre,
+          colorJugador: color,
+          duracionMs: 2500,
+          pacto: ws.pacto,
+        });
+        break;
     }
   }
 
@@ -259,8 +296,37 @@ export class TableroEventService {
         texto = ws.descripcion ?? `${ws.jugadorNombre} canjeó tarjetas`;
         tipo = 'ok';
         break;
+      case 'PACTO_PROPUESTO':
+        texto = `${ws.jugadorNombre} propuso un pacto a ${ws.jugadorDefensor ?? '—'}`;
+        tipo = 'pacto';
+        break;
+      case 'PACTO_ACEPTADO':
+        texto = this.descripcionPactoAceptado(ws);
+        tipo = 'pacto';
+        break;
+      case 'PACTO_RECHAZADO':
+        texto = `${ws.jugadorDefensor ?? '—'} rechazó la propuesta de ${ws.jugadorNombre}`;
+        tipo = 'pacto';
+        break;
+      case 'PACTO_ROTO':
+        texto = ws.descripcion ?? `Pacto entre ${ws.jugadorNombre} y ${ws.jugadorDefensor ?? '—'} roto`;
+        tipo = 'pacto';
+        break;
     }
     if (texto) this.historialEventSubject.next({ texto, tipo });
+  }
+
+  private descripcionPactoAceptado(ws: PartidaEventWs): string {
+    const p = ws.pacto;
+    if (!p) return `${ws.jugadorNombre} y ${ws.jugadorDefensor ?? '—'} firmaron un pacto`;
+    switch (p.tipo) {
+      case 'PACTO_PAISES':
+        return `${p.nombreJugadorA} firmó un pacto con ${p.nombreJugadorB} sobre ${p.nombrePaisProtegidoA ?? '—'} ⟷ ${p.nombrePaisProtegidoB ?? '—'}`;
+      case 'PACTO_MUNDIAL':
+        return `${p.nombreJugadorA} firmó un pacto de no agresión mundial con ${p.nombreJugadorB}`;
+      case 'PACTO_ZONA_INTERNACIONAL':
+        return `${p.nombreJugadorA} estableció zona internacional en ${p.nombrePaisZona ?? '—'} con ${p.nombreJugadorB}`;
+    }
   }
 
   /** Marca el evento siguiente con flag fastMode si la cola está saturada

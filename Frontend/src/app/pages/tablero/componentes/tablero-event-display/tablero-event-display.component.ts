@@ -296,6 +296,10 @@ export class TableroEventDisplayComponent implements OnInit, OnDestroy {
       case 'CONQUISTA':        return '★';
       case 'RESULTADO_DADOS':  return '⚔';
       case 'ATAQUE_INICIADO':  return '⚔';
+      case 'PACTO_PROPUESTO':
+      case 'PACTO_ACEPTADO':   return '✍';
+      case 'PACTO_RECHAZADO':
+      case 'PACTO_ROTO':       return '✕';
       default:                  return '·';
     }
   }

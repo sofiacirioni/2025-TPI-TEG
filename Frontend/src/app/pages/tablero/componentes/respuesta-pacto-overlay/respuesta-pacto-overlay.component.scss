@@ -1,0 +1,220 @@
+@import '../../../../../styles/tokens';
+
+.resp-pacto-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-vignette) + 5);
+  background: rgba(4, 2, 1, 0.78);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+
+  &.no-bloqueante {
+    background: transparent;
+    backdrop-filter: none;
+    pointer-events: none;
+
+    .resp-pacto-tratado {
+      pointer-events: auto;
+      opacity: 0.94;
+    }
+  }
+}
+
+.resp-pacto-tratado {
+  width: min(90vw, 540px);
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 2px solid rgba(67, 42, 30, 0.55);
+  // padding-top extra para que el símbolo (que sobresale ~70px arriba con
+  // 26px de overlap dentro del documento) no choque con el título.
+  padding: 60px $space-6 $space-4;
+  color: var(--color-oscuro);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+// Símbolo del tipo de pacto. Mayoría afuera del documento (~70px arriba) y
+// solo ~26px overlap dentro — el padding-top de 60px deja aire entre el
+// símbolo y el título "PROPUESTA DE TRATADO".
+.resp-pacto-simbolo {
+  position: absolute;
+  top: -70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 1px 2px rgba(20, 10, 4, 0.55))
+    drop-shadow(0 0 8px rgba(20, 10, 4, 0.30));
+  pointer-events: none;
+}
+
+.resp-pacto-header {
+  text-align: center;
+  margin-bottom: $space-3;
+  border-bottom: 1px dashed rgba(67, 42, 30, 0.35);
+  padding-bottom: $space-2;
+}
+
+.resp-pacto-titulo {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  letter-spacing: 0.24em;
+  margin: 0;
+  // override del color claro por defecto que aplica el typography global a h2
+  color: var(--color-oscuro);
+}
+
+.resp-pacto-subtitulo {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(67, 42, 30, 0.6);
+  margin: $space-1 0 0;
+}
+
+.resp-pacto-jugadores {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: $space-3;
+  margin: $space-3 0;
+}
+
+.resp-jug {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+}
+
+.resp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(67, 42, 30, 0.6);
+}
+
+// Variante imagen: foto del jugador. Border-color se setea inline con el color del jugador.
+.resp-avatar--img {
+  object-fit: cover;
+  background: var(--color-claro);
+  // Sombra interior + drop-shadow para integrarlo al papel
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.resp-nombre {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.resp-flecha {
+  font-size: 22px;
+  color: rgba(67, 42, 30, 0.6);
+}
+
+.resp-pacto-tipo {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  margin: $space-3 0 $space-2;
+}
+
+.resp-pacto-desc {
+  text-align: center;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(67, 42, 30, 0.85);
+  margin-bottom: $space-4;
+}
+
+.resp-pacto-actions {
+  display: flex;
+  justify-content: center;
+  gap: $space-3;
+  margin-bottom: $space-2;
+}
+
+.resp-pacto-countdown {
+  text-align: center;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(67, 42, 30, 0.7);
+
+  strong {
+    font-family: var(--font-heading);
+    font-style: normal;
+    color: var(--color-sello);
+  }
+}
+
+.resp-pacto-esperando {
+  text-align: center;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(67, 42, 30, 0.75);
+
+  strong {
+    font-family: var(--font-heading);
+    font-style: normal;
+  }
+}
+
+// ── Resultado APROBADO / RECHAZADO ───────────────────────────────
+// Aparece reemplazando los botones / mensaje de espera. Pill grande
+// con tipografía heading, simulando un sello rectangular que cae
+// sobre el documento.
+.resp-pacto-resultado {
+  margin: $space-2 auto 0;
+  padding: 10px 28px 8px;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  text-transform: uppercase;
+  border: 2px solid currentColor;
+  display: inline-block;
+  align-self: center;
+  // entrada: pequeño zoom-in para llamar la atención
+  animation: respPactoStamp 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+
+  &.resultado-aprobado {
+    color: #1E7A50; // verde oliva del DS — coincide con var(--player-verde)
+    background: rgba(30, 122, 80, 0.08);
+  }
+
+  &.resultado-rechazado {
+    color: var(--color-sello);
+    background: rgba(160, 21, 21, 0.08);
+  }
+}
+
+// El contenedor flex column del tratado no centra al :inline — wrap
+.resp-pacto-tratado {
+  // tipo + desc ya están centrados; el resultado va centrado solo
+  & > .resp-pacto-resultado {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: max-content;
+    max-width: 90%;
+  }
+}
+
+@keyframes respPactoStamp {
+  from { opacity: 0; transform: scale(0.7) rotate(-3deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}

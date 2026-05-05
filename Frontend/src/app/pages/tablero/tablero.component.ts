@@ -12,6 +12,9 @@ import { TableroEventDisplayComponent } from './componentes/tablero-event-displa
 import { ObjetivoRevelacionComponent } from './componentes/objetivo-revelacion/objetivo-revelacion.component';
 import { ObjetivoQuemadoComponent } from './componentes/objetivo-quemado/objetivo-quemado.component';
 import { FinPartidaOverlayComponent } from './componentes/fin-partida-overlay/fin-partida-overlay.component';
+import { BotonPactosComponent } from './componentes/boton-pactos/boton-pactos.component';
+import { PactosOverlayComponent } from './componentes/pactos-overlay/pactos-overlay.component';
+import { RespuestaPactoOverlayComponent } from './componentes/respuesta-pacto-overlay/respuesta-pacto-overlay.component';
 import {
   AtaqueDto,
   AtaqueResponseDto,
@@ -28,6 +31,8 @@ import {
   TurnoDto,
   UsarTarjetaEnPaisDto,
 } from '../../core/models/interfaces/partida.interface';
+import { PactoDto } from '../../core/models/interfaces/pacto.interface';
+import { PactoService } from '../../core/services/pacto.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { NombrePaisPipe } from '../../core/pipes/nombre-pais.pipe';
@@ -44,13 +49,13 @@ interface ChatMensaje {
 
 interface HistorialItem {
   texto: string;
-  tipo: 'ataque' | 'ok' | 'normal';
+  tipo: 'ataque' | 'ok' | 'normal' | 'pacto';
 }
 
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent, ObjetivoQuemadoComponent, FinPartidaOverlayComponent],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent, ObjetivoQuemadoComponent, FinPartidaOverlayComponent, BotonPactosComponent, PactosOverlayComponent, RespuestaPactoOverlayComponent],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })
@@ -62,6 +67,7 @@ export class TableroComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private notificationService = inject(NotificationService);
   private wsService = inject(WebSocketService);
+  private pactoService = inject(PactoService);
   readonly tableroEventService = inject(TableroEventService);
 
   /** true cuando ya nos suscribimos al topic de la partida (solo 1 vez) */
@@ -119,6 +125,17 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   // ── Vista de continentes ───────────────────────────────────
   modoContinente = false;
+
+  // ── Pactos ─────────────────────────────────────────────────
+  pactosActivos: PactoDto[] = [];
+  showPactosOverlay = false;
+  /** Propuesta pendiente: si soy receptor, abre overlay bloqueante;
+   *  si soy proponente o tercero, muestra overlay no bloqueante hasta que el receptor responda. */
+  propuestaPendiente: PactoDto | null = null;
+  /** Resultado de la propuesta vigente — `null` mientras se espera respuesta;
+   *  `'ACEPTADO'` o `'RECHAZADO'` cuando llega el WS. El overlay queda visible
+   *  unos segundos mostrando el resultado antes de cerrarse. */
+  resultadoPropuesta: 'ACEPTADO' | 'RECHAZADO' | null = null;
 
   /** Referencias para la leyenda inferior cuando el modo overlay está activo.
    *  Los colores se mantienen sincronizados con CONTINENT_FILL_COLORS de
@@ -286,6 +303,11 @@ export class TableroComponent implements OnInit, OnDestroy {
   get puedoAtacarDesdeModal(): boolean {
     return this.faseActual === FaseTurno.ATAQUE && this.esSuyoPaisModal && this.estaJugandoModal;
   }
+  // Reglamento: hacen falta ≥2 ejércitos en el país para iniciar ataque
+  // (uno se queda defendiendo). El botón se muestra deshabilitado si no se cumple.
+  get tropasInsuficientesParaAtacar(): boolean {
+    return (this.paisModalSeleccionado?.cantidadTropas ?? 0) <= 1;
+  }
   get puedoDefenderDesdeModal(): boolean {
     return this.faseActual === FaseTurno.INCORPORACION && this.esSuyoPaisModal && this.estaJugandoModal;
   }
@@ -351,8 +373,16 @@ export class TableroComponent implements OnInit, OnDestroy {
               this.alRecibirFinPartida(evento.finPartida);
               return;
             }
+            // Pactos: actualizar estado local y manejar overlays antes de pasar al servicio de eventos
+            // (que se encarga del registro/notificaciones).
+            if (evento.tipo?.startsWith('PACTO_')) {
+              this.alRecibirEventoPacto(evento);
+            }
             this.tableroEventService.enqueueFromWs(evento, this.jugadorUsuario?.nombre);
           });
+
+          // Carga inicial de pactos activos para esta partida.
+          this.recargarPactos();
 
           // Suscribir al topic personal de progreso de objetivo
           const jugadorId = this.authService.getJugadorId();
@@ -518,6 +548,79 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   irAEstadisticas(): void {
     this.router.navigate(['/estadisticas']);
+  }
+
+  // ── Pactos ────────────────────────────────────────────────
+  recargarPactos(): void {
+    if (!this.partida?.idPartida) return;
+    this.pactoService.listarActivos(this.partida.idPartida).subscribe({
+      next: (lista) => { this.pactosActivos = lista; },
+      error: () => {},
+    });
+  }
+
+  /** Cantidad de pactos activos en los que el jugador local participa. */
+  get cantidadPactosLocales(): number {
+    const myId = this.jugadorUsuario?.idJugador;
+    if (!myId) return 0;
+    return this.pactosActivos.filter(p =>
+      p.estado === 'ACTIVO' && (p.idJugadorA === myId || p.idJugadorB === myId)
+    ).length;
+  }
+
+  abrirPactosOverlay(): void {
+    this.recargarPactos();
+    this.showPactosOverlay = true;
+  }
+
+  cerrarPactosOverlay(): void {
+    this.showPactosOverlay = false;
+  }
+
+  onPactoCambiado(): void {
+    this.recargarPactos();
+  }
+
+  onRespuestaPacto(): void {
+    this.propuestaPendiente = null;
+    this.resultadoPropuesta = null;
+    this.recargarPactos();
+  }
+
+  /** Maneja todos los eventos WS PACTO_*. */
+  alRecibirEventoPacto(ws: any): void {
+    if (!ws.pacto) return;
+    const myId = this.jugadorUsuario?.idJugador;
+
+    switch (ws.tipo) {
+      case 'PACTO_PROPUESTO':
+        // Mostrar overlay de respuesta a TODOS los jugadores; el receptor verá modo bloqueante.
+        this.propuestaPendiente = ws.pacto;
+        this.resultadoPropuesta = null;
+        break;
+      case 'PACTO_ACEPTADO':
+      case 'PACTO_RECHAZADO':
+        // Mantener el overlay unos segundos mostrando APROBADO/RECHAZADO antes de cerrar.
+        if (this.propuestaPendiente?.id === ws.pacto.id) {
+          this.resultadoPropuesta = ws.tipo === 'PACTO_ACEPTADO' ? 'ACEPTADO' : 'RECHAZADO';
+        }
+        if (ws.tipo === 'PACTO_ACEPTADO' && myId
+            && (ws.pacto.idJugadorA === myId || ws.pacto.idJugadorB === myId)) {
+          this.notificationService.success('Pacto firmado.');
+        }
+        break;
+      case 'PACTO_ROTO':
+        // Si era una propuesta abierta, cerrar.
+        if (this.propuestaPendiente?.id === ws.pacto.id) {
+          this.propuestaPendiente = null;
+          this.resultadoPropuesta = null;
+        }
+        break;
+    }
+
+    // Actualizar estado local de pactos: el WS no contiene la lista completa,
+    // pedimos refresh al backend.
+    this.recargarPactos();
   }
 
   // ── HostListeners para detectar actividad ─────────────────────
@@ -987,7 +1090,7 @@ export class TableroComponent implements OnInit, OnDestroy {
   // y por ende aparece arriba en la lista renderizada — el jugador siempre lee
   // lo último sin necesidad de scrollear. Los eventos viejos caen al final y
   // se descartan al superar 20 entradas.
-  agregarHistorial(texto: string, tipo: 'ataque' | 'ok' | 'normal' = 'normal') {
+  agregarHistorial(texto: string, tipo: 'ataque' | 'ok' | 'normal' | 'pacto' = 'normal') {
     this.historial.unshift({ texto, tipo });
     if (this.historial.length > 20) this.historial.pop();
   }

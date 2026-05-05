@@ -84,8 +84,10 @@
         <img class="sobre-lacre-mini"
              src="assets/images/tablero/teg-wax-seal.png"
              alt="Sello TEG" />
-        <div class="sobre-sello">SECRETO</div>
-        <div class="sobre-label">MI OBJETIVO</div>
+        <img class="sobre-stamp"
+             src="assets/vectors/top-secret-stamp.svg"
+             alt="" aria-hidden="true" />
+        <div class="sobre-label">MISIÓN URGENTE</div>
       </div>
     </div>
 
@@ -132,7 +134,10 @@
       <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
       <div class="historial-lista">
         @for (item of historial; track $index) {
-          <div class="hist-item" [class.hist-ataque]="item.tipo === 'ataque'" [class.hist-ok]="item.tipo === 'ok'">
+          <div class="hist-item"
+               [class.hist-ataque]="item.tipo === 'ataque'"
+               [class.hist-ok]="item.tipo === 'ok'"
+               [class.hist-pacto]="item.tipo === 'pacto'">
             {{ item.texto }}
           </div>
         }
@@ -147,8 +152,16 @@
       <button type="button" class="tarjetas-titulo tarjetas-titulo-btn"
               (click)="abrirModalCanje()"
               [disabled]="cartasJugador.length === 0"
-              aria-label="Abrir detalle de tarjetas">
-        TARJETAS
+              [attr.aria-label]="combinacionesPosibles.length > 0
+                ? 'Abrir detalle de tarjetas — hay canjes posibles'
+                : 'Abrir detalle de tarjetas'">
+        <span class="tarjetas-titulo-text">TARJETAS</span>
+        <span class="tarjetas-canje-light"
+              [class.encendida]="combinacionesPosibles.length > 0"
+              [attr.title]="combinacionesPosibles.length > 0
+                ? 'Tenés ' + combinacionesPosibles.length + ' combinación(es) de canje posible'
+                : 'Sin combinaciones de canje posibles'"
+              aria-hidden="true"></span>
       </button>
       <div class="tarjetas-contenido">
         @for (t of cartasJugador; track t.idEstadoTarjeta) {
@@ -268,6 +281,8 @@
            [style.top.px]="modalY"
            [style.background-color]="getColorSolidoPaisModal()">
 
+        <button class="modal-close-x" (click)="cerrarModalPais()" aria-label="Cerrar">✕</button>
+
         <!-- Papel interior: la strip del nombre va ADENTRO del papel -->
         <div class="modal-papel paper-grunge--v3">
 
@@ -309,15 +324,26 @@
               @if (puedoAtacarDesdeModal && paisesEnemigos.length > 0) {
                 <div class="modal-accion-group">
                   <label class="modal-input-lbl">Atacar hacia</label>
-                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal"
+                          [disabled]="tropasInsuficientesParaAtacar">
                     <option [value]="-1" disabled>Seleccioná país</option>
                     @for (p of paisesEnemigos; track p.pais.idPais) {
                       <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
                     }
                   </select>
-                  <button class="btn-teg-danger btn-modal-accion" (click)="atacarDesdeModal()">
+                  <button class="btn-teg-danger btn-modal-accion"
+                          [disabled]="tropasInsuficientesParaAtacar"
+                          [attr.title]="tropasInsuficientesParaAtacar
+                            ? 'Necesitás al menos 2 ejércitos para atacar (uno queda defendiendo).'
+                            : null"
+                          (click)="atacarDesdeModal()">
                     · ATACAR ·
                   </button>
+                  @if (tropasInsuficientesParaAtacar) {
+                    <p class="modal-aviso">
+                      Hace falta más de 1 ejército para iniciar un ataque.
+                    </p>
+                  }
                 </div>
               }
 
@@ -342,7 +368,6 @@
               }
             }
 
-            <button class="btn-modal-cerrar" (click)="cerrarModalPais()">✕ cerrar</button>
           </div>
         </div>
       </div>
@@ -505,6 +530,14 @@
         </div>
       }
     </div>
+
+    <!-- ── Botón de pactos: dentro del panel derecho, alineado con el borde inferior del mapa ── -->
+    <div class="boton-pactos-wrap">
+      <app-boton-pactos
+        [esMiTurno]="esMiTurno"
+        [cantidadPactosActivos]="cantidadPactosLocales"
+        (abrir)="abrirPactosOverlay()" />
+    </div>
   </div>
 
 </div><!-- .tablero-container -->
@@ -520,7 +553,7 @@
 
       <button class="btn-tarjetas-cerrar" (click)="cerrarModalCanje()" aria-label="Cerrar">✕</button>
 
-      <div class="tarjetas-modal-titulo">CARTAS EN MANO</div>
+      <div class="tarjetas-modal-titulo">TARJETAS EN MANO</div>
       @if (canjeHabilitado && puedeCanjear) {
         <div class="tarjetas-modal-subtitulo">· Tenés una combinación válida para canjear ·</div>
       }
@@ -600,4 +633,25 @@
   <app-fin-partida-overlay
     [datos]="datosFinPartida"
     (verEstadisticas)="irAEstadisticas()" />
+}
+
+<!-- ══ PACTOS: overlay principal con lista + wizard ════════════════════ -->
+@if (showPactosOverlay && partida && jugadorUsuario) {
+  <app-pactos-overlay
+    [partida]="partida"
+    [jugadorLocal]="jugadorUsuario"
+    [esMiTurno]="esMiTurno"
+    [pactosActivos]="pactosActivos"
+    (cerrar)="cerrarPactosOverlay()"
+    (pactoCambiado)="onPactoCambiado()" />
+}
+
+<!-- ══ PACTO: overlay de respuesta a propuesta entrante ══════════════ -->
+@if (propuestaPendiente && jugadorUsuario) {
+  <app-respuesta-pacto-overlay
+    [pacto]="propuestaPendiente"
+    [jugadorLocalId]="jugadorUsuario.idJugador"
+    [jugadores]="partida?.jugadores ?? []"
+    [resultado]="resultadoPropuesta"
+    (respondido)="onRespuestaPacto()" />
 }

@@ -7,6 +7,7 @@ import ar.edu.utn.frc.tup.piii.Dtos.PartidaEventDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.*;
 import ar.edu.utn.frc.tup.piii.Services.*;
+import ar.edu.utn.frc.tup.piii.Services.PactoService;
 import ar.edu.utn.frc.tup.piii.models.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class TurnoServiceImpl implements TurnoService {
     private final LimiteRepository limiteRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final AtaquePendienteStore ataquePendienteStore;
+    private final PactoService pactoService;
 
     /** @Lazy rompe la dependencia circular: TurnoService ↔ BotService */
     @Lazy
@@ -234,6 +236,12 @@ public class TurnoServiceImpl implements TurnoService {
         partidaEntity.setTurnoActual(nroTurnoSiguiente);
         partidaRepository.save(partidaEntity);
 
+        // Procesar pactos en período de gracia: marcar como EXPIRADO los que ya cumplieron.
+        try {
+            pactoService.procesarPactosEnGracia(partidaEntity.getIdPartida(), nroTurnoSiguiente);
+        } catch (Exception ignored) {
+        }
+
         int cantidadJugadores = jugadores.size();
         if (nroTurnoSiguiente == cantidadJugadores + 1) {
             List<Turno> turnosPrimeraVuelta = partidaEntity.getTurnos().stream()
@@ -398,9 +406,10 @@ public class TurnoServiceImpl implements TurnoService {
             throw new IllegalArgumentException("Fase no correspondiente.");
         }
 
-        if (turnoActual.isReagrupado()) {
-            throw new IllegalArgumentException("Ya reagrupaste tropas en este turno. Solo se permite reagrupar una vez por turno.");
-        }
+        // Reglamento TEG: en la fase de Reagrupamiento el jugador puede mover ejércitos
+        // libremente entre sus países conectados, varias veces, mientras siga en la fase.
+        // No bloqueamos por isReagrupado(); el flag se mantiene por compatibilidad pero
+        // el avance de fase es el único corte.
 
         // Validar conectividad: origen y destino deben estar conectados a través de territorio propio
         if (!esConectadoPorTerritorioPropio(moverFichas.getIdPaisOrigen(), moverFichas.getIdPaisDestino(),
@@ -907,6 +916,13 @@ public class TurnoServiceImpl implements TurnoService {
             throw new IllegalArgumentException("No se puede atacar su propio país");
         }
 
+        // Validación de pactos: bloquear si existe un pacto activo (o en gracia) que prohíba este ataque.
+        if (pactoService.ataqueViolaPactoActivo(ataque.getIdJugador(), ataque.getIdPaisDestino(),
+                jugador.getPartida().getIdPartida())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Existe un pacto vigente que impide este ataque.");
+        }
+
         ContextoAtaque ctx = new ContextoAtaque();
         ctx.jugador = jugador;
         ctx.partida = partida;
@@ -984,12 +1000,27 @@ public class TurnoServiceImpl implements TurnoService {
             jugadorRepository.save(jugador);
             conquista = true;
 
+            // Verificar ruptura automática de pactos por conquista del país.
+            try {
+                pactoService.verificarRupturaAutomaticaPorConquista(
+                        estadoPaisDefensor.getPais().getIdPais(),
+                        jugador.getIdJugador(),
+                        partida.getIdPartida());
+            } catch (Exception ignored) {
+            }
+
             List<EstadoPaisEntity> paisesDefensor = estadoPaisRepository
                     .findEstadoPaisEntitiesByJugador_IdJugador(defensorEntity.getIdJugador());
             if (paisesDefensor.isEmpty()) {
                 defensorEntity.setPerdio(true);
                 defensorEntity.setEliminadoPorColor(jugador.getColor());
                 jugadorRepository.save(defensorEntity);
+                // Eliminado: expirar todos sus pactos.
+                try {
+                    pactoService.expirarPactosDeJugadorEliminado(
+                            defensorEntity.getIdJugador(), partida.getIdPartida());
+                } catch (Exception ignored) {
+                }
             }
 
             try {

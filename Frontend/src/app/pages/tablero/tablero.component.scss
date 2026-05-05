@@ -295,12 +295,19 @@
   transition: opacity 0.25s ease, transform 0.3s ease;
 }
 
-.sobre-sello {
-  font-family: var(--font-heading); font-size: $text-caption;
-  letter-spacing: 0.1em; color: rgba(160,21,21,0.8);
-  border: 0.5px solid rgba(160,21,21,0.5);
-  padding: 2px 5px; border-radius: 1px;
+// Sello TOP SECRET — SVG en lugar del badge CSS. Aspect ratio 185.24:67.87 ≈ 2.73:1.
+// Width 100px → height ~37px. Rotado 5° para verse "estampado".
+.sobre-stamp {
+  width: 100px;
+  height: auto;
+  object-fit: contain;
   transform: rotate(-5deg);
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 2px rgba(160, 21, 21, 0.25));
+  // El SVG ya está en rojo #d51218 — mezcla multiply lo asienta sobre el papel
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 .sobre-label {
@@ -458,6 +465,19 @@ app-tablero-event-display {
   display: flex; flex-direction: column; align-items: center;
   gap: $space-2;
   opacity: 0.4;
+}
+
+// Botón de pactos: vive dentro de .panel-derecho como último hijo flex-column.
+// margin-top: auto lo empuja al fondo del panel; padding-bottom alinea su base
+// con el borde inferior del mapa (.mapa-zona { bottom: 48px }) — el panel
+// derecho termina a bottom: 8px, así que 40px de padding-bottom dejan el botón
+// a 48px del borde inferior de la viewport.
+.boton-pactos-wrap {
+  margin-top: auto;
+  padding: 0 0 40px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 // Botones circulares de zoom
@@ -623,6 +643,10 @@ app-tablero-event-display {
 }
 
 .modal-input {
+  // box-sizing: border-box → el width:100% incluye padding y border y respeta
+  // los 12px de padding-right de .modal-cuerpo. Sin esto el input excede el
+  // contenedor por (border + padding) ≈ 11px y se "come" la separación derecha.
+  box-sizing: border-box;
   width: 100%;
   background: rgba(67,42,30,0.06);
   border: 0.5px solid rgba(67,42,30,0.2);
@@ -630,12 +654,49 @@ app-tablero-event-display {
   font-family: var(--font-body); font-size: 11px;
   color: rgba(67,42,30,0.85); outline: none;
 
+  // Eliminar las flechas spinner del input number — no encajan con la estética
+  // y suelen sobresalir del borde derecho.
+  &[type='number'] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  &[type='number']::-webkit-outer-spin-button,
+  &[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
   &:focus { border-color: rgba(67,42,30,0.45); }
 }
 
 .modal-select {
   @extend .modal-input;
   cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  // Chevron warm-dark + textura papelera para alinearse con .modal-papel
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M1 1l3 3 3-3' stroke='%23432A1E' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
+    repeating-linear-gradient(
+      44deg,
+      rgba(88, 58, 24, 0.05) 0px, rgba(88, 58, 24, 0.05) 1px,
+      transparent 1px, transparent 7px
+    ),
+    linear-gradient(rgba(67, 42, 30, 0.06), rgba(67, 42, 30, 0.06));
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: right 6px center, 0 0, 0 0;
+  background-size: 8px 5px, auto, auto;
+  // Espacio derecho para el chevron sin invadir el texto
+  padding: 4px 18px 3px 5px;
+
+  option {
+    background: var(--color-claro);
+    color: var(--color-oscuro);
+    font-family: var(--font-body);
+    font-size: 11px;
+  }
 }
 
 // Override de tamaño para btn-teg-* dentro del modal de país
@@ -674,12 +735,41 @@ app-tablero-event-display {
   &:hover { background: rgba(26,64,128,0.3); }
 }
 
-.btn-modal-cerrar {
-  background: none; border: none; cursor: pointer;
-  font-family: var(--font-body); font-size: 8px;
-  color: rgba(67,42,30,0.35); align-self: flex-end;
-  padding: 2px 0; transition: color 0.15s;
-  &:hover { color: var(--color-sello); }
+// Close ✕ minimalista — top-right del modal-pais, sobre el borde de color del jugador.
+// Mismo patrón que .pactos-cerrar (sin recuadro), pero color oscuro para contrastar
+// con el fondo claro del jugador.
+.modal-close-x {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  color: rgba(255, 245, 220, 0.85);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  transition: color 150ms ease, transform 150ms ease;
+
+  &:hover, &:focus-visible {
+    color: var(--color-claro);
+    transform: scale(1.18);
+    outline: none;
+  }
+}
+
+// Aviso pequeño cuando no se puede atacar (1 sola tropa)
+.modal-aviso {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 9px;
+  color: var(--color-sello);
+  text-align: center;
+  line-height: 1.3;
 }
 
 // ── Resultado de ataque ───────────────────────────────────────────
@@ -955,6 +1045,7 @@ app-tablero-event-display {
 
   &.hist-ataque { color: rgba(191,104,0,0.90); }
   &.hist-ok     { color: rgba(184,216,213,0.85); }
+  &.hist-pacto  { color: rgba(120,160,210,0.90); font-style: italic; }
 }
 
 // ── Tarjetas (panel mini) ────────────────────────────────────────
@@ -977,14 +1068,15 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
           mask-size: contain;
 }
 
-// Grid de chips compactos: 2 columnas × 60px, alto auto, gap 8px.
-// Hasta 5 cartas (umbral de canje obligatorio) → 3 filas como máximo.
-// Padding solo vertical: necesitamos los 200px de ancho del panel para que
-// los 3 chips de 58px entren con sus gaps (3×58 + 2×8 = 190 < 200).
+// Grid de 3 columnas con scroll vertical limitado para que no domine la
+// columna izquierda cuando el jugador acumula muchas cartas. Padding
+// horizontal para alinear con el resto del panel.
 .tarjetas-panel {
   padding: $space-2 0;
   flex: 0 0 auto;
   display: flex; flex-direction: column;
+  max-height: 200px;
+  min-height: 0;
 }
 
 .tarjetas-titulo {
@@ -994,30 +1086,79 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 }
 
 // Versión clickable: hereda de .tarjetas-titulo pero comporta como botón.
+// Contiene el texto a la izquierda y la luz indicadora de canjes a la derecha.
 .tarjetas-titulo-btn {
   background: transparent;
   border: none;
-  text-align: left;
   cursor: pointer;
   transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  width: 100%;
 
   &:hover:not(:disabled) { color: rgba(239,232,206,0.85); }
   &:disabled { cursor: default; opacity: 0.4; }
 }
 
-// Distribución horizontal: chips fluyen de izquierda a derecha en el orden
-// en que el jugador las va obteniendo, con gap normal. Cuando hay menos chips
-// que el ancho del panel, quedan agrupadas a la izquierda (sin separarse a
-// los bordes como hacía space-between con 2 cartas).
+.tarjetas-titulo-text {
+  display: inline-block;
+}
+
+// Luz tipo LED a la derecha del título: verde + halo cuando hay canjes posibles,
+// gris oscuro y apagada cuando no hay. La transición de halo es suave para que
+// el cambio de estado al ganar la 3ª carta del set se vea como un "encendido".
+.tarjetas-canje-light {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #2a2a2a;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+
+  &.encendida {
+    background: radial-gradient(circle at 35% 30%, #6dff8a 0%, #25b04a 60%, #0e6a28 100%);
+    border-color: rgba(14, 90, 30, 0.9);
+    box-shadow: 0 0 4px rgba(110, 255, 138, 0.55),
+                0 0 9px rgba(75, 220, 110, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    animation: tarjetas-canje-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tarjetas-canje-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(110, 255, 138, 0.55),
+                0 0 9px rgba(75, 220, 110, 0.35),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 6px rgba(110, 255, 138, 0.85),
+                0 0 14px rgba(75, 220, 110, 0.55),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+}
+
+// Grid 3 columnas: las cartas se acomodan ordenadas, ancho proporcional al
+// del panel. La altura sigue la proporción 2:3 vía aspect-ratio. Si hay más
+// filas de las que entran en .tarjetas-panel, scrollea verticalmente.
 .tarjetas-contenido {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
-  row-gap: $space-2;
-  column-gap: $space-2;
-  padding: 2px $space-2;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 2px $space-1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67,42,30,0.25) transparent;
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(67,42,30,0.25); border-radius: 2px; }
 }
 
 // Chip individual — proporción de carta 2:3 (58×87px), zona superior con el
@@ -1029,7 +1170,9 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 .tarjeta-mini {
   position: relative;
   isolation: isolate;
-  width: 58px; height: 87px;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  height: auto;
   padding: 0;
   background-color: var(--color-claro);
   background-image: repeating-linear-gradient(
@@ -1136,11 +1279,14 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 // permanece fija mientras el contenido se desplaza.
 .chat-panel {
   position: relative;
-  // Crece para llenar el espacio sobrante hasta el borde inferior de la
-  // columna izquierda (que está alineado con el del mapa via bottom: 48px).
-  flex: 1 1 0;
+  // Alto fijo 200px y `margin-top: auto` para que quede SIEMPRE pegado al
+  // borde inferior de la columna-izquierda (que está alineado con el bottom
+  // del mapa vía .columna-izquierda { bottom: 48px }). Así el chat no crece
+  // ni se mueve aunque el modal de objetivo o las tarjetas cambien de alto.
+  flex: 0 0 200px;
+  margin-top: auto;
   min-height: 200px;
-  max-height: 380px;
+  max-height: 200px;
   display: flex; flex-direction: column;
   background: var(--color-claro);
   border-radius: 2px;
@@ -1356,12 +1502,13 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 
 .tarjetas-modal-titulo {
   font-family: var(--font-heading);
-  font-size: 22px;
-  letter-spacing: 0.18em;
+  font-size: 26px;
+  letter-spacing: 0.2em;
   color: var(--color-claro);
   text-transform: uppercase;
   text-align: center;
   text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  margin-bottom: 18px;
 }
 
 .tarjetas-modal-subtitulo {
@@ -1406,10 +1553,10 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 .tarjetas-modal-grid {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fit, 140px);
+  grid-template-columns: repeat(auto-fit, 180px);
   justify-content: center;
-  gap: 24px 20px;
-  padding: 8px 4px;
+  gap: 28px 24px;
+  padding: 16px 4px 8px;
   overflow-y: auto;
   width: 100%;
   scrollbar-width: thin;
@@ -1451,7 +1598,7 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 .tarjeta-detalle {
   position: relative;
   isolation: isolate;
-  width: 140px; height: 210px;
+  width: 180px; height: 270px;
   padding: 0;
   background-color: var(--color-claro);
   background-image: repeating-linear-gradient(
@@ -1508,18 +1655,20 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 
   &--seleccionada {
     border-color: var(--color-secondary);
-    box-shadow: 0 0 0 2px var(--color-secondary), 3px 7px 18px rgba(0,0,0,0.6);
+    // Tinte verde como inset box-shadow: pinta sobre el background pero
+    // BAJO el ::after del marco lineal interior, así el marco se mantiene
+    // visible. inset radius enorme cubre toda la card aunque cambie de
+    // tamaño. El tinte queda atenuado por el grunge ::before, pero sigue
+    // dando feedback claro de selección.
+    box-shadow:
+      inset 0 0 0 9999px rgba(55, 94, 65, 0.20),
+      0 0 0 2px var(--color-secondary),
+      3px 7px 18px rgba(0,0,0,0.6);
 
-    // Tinte de selección verdoso, sobrescribe el marco lineal de ::after
-    // pero conserva el grunge de ::before.
+    // Tintamos el marco lineal en verde para coordinar con la selección,
+    // pero conservamos el inset:6px y el border (NO lo sobreescribimos).
     &::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: rgba(55, 94, 65, 0.18);
-      border: none;
-      border-radius: inherit;
-      pointer-events: none;
-      z-index: 2;
+      border-color: rgba(40, 90, 55, 0.7);
     }
   }
 }
@@ -1532,7 +1681,7 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 
 .tarjeta-detalle-symbol-img {
   display: block;
-  width: 80px; height: 80px;
+  width: 110px; height: 110px;
   flex-shrink: 0;
 
   &--canion { @include simbolo-mask('/assets/vectors/tablero/war-tank-symbol.svg',  $card-canion); }
@@ -1541,8 +1690,9 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 }
 
 // Comodín: 3 íconos pequeños en lugar de uno grande
+.tarjetas-detalle-symbol-wrap:has(> .tarjeta-detalle-symbol-img:nth-child(2)) .tarjeta-detalle-symbol-img,
 .tarjeta-detalle-symbol-wrap:has(> .tarjeta-detalle-symbol-img:nth-child(2)) .tarjeta-detalle-symbol-img {
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
 }
 
 .tarjeta-detalle-divider {
@@ -1553,10 +1703,10 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 
 .tarjeta-detalle-pais {
   display: flex; align-items: center; justify-content: center;
-  padding: 0 8px;
+  padding: 0 10px;
   font-family: var(--font-heading);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 14px;
+  letter-spacing: 0.07em;
   color: var(--color-oscuro);
   text-align: center;
   line-height: 1.1;
