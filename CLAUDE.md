@@ -8,7 +8,7 @@ Juego de estrategia por turnos implementado como aplicación web fullstack. Mono
 |---|---|
 | Frontend | Angular 19, TypeScript 5.8, Bootstrap 5, ng-bootstrap |
 | Backend | Java 17, Spring Boot 3.3.5, Maven |
-| Base de datos | H2 file-based (`Backend/data/tegdb`) |
+| Base de datos | PostgreSQL 15 (Docker), migraciones con Flyway |
 | Tiempo real | WebSocket (STOMP + SockJS) |
 | Tests FE | Jasmine + Karma |
 | Tests BE | JUnit + Mockito |
@@ -20,15 +20,22 @@ Juego de estrategia por turnos implementado como aplicación web fullstack. Mono
 - Backend API: http://localhost:8080/api/v1
 - WebSocket: http://localhost:8080/ws
 - Swagger: http://localhost:8080/swagger-ui.html
-- H2 Console: http://localhost:8080/h2-console (user: `sa`, pass: vacío)
+- Con Docker todo se sirve desde http://localhost (Nginx proxya `/api` y `/ws`)
+
+**Usuarios semilla** (cargados por Flyway): `test@test.com`, `comandante@test.com`,
+`aliado@test.com` — todos con contraseña `Test123@`.
 
 ## Comandos
 
 ```bash
-# Levantar ambos simultáneamente (desde raíz)
+# Stack completo en Docker (requiere .env — copiar de .env.example)
+docker compose up --build
+
+# Desarrollo local: solo la base en Docker, app nativa con hot-reload
+docker compose up -d postgres
 npm start
 
-# Solo backend
+# Solo backend (necesita el postgres arriba)
 cd Backend && ./mvnw spring-boot:run
 
 # Solo frontend
@@ -130,7 +137,8 @@ npx playwright test nombre-test.spec.ts
 
 ## Notas importantes
 
-- La DB H2 es persistente (archivo `Backend/data/tegdb`). Al cambiar entidades con `ddl-auto=update`, puede haber conflictos. Para reset limpio, eliminar el archivo `.mv.db`.
+- El esquema lo gobierna **Flyway**, no Hibernate: la app corre con `ddl-auto=validate`. Al cambiar una entidad hay que agregar una migración nueva en `Backend/src/main/resources/db/migration/` (nunca editar una ya aplicada — Flyway valida el checksum). Sin la migración, el arranque falla a propósito. Reset limpio: `docker compose down -v`.
+- Los tests usan H2 en memoria (Flyway apagado, esquema generado por Hibernate) para no depender de un Postgres levantado.
 - El CORS está configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
 - Los bots (`BotService`) tienen lógica de juego automática — revisar antes de modificar el flujo de turnos.
 - El mapa del tablero es SVG interactivo (`mapa-svg/`).

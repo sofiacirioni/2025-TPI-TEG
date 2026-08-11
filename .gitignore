@@ -131,6 +131,11 @@ coverage/
 test-results/
 junit.xml
 
+# ========== CRASH DUMPS / LOGS DE BUILD ==========
+hs_err_pid*
+*.jfr
+replay_pid*.log
+
 # ========== VARIABLES DE ENTORNO ==========
 .env
 *.env.local

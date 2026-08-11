@@ -1,4 +1,14 @@
-version: '3.8'
+# ============================================================
+# TEG — stack completo en un comando:
+#
+#     docker compose up --build
+#
+# Levanta PostgreSQL, el backend (que aplica las migraciones de
+# Flyway al arrancar: esquema + tablero + usuarios de prueba) y
+# el frontend servido por Nginx en http://localhost
+#
+# Las variables salen del archivo .env de la raíz (ver .env.example).
+# ============================================================
 
 services:
 
@@ -7,19 +17,20 @@ services:
     container_name: teg-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: tegdb
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-tegdb}
+      POSTGRES_USER: ${DB_USER:-teg}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-teg}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Puerto solo expuesto localmente — no accesible desde internet
+    # Publicado en localhost para poder correr el backend fuera de Docker
+    # (npm start) contra esta misma base. No queda expuesto a la red.
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d tegdb"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-teg} -d ${DB_NAME:-tegdb}"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend:
     build:
@@ -28,13 +39,14 @@ services:
     container_name: teg-backend
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:postgresql://postgres:5432/tegdb
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      FRONTEND_URL: ${FRONTEND_URL}
-    # Puerto del backend NO expuesto al exterior —
-    # solo accesible desde Nginx dentro de la red Docker
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-tegdb}
+      DB_USER: ${DB_USER:-teg}
+      DB_PASSWORD: ${DB_PASSWORD:-teg}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-WARN}
+    # No se publica al host: Nginx lo alcanza por la red interna de Docker.
     expose:
       - "8080"
     depends_on:

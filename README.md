@@ -10,56 +10,92 @@ Juego de estrategia por turnos implementado como aplicación web fullstack. Mono
 |---|---|
 | Frontend | Angular 21, TypeScript 5.8, Bootstrap 5, SCSS |
 | Backend | Java 17, Spring Boot 3.3.5, Maven |
-| Base de datos | H2 file-based (`Backend/data/tegdb`) |
+| Base de datos | PostgreSQL 15 |
+| Migraciones | Flyway (`Backend/src/main/resources/db/migration`) |
 | Tiempo real | WebSocket (STOMP + SockJS) |
 | Tests FE | Jasmine + Karma |
-| Tests BE | JUnit + Mockito |
+| Tests BE | JUnit + Mockito (H2 en memoria) |
 | API docs | Swagger `/swagger-ui.html` |
 
 ---
 
-## URLs de desarrollo
+## Levantar todo con un comando
 
-| Servicio | URL |
+Requiere Docker.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Listo: http://localhost
+
+Al arrancar, Flyway crea el esquema y carga el tablero (continentes, países,
+fronteras, objetivos, tarjetas) más tres usuarios de prueba. No hace falta
+ningún paso manual sobre la base.
+
+### Usuarios de prueba
+
+Los tres usan la contraseña `Test123@`:
+
+| Correo | Usuario |
 |---|---|
-| Frontend | http://localhost:4200 |
-| Backend API | http://localhost:8080/api/v1 |
-| WebSocket | http://localhost:8080/ws |
-| Swagger | http://localhost:8080/swagger-ui.html |
-| H2 Console | http://localhost:8080/h2-console |
+| test@test.com | testuser |
+| comandante@test.com | comandante |
+| aliado@test.com | aliado |
 
-**Credenciales H2:** usuario `sa`, password vacío, JDBC URL `jdbc:h2:file:./data/tegdb`
+Son credenciales de desarrollo conocidas — quitar `V3__seed_users.sql` antes de
+cualquier despliegue real.
 
 ---
 
-## Instalación y levantado
+## URLs
 
-### Backend
+| Servicio | Con Docker | Desarrollo local |
+|---|---|---|
+| Frontend | http://localhost | http://localhost:4200 |
+| Backend API | http://localhost/api/v1 | http://localhost:8080/api/v1 |
+| WebSocket | http://localhost/ws | http://localhost:8080/ws |
+| Swagger | http://localhost/swagger-ui.html | http://localhost:8080/swagger-ui.html |
 
-```bash
-cd Backend
+---
 
-# Primera vez
-./mvnw clean install          # Linux/Mac
-mvnw.cmd clean install        # Windows
+## Desarrollo local (sin Docker para la app)
 
-# Levantar
-./mvnw spring-boot:run
-mvnw.cmd spring-boot:run      # Windows
-```
-
-### Frontend
+La base sigue siendo PostgreSQL, así que se levanta solo ese contenedor y el
+resto corre nativo con hot-reload:
 
 ```bash
-cd Frontend
-npm install       # primera vez
-npm start         # levanta en localhost:4200
-```
-
-### Ambos simultáneamente (desde la raíz)
-
-```bash
+docker compose up -d postgres
 npm start
+```
+
+`npm start` levanta backend y frontend a la vez. El backend toma por defecto
+`jdbc:postgresql://localhost:5432/tegdb`, que es el puerto que publica el
+contenedor, así que ambos modos comparten la misma base.
+
+---
+
+## Migraciones de base de datos
+
+El esquema lo gobierna Flyway y la app corre con `ddl-auto=validate`: Hibernate
+verifica que las entidades coincidan con las tablas y **nunca** las modifica.
+
+Para cambiar el modelo hay que agregar un archivo nuevo — no editar los ya
+aplicados, porque Flyway valida su checksum:
+
+```
+Backend/src/main/resources/db/migration/
+├── V1__init_schema.sql       # tablas y claves foráneas
+├── V2__reference_data.sql    # tablero del juego
+├── V3__seed_users.sql        # usuarios de prueba
+└── V4__lo_que_sigue.sql      # ← nuevos cambios acá
+```
+
+Para empezar de cero, borrar el volumen:
+
+```bash
+docker compose down -v && docker compose up --build
 ```
 
 ---
@@ -78,7 +114,8 @@ npm start
 │   │   ├── Dtos/               # Data Transfer Objects
 │   │   ├── models/             # Enums y modelos de dominio
 │   │   └── configs/            # CORS, WebSocket, Swagger
-│   ├── data/                   # Base de datos H2 (tegdb.mv.db)
+│   ├── src/main/resources/
+│   │   └── db/migration/       # Migraciones Flyway (esquema + semillas)
 │   └── pom.xml
 │
 └── Frontend/                   # Angular 21
@@ -134,8 +171,10 @@ cd Frontend && rm -rf .angular/cache && npm start
 
 ## Notas importantes
 
-- **DB H2 persistente**: el archivo `Backend/data/tegdb.mv.db` se mantiene entre reinicios. Para reset limpio, eliminar ese archivo.
-- **CORS**: configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
+- **Base de datos**: PostgreSQL en Docker, persistida en el volumen `teg-postgres-data`. Para reset limpio: `docker compose down -v`.
+- **Esquema**: lo gobierna Flyway, no Hibernate. Cambiar una entidad sin agregar la migración correspondiente hace fallar el arranque (`ddl-auto=validate`) — eso es intencional.
+- **CORS**: sale de `FRONTEND_URL` en el `.env` (coma-separado). Default: `localhost:4200` y `localhost`.
+- **Secretos**: viven en `.env`, que está en `.gitignore` y no se commitea. La plantilla es `.env.example`.
 - **Bots**: `BotService` juega automáticamente los turnos de jugadores bot — revisar antes de modificar el flujo de turnos.
 - **Mapa SVG**: cargado vía HTTP desde `public/`, parseado con DOMParser. Los países tienen IDs 1-50 = `pais.idPais`.
 - **Caché Angular**: si `npm start` muestra errores de módulos no encontrados pero `ng build` compila bien, borrar `.angular/cache` y reiniciar.
