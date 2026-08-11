@@ -4,6 +4,7 @@ import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
+import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
@@ -39,6 +40,15 @@ class BotServiceImplTest {
 
     @Mock
     private JugadorRepository jugadorRepository;
+
+    /**
+     * Necesario desde que realizarIncorporacion() arranca con el canje obligatorio de
+     * tarjetas. Sin este mock el campo queda null, la incorporación lanza NPE y el bot
+     * cae en la rama de recuperación del catch — con lo cual nunca distribuye ni ataca.
+     * Sin stubear: Mockito devuelve lista vacía y el bot sigue de largo (no hay canje).
+     */
+    @Mock
+    private EstadoTarjetaRepository estadoTarjetaRepository;
 
     @BeforeEach
     void setUp() {

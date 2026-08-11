@@ -19,6 +19,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -65,6 +66,20 @@ class TurnoServiceImplTest {
     private PaisRepository paisRepository;
     @Mock
     private JugadorService jugadorService;
+
+    // Dependencias incorporadas después de que se escribieron estos tests. Sin
+    // declararlas, @InjectMocks las deja en null y cualquier camino que las use
+    // revienta con NPE antes de llegar a lo que el test quiere verificar.
+    @Mock
+    private LimiteRepository limiteRepository;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+    @Mock
+    private AtaquePendienteStore ataquePendienteStore;
+    @Mock
+    private PactoService pactoService;
+    @Mock
+    private BotService botService;
 
     private TurnoEntity turnoEntity;
     private Turno turno;
@@ -313,8 +328,13 @@ class TurnoServiceImplTest {
         Long idJugador = 1L;
         Long idPartida = 10L;
 
+        // moverFichas ahora valida conectividad por territorio propio (BFS) antes de
+        // reagrupar. Sin países de origen/destino el BFS recibe null y explota, por eso
+        // este test hay que armarlo con dos países propios y limítrofes entre sí.
         MoverFichas moverFichas = new MoverFichas();
         moverFichas.setIdJugador(idJugador);
+        moverFichas.setIdPaisOrigen(1L);
+        moverFichas.setIdPaisDestino(2L);
 
         PartidaEntity partida = new PartidaEntity();
         partida.setIdPartida(idPartida);
@@ -322,6 +342,7 @@ class TurnoServiceImplTest {
 
         JugadorEntity jugador = new JugadorEntity();
         jugador.setIdJugador(idJugador);
+        jugador.setNombre("Jugador Test");
         jugador.setPartida(partida);
 
         TurnoEntity turno = new TurnoEntity();
@@ -329,9 +350,24 @@ class TurnoServiceImplTest {
         turno.setJugador(jugador);
         turno.setNroTurno(3);
 
+        PaisEntity pais1 = new PaisEntity();
+        pais1.setIdPais(1L);
+        PaisEntity pais2 = new PaisEntity();
+        pais2.setIdPais(2L);
+
+        LimiteEntity limite = new LimiteEntity();
+        limite.setPais1(pais1);
+        limite.setPais2(pais2);
+
         when(jugadorRepository.findById(idJugador)).thenReturn(Optional.of(jugador));
         when(partidaRepository.findById(idPartida)).thenReturn(Optional.of(partida));
         when(turnoRepository.findByNroTurnoAndPartida_IdPartida(3, idPartida)).thenReturn(Optional.of(turno));
+
+        // Grafo mínimo para el BFS: 1 y 2 son limítrofes y ambos del jugador.
+        when(limiteRepository.findByPais1_IdPaisOrPais2_IdPais(1L, 1L)).thenReturn(List.of(limite));
+        when(estadoPaisRepository.findAllByPais_IdPaisInAndPartida_IdPartida(any(), eq(idPartida)))
+                .thenReturn(List.of(estadoPaisDe(2L, jugador, 1)));
+
         when(estadoPaisService.agrupacionFichas(moverFichas)).thenReturn(true);
 
         Boolean resultado = turnosServiceImpl.moverFichas(moverFichas);
@@ -454,7 +490,7 @@ class TurnoServiceImplTest {
     }
 
     @Test
-    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_DEFENDER() {
+    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_INCORPORACION() {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
@@ -463,13 +499,15 @@ class TurnoServiceImplTest {
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
 
-        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Defender");
+        // Las acciones se nombran como las fases (Incorporacion / Ataque / Reagrupacion).
+        // Antes este test mandaba "Defender", vocabulario que ya no existe.
+        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Incorporacion");
 
         assertTrue(resultado);
     }
 
     @Test
-    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_ATACAR() {
+    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_ATAQUE() {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
@@ -478,13 +516,13 @@ class TurnoServiceImplTest {
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
 
-        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Atacar");
+        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Ataque");
 
         assertTrue(resultado);
     }
 
     @Test
-    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_MOVER_TROPAS() {
+    void verificarOrdenAcciones_deberiaRetornarTrue_siAccionCoincideConFase_REAGRUPACION() {
         Jugador jugador = new Jugador();
         JugadorEntity jugadorEntity = new JugadorEntity();
         TurnoEntity turno = new TurnoEntity();
@@ -493,7 +531,7 @@ class TurnoServiceImplTest {
         when(modelMapper.map(jugador, JugadorEntity.class)).thenReturn(jugadorEntity);
         when(turnoRepository.findByJugador(jugadorEntity)).thenReturn(turno);
 
-        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Mover Tropas");
+        boolean resultado = turnosServiceImpl.verificarOrdenAcciones(jugador, "Reagrupacion");
 
         assertTrue(resultado);
     }
@@ -515,93 +553,71 @@ class TurnoServiceImplTest {
 
     @Test
     void validarMovimiento_deberiaRetornarTrue_siCondicionesSonValidas() {
+        // validarMovimiento trabaja directo con las entidades: ya no pasa por
+        // modelMapper, así que el país de cada estado tiene que estar seteado.
         Pais origen = new Pais();
         origen.setIdPais(1L);
-
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(100L);
 
-        EstadoPaisEntity origenEntity = new EstadoPaisEntity();
-        EstadoPaisEntity destinoEntity = new EstadoPaisEntity();
-
-        EstadoPais estadoOrigen = new EstadoPais();
-        estadoOrigen.setCantidadTropas(3);
-
-        EstadoPais estadoDestino = new EstadoPais();
-        estadoDestino.setCantidadTropas(1);
-
-        PaisEntity pais1Entity = new PaisEntity();
-        pais1Entity.setIdPais(1L);
-
-        PaisEntity pais2Entity = new PaisEntity();
-        pais2Entity.setIdPais(2L);
+        JugadorEntity duenio = new JugadorEntity();
+        duenio.setIdJugador(100L);
 
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 100L))
-                .thenReturn(Optional.of(origenEntity));
-
+                .thenReturn(Optional.of(estadoPaisDe(1L, duenio, 3)));
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(2L, 100L))
-                .thenReturn(Optional.of(destinoEntity));
+                .thenReturn(Optional.of(estadoPaisDe(2L, duenio, 1)));
+        when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(true);
 
-        when(modelMapper.map(Optional.of(origenEntity), EstadoPais.class)).thenReturn(estadoOrigen);
-        when(modelMapper.map(Optional.of(destinoEntity), EstadoPais.class)).thenReturn(estadoDestino);
-        when(modelMapper.map(origen, PaisEntity.class)).thenReturn(pais1Entity);
-        when(modelMapper.map(destino, PaisEntity.class)).thenReturn(pais2Entity);
-
-        when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(false);
-
-        boolean resultado = turnosServiceImpl.validarMovimiento(origen, destino, jugador);
-
-        assertTrue(resultado);
+        assertTrue(turnosServiceImpl.validarMovimiento(origen, destino, jugador));
     }
 
     @Test
-    void validarAtaque_estadoOrigenYDestinoPresentes_deberiaRetornarFalse() {
+    void validarMovimiento_deberiaRetornarFalse_siNoSonLimitrofes() {
         Pais origen = new Pais();
         origen.setIdPais(1L);
+        Pais destino = new Pais();
+        destino.setIdPais(2L);
 
+        Jugador jugador = new Jugador();
+        jugador.setIdJugador(100L);
+
+        JugadorEntity duenio = new JugadorEntity();
+        duenio.setIdJugador(100L);
+
+        when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 100L))
+                .thenReturn(Optional.of(estadoPaisDe(1L, duenio, 3)));
+        when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(2L, 100L))
+                .thenReturn(Optional.of(estadoPaisDe(2L, duenio, 1)));
+        when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(false);
+
+        assertFalse(turnosServiceImpl.validarMovimiento(origen, destino, jugador));
+    }
+    @Test
+    void validarAtaque_tropasInsuficientes_deberiaRetornarFalse() {
+        // Con 1 sola tropa en el origen no se puede atacar: una debe quedar defendiendo.
+        Pais origen = new Pais();
+        origen.setIdPais(1L);
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(1L);
 
-        EstadoPaisEntity estadoOrigenEntity = new EstadoPaisEntity();
-        estadoOrigenEntity.setIdEstadoPais(10L);
-        JugadorEntity jugadorEntity = new JugadorEntity();
-        jugadorEntity.setIdJugador(1L);
-        estadoOrigenEntity.setJugador(jugadorEntity);
-
-        EstadoPaisEntity estadoDestinoEntity = new EstadoPaisEntity();
-        estadoDestinoEntity.setIdEstadoPais(20L);
-        estadoDestinoEntity.setJugador(new JugadorEntity());
-        estadoDestinoEntity.getJugador().setIdJugador(2L);
+        JugadorEntity atacante = stubJugadorConPartida(1L, 7L);
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(2L);
 
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 1L))
-                .thenReturn(Optional.of(estadoOrigenEntity));
-        when(estadoPaisRepository.findById(2L))
-                .thenReturn(Optional.of(estadoDestinoEntity));
+                .thenReturn(Optional.of(estadoPaisDe(1L, atacante, 1)));
+        when(estadoPaisRepository.findByPais_IdPaisAndPartida_IdPartida(2L, 7L))
+                .thenReturn(Optional.of(estadoPaisDe(2L, enemigo, 3)));
+        when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(true);
 
-        when(modelMapper.map(Optional.of(estadoOrigenEntity), EstadoPais.class))
-                .thenReturn(mapToEstadoPais(estadoOrigenEntity));
-        when(modelMapper.map(Optional.of(estadoDestinoEntity), EstadoPais.class))
-                .thenReturn(mapToEstadoPais(estadoDestinoEntity));
-
-        when(modelMapper.map(origen, PaisEntity.class)).thenReturn(mapToPaisEntity(origen));
-        when(modelMapper.map(destino, PaisEntity.class)).thenReturn(mapToPaisEntity(destino));
-
-        boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
-
-        assertFalse(resultado);
-
-        verify(estadoPaisRepository).findByPaisIdPaisAndJugadorIdJugador(1L, 1L);
-        verify(estadoPaisRepository).findById(2L);
-        verify(modelMapper).map(Optional.of(estadoOrigenEntity), EstadoPais.class);
-        verify(modelMapper).map(Optional.of(estadoDestinoEntity), EstadoPais.class);
-        verify(modelMapper).map(origen, PaisEntity.class);
-        verify(modelMapper).map(destino, PaisEntity.class);
+        assertFalse(turnosServiceImpl.validarAtaque(origen, destino, jugador));
     }
 
     @Test
@@ -756,6 +772,26 @@ class TurnoServiceImplTest {
         assertThrows(ResponseStatusException.class, () -> turnosServiceImpl.validarUsarTarjetaEnPais(dto));
     }
 
+    /**
+     * validarCanjeTarjetas ahora exige que sea el turno del jugador y que la fase sea
+     * INCORPORACION, así que hace falta armar partida + turno. Antes alcanzaba con un
+     * JugadorEntity vacío y por eso estos tests explotaban con NPE.
+     */
+    private void stubContextoDeCanje(JugadorEntity jugador, Long idPartida, FaseTurno fase) {
+        PartidaEntity partida = new PartidaEntity();
+        partida.setIdPartida(idPartida);
+        partida.setTurnoActual(1);
+        jugador.setPartida(partida);
+
+        TurnoEntity turnoCanje = new TurnoEntity();
+        turnoCanje.setJugador(jugador);
+        turnoCanje.setFase(fase);
+
+        when(partidaRepository.findById(idPartida)).thenReturn(Optional.of(partida));
+        when(turnoRepository.findByNroTurnoAndPartida_IdPartida(1, idPartida))
+                .thenReturn(Optional.of(turnoCanje));
+    }
+
     @Test
     void testValidarCanjeTarjetas_CanjeExitoso() {
         CanjeTarjetasDto dto = new CanjeTarjetasDto();
@@ -763,12 +799,13 @@ class TurnoServiceImplTest {
         dto.setIdTarjetas(List.of(10L, 20L));
 
         JugadorEntity jugador = new JugadorEntity();
+        jugador.setIdJugador(1L);
+        jugador.setNombre("Jugador Test");
+        stubContextoDeCanje(jugador, 30L, FaseTurno.INCORPORACION);
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
 
-        EstadoTarjetaEntity et1 = new EstadoTarjetaEntity();
-        EstadoTarjetaEntity et2 = new EstadoTarjetaEntity();
-        when(estadoTarjetaRepository.findAllById(dto.getIdTarjetas())).thenReturn(List.of(et1, et2));
-
+        when(estadoTarjetaRepository.findAllById(dto.getIdTarjetas()))
+                .thenReturn(List.of(new EstadoTarjetaEntity(), new EstadoTarjetaEntity()));
         when(estadoTarjetaService.canjearTarjetas(dto.getIdTarjetas(), 1L)).thenReturn(5);
 
         Integer result = turnosServiceImpl.validarCanjeTarjetas(dto);
@@ -783,11 +820,29 @@ class TurnoServiceImplTest {
         dto.setIdTarjetas(List.of(10L, 20L));
 
         JugadorEntity jugador = new JugadorEntity();
+        jugador.setIdJugador(1L);
+        stubContextoDeCanje(jugador, 30L, FaseTurno.INCORPORACION);
         when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
+
         when(estadoTarjetaRepository.findAllById(dto.getIdTarjetas()))
                 .thenReturn(List.of(new EstadoTarjetaEntity(), new EstadoTarjetaEntity()));
-
         when(estadoTarjetaService.canjearTarjetas(dto.getIdTarjetas(), 1L)).thenReturn(3);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> turnosServiceImpl.validarCanjeTarjetas(dto));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void testValidarCanjeTarjetas_faseIncorrecta_deberiaLanzarBadRequest() {
+        CanjeTarjetasDto dto = new CanjeTarjetasDto();
+        dto.setIdJugador(1L);
+        dto.setIdTarjetas(List.of(10L, 20L));
+
+        JugadorEntity jugador = new JugadorEntity();
+        jugador.setIdJugador(1L);
+        stubContextoDeCanje(jugador, 30L, FaseTurno.ATAQUE);
+        when(jugadorRepository.findById(1L)).thenReturn(Optional.of(jugador));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> turnosServiceImpl.validarCanjeTarjetas(dto));
@@ -1050,135 +1105,116 @@ class TurnoServiceImplTest {
         assertEquals(FaseTurno.REAGRUPACION, turnoEntity.getFase());
     }
 
+    // ── validarAtaque ──────────────────────────────────────────────────────────
+    // Reescritos: validarAtaque ahora resuelve el jugador por repositorio y busca el
+    // destino por partida (findByPais_IdPaisAndPartida_IdPartida), no por findById.
+    // Los tests viejos mockeaban modelMapper sobre Optionals, API que ya no se usa.
+
+    /** El jugador y su partida, que validarAtaque resuelve por repositorio. */
+    private JugadorEntity stubJugadorConPartida(Long idJugador, Long idPartida) {
+        PartidaEntity partida = new PartidaEntity();
+        partida.setIdPartida(idPartida);
+        JugadorEntity je = new JugadorEntity();
+        je.setIdJugador(idJugador);
+        je.setPartida(partida);
+        when(jugadorRepository.findById(idJugador)).thenReturn(Optional.of(je));
+        return je;
+    }
+
+    private EstadoPaisEntity estadoPaisDe(Long idPais, JugadorEntity duenio, int tropas) {
+        PaisEntity pais = new PaisEntity();
+        pais.setIdPais(idPais);
+        EstadoPaisEntity ep = new EstadoPaisEntity();
+        ep.setPais(pais);
+        ep.setJugador(duenio);
+        ep.setCantidadTropas(tropas);
+        return ep;
+    }
+
     @Test
     void validarAtaque_condicionesCorrectas_deberiaRetornarTrue() {
         Pais origen = new Pais();
         origen.setIdPais(1L);
-
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(99L);
 
-        EstadoPaisEntity estadoOrigenEntity = new EstadoPaisEntity();
-        EstadoPaisEntity estadoDestinoEntity = new EstadoPaisEntity();
+        JugadorEntity atacante = stubJugadorConPartida(99L, 7L);
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(50L);
 
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 99L))
-                .thenReturn(Optional.empty());
-        when(estadoPaisRepository.findById(2L))
-                .thenReturn(Optional.empty());
-
-        EstadoPais eOrigen = new EstadoPais();
-        EstadoPais eDestino = new EstadoPais();
-
-        Jugador jugadorOrigen = new Jugador();
-        jugadorOrigen.setIdJugador(1L);
-        Jugador jugadorDestino = new Jugador();
-        jugadorDestino.setIdJugador(2L);
-        eOrigen.setJugador(jugadorOrigen);
-        eOrigen.setCantidadTropas(5);
-        eDestino.setJugador(jugadorDestino);
-        eDestino.setCantidadTropas(3);
-
-        when(modelMapper.map(Optional.empty(), EstadoPais.class)).thenReturn(eOrigen).thenReturn(eDestino);
-
-        PaisEntity pais1 = new PaisEntity();
-        pais1.setIdPais(1L);
-        PaisEntity pais2 = new PaisEntity();
-        pais2.setIdPais(2L);
-
-        when(modelMapper.map(origen, PaisEntity.class)).thenReturn(pais1);
-        when(modelMapper.map(destino, PaisEntity.class)).thenReturn(pais2);
-
+                .thenReturn(Optional.of(estadoPaisDe(1L, atacante, 5)));
+        when(estadoPaisRepository.findByPais_IdPaisAndPartida_IdPartida(2L, 7L))
+                .thenReturn(Optional.of(estadoPaisDe(2L, enemigo, 3)));
         when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(true);
 
-        boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
-
-        assertTrue(resultado);
+        assertTrue(turnosServiceImpl.validarAtaque(origen, destino, jugador));
     }
 
     @Test
     void validarAtaque_jugadoresIguales_deberiaRetornarFalse() {
         Pais origen = new Pais();
         origen.setIdPais(1L);
-
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(99L);
 
+        JugadorEntity atacante = stubJugadorConPartida(99L, 7L);
+
+        // El destino es del propio atacante: no se puede atacar territorio propio.
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 99L))
-                .thenReturn(Optional.empty());
-        when(estadoPaisRepository.findById(2L))
-                .thenReturn(Optional.empty());
+                .thenReturn(Optional.of(estadoPaisDe(1L, atacante, 5)));
+        when(estadoPaisRepository.findByPais_IdPaisAndPartida_IdPartida(2L, 7L))
+                .thenReturn(Optional.of(estadoPaisDe(2L, atacante, 3)));
 
-        Jugador jugadorComun = new Jugador();
-        jugadorComun.setIdJugador(1L);
-
-        EstadoPais eOrigen = new EstadoPais();
-        eOrigen.setJugador(jugadorComun);
-        eOrigen.setCantidadTropas(5);
-
-        EstadoPais eDestino = new EstadoPais();
-        eDestino.setJugador(jugadorComun);
-        eDestino.setCantidadTropas(3);
-
-        when(modelMapper.map(Optional.empty(), EstadoPais.class)).thenReturn(eOrigen).thenReturn(eDestino);
-
-        PaisEntity pais1 = new PaisEntity();
-        pais1.setIdPais(1L);
-        PaisEntity pais2 = new PaisEntity();
-        pais2.setIdPais(2L);
-
-        when(modelMapper.map(origen, PaisEntity.class)).thenReturn(pais1);
-        when(modelMapper.map(destino, PaisEntity.class)).thenReturn(pais2);
-
-        boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
-
-        assertFalse(resultado);
+        assertFalse(turnosServiceImpl.validarAtaque(origen, destino, jugador));
     }
 
     @Test
-    void validarAtaque_estadosPresentes_deberiaRetornarFalse() {
+    void validarAtaque_paisesNoLimitrofes_deberiaRetornarFalse() {
         Pais origen = new Pais();
         origen.setIdPais(1L);
-
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(99L);
 
-        EstadoPaisEntity estadoOrigenEntity = new EstadoPaisEntity();
-        EstadoPaisEntity estadoDestinoEntity = new EstadoPaisEntity();
+        JugadorEntity atacante = stubJugadorConPartida(99L, 7L);
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(50L);
 
         when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 99L))
-                .thenReturn(Optional.of(estadoOrigenEntity));
+                .thenReturn(Optional.of(estadoPaisDe(1L, atacante, 5)));
+        when(estadoPaisRepository.findByPais_IdPaisAndPartida_IdPartida(2L, 7L))
+                .thenReturn(Optional.of(estadoPaisDe(2L, enemigo, 3)));
+        when(estadoPaisService.sonLimitrofes(1L, 2L)).thenReturn(false);
 
-        when(estadoPaisRepository.findById(2L))
-                .thenReturn(Optional.of(estadoDestinoEntity));
-
-        boolean resultado = turnosServiceImpl.validarAtaque(origen, destino, jugador);
-
-        assertFalse(resultado);
+        assertFalse(turnosServiceImpl.validarAtaque(origen, destino, jugador));
     }
 
     @Test
     void validarAtaque_estadoOrigenInexistente_deberiaRetornarFalse() {
         Pais origen = new Pais();
         origen.setIdPais(1L);
-
         Pais destino = new Pais();
         destino.setIdPais(2L);
 
         Jugador jugador = new Jugador();
         jugador.setIdJugador(99L);
 
-        boolean resultado = turnoService.validarAtaque(origen, destino, jugador);
+        stubJugadorConPartida(99L, 7L);
 
-        assertFalse(resultado);
+        // El jugador no ocupa el país de origen.
+        when(estadoPaisRepository.findByPaisIdPaisAndJugadorIdJugador(1L, 99L))
+                .thenReturn(Optional.empty());
+
+        assertFalse(turnosServiceImpl.validarAtaque(origen, destino, jugador));
     }
 
     private EstadoPais mapToEstadoPais(EstadoPaisEntity entity) {
