@@ -155,6 +155,11 @@ export class TableroServicio {
     );
   }
 
+  /** Envía un mensaje de chat; el backend lo difunde por WS a todos los jugadores de la partida. */
+  enviarChat(idPartida: number, idJugador: number, texto: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/chat/enviar`, { idPartida, idJugador, texto });
+  }
+
 
 
 

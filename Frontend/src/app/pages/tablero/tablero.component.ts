@@ -32,6 +32,7 @@ import {
   UsarTarjetaEnPaisDto,
 } from '../../core/models/interfaces/partida.interface';
 import { PactoDto } from '../../core/models/interfaces/pacto.interface';
+import { PartidaEventWs } from '../../core/models/interfaces/game-event.interface';
 import { PactoService } from '../../core/services/pacto.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -371,6 +372,11 @@ export class TableroComponent implements OnInit, OnDestroy {
             // Capturamos FIN_PARTIDA acá: no es una notificación efímera.
             if (evento.tipo === 'FIN_PARTIDA' && evento.finPartida) {
               this.alRecibirFinPartida(evento.finPartida);
+              return;
+            }
+            // Chat: canal aparte, no pasa por el pipeline de notificaciones/historial.
+            if (evento.tipo === 'CHAT') {
+              this.alRecibirChat(evento);
               return;
             }
             // Pactos: actualizar estado local y manejar overlays antes de pasar al servicio de eventos
@@ -1113,20 +1119,33 @@ export class TableroComponent implements OnInit, OnDestroy {
     }
     this.mensajesRecientes.push(ahora);
 
-    const usuario = this.authService.getCurrentUser();
-    const color = this.jugadorUsuario?.color ?? '';
-    this.chatMensajes.push({
-      actor: usuario?.usuario ?? this.jugadorUsuario?.nombre ?? 'Yo',
-      texto: textoAcotado,
-      colorSolido: this.getColorSolido(color),
-      colorVar: this.getColorVarJugador(color),
-      timestamp: new Date(),
-      esPropio: true,
-    });
+    const idJugador = this.jugadorUsuario?.idJugador;
+    const idPartida = this.partida?.idPartida;
+    if (!idJugador || !idPartida) return;
+
     this.chatInput = '';
-    this.chatPegadoAlFondo = true;
+    // El mensaje se agrega a la lista cuando llega por WS (alRecibirChat), no
+    // acá — así todos los clientes (incluido el propio) lo ven en el mismo
+    // orden que el resto de los eventos de la partida.
+    this.tableroServicio.enviarChat(idPartida, idJugador, textoAcotado).subscribe({
+      error: () => this.notificationService.error('No se pudo enviar el mensaje.')
+    });
+  }
+
+  private alRecibirChat(evento: PartidaEventWs) {
+    const esPropio = evento.jugadorNombre === this.jugadorUsuario?.nombre;
+    this.chatMensajes.push({
+      actor: evento.jugadorNombre || 'Desconocido',
+      texto: evento.descripcion || '',
+      colorSolido: this.getColorSolido(evento.jugadorColor || ''),
+      colorVar: this.getColorVarJugador(evento.jugadorColor || ''),
+      timestamp: new Date(),
+      esPropio,
+    });
+    // El propio mensaje siempre fuerza el scroll al fondo; los ajenos solo
+    // si el usuario ya estaba mirando el final de la conversación.
+    if (esPropio) this.chatPegadoAlFondo = true;
     this.scrollChatAlFondoSiCorresponde();
-    // TODO: WebSocket chat no implementado — sin topic en backend
   }
 
   private activarCooldown(): void {
