@@ -5,6 +5,7 @@ import ar.edu.utn.frc.tup.piii.models.FaseJuego;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -12,10 +13,11 @@ import java.util.List;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "partidas")
-public class PartidaEntity {
+public class PartidaEntity extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idPartida;

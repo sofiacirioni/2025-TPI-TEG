@@ -1,7 +1,9 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
+import ar.edu.utn.frc.tup.piii.Dtos.HistorialComandanteDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioPutDto;
+import ar.edu.utn.frc.tup.piii.Services.HistorialComandanteService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.Usuario;
 
@@ -20,6 +22,14 @@ public class UsuarioController {
     public UsuarioService usuarioService;
     @Autowired
     public ModelMapper modelMapper;
+    @Autowired
+    private HistorialComandanteService historialComandanteService;
+
+    /** Hoja de servicios del comandante — la consume la libreta del perfil. */
+    @GetMapping("/{idUsuario}/historial")
+    public ResponseEntity<HistorialComandanteDto> obtenerHistorial(@PathVariable Long idUsuario) {
+        return ResponseEntity.ok(historialComandanteService.obtenerHistorial(idUsuario));
+    }
 
     @PutMapping("/actualizar")
     public ResponseEntity<UsuarioDto> actualizarUsuario(@RequestBody UsuarioPutDto request) {

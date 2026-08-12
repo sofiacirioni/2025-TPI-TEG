@@ -25,6 +25,19 @@ public interface JugadorRepository extends JpaRepository<JugadorEntity, Long> {
 
     JugadorEntity findByUsuario_IdUsuario(Long idUsuario);
 
+    /**
+     * Las participaciones que el usuario jugó en persona: hay una fila de
+     * jugadores por partida, así que esta lista es su historial de campañas.
+     *
+     * <p>El filtro por HUMANO no es decorativo. Los bots de una partida quedan
+     * grabados con el id_usuario de quien la creó, así que sin él un usuario se
+     * llevaría también las campañas de sus tres bots y su hoja de servicios
+     * contaría cuatro veces cada partida.
+     */
+    @Query("SELECT j FROM JugadorEntity j WHERE j.usuario.idUsuario = :idUsuario " +
+            "AND j.tipoJugador = ar.edu.utn.frc.tup.piii.models.TipoJugador.HUMANO")
+    List<JugadorEntity> findParticipacionesHumanas(@Param("idUsuario") Long idUsuario);
+
     Optional<JugadorEntity> findByIdJugador(Long idUsuario);
 
     List<JugadorEntity> findByPartidaAndEstadoJugador(PartidaEntity partida, EstadoJugador estadoJugador);
