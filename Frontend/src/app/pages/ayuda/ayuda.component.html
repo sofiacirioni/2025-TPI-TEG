@@ -1,102 +1,57 @@
-<div class="ayuda-container">
-  <div class="sidebar">
-    <h1>Ayuda TEG</h1>
-    <button
-      [class.activo]="seccionActiva === 'reglas-basicas'"
-      (click)="cambiarSeccion('reglas-basicas')">
-      Reglas Básicas
-    </button>
-    <button
-      [class.activo]="seccionActiva === 'fases'"
-      (click)="cambiarSeccion('fases')">
-      Fases del Juego
-    </button>
-    <button
-      [class.activo]="seccionActiva === 'canjes'"
-      (click)="cambiarSeccion('canjes')">
-      Canjes
-    </button>
-    <button
-      [class.activo]="seccionActiva === 'pactos'"
-      (click)="cambiarSeccion('pactos')">
-      Pactos
-    </button>
-    <button
-      [class.activo]="seccionActiva === 'misiones-secretas'"
-      (click)="cambiarSeccion('misiones-secretas')">
-      Misiones Secretas
-    </button>
-  </div>
+<!-- El reglamento como carpeta de archivo sobre la mesa: una pestaña por
+     sección y la hoja mecanografiada adentro. -->
+<div class="ayuda-escena scene-game">
+  <div class="lamp-overlay" aria-hidden="true"></div>
 
-  <div class="main-content">
-    <div class="help-box">
-      <!-- Reglas Básicas -->
-      @if (seccionActiva === 'reglas-basicas') {
-        <div class="section-header">
-          <h2>{{ reglasBasicas.titulo }}</h2>
-        </div>
-        @for (item of reglasBasicas.contenido; track item.subtitulo) {
-          <div class="help-section">
-            <h3>{{ item.subtitulo }}</h3>
-            <p>{{ item.texto }}</p>
-          </div>
-        }
+  <div class="carpeta">
+    <!-- Tapa trasera: el cartón que asoma por arriba y por el costado -->
+    <div class="carpeta-atras" aria-hidden="true"></div>
+
+    <div class="carpeta-pestanias" role="tablist" aria-label="Secciones del reglamento">
+      @for (s of secciones; track s.id) {
+        <button
+          type="button"
+          role="tab"
+          class="pestania paper-grunge--v2"
+          [class.pestania--activa]="s.id === seccionActiva"
+          [attr.aria-selected]="s.id === seccionActiva"
+          [attr.aria-controls]="'panel-' + s.id"
+          (click)="cambiarSeccion(s.id)">
+          {{ s.pestania }}
+        </button>
       }
+    </div>
 
-      <!-- Fases -->
-      @if (seccionActiva === 'fases') {
-        <div class="section-header">
-          <h2>{{ fases.titulo }}</h2>
-        </div>
-        @for (item of fases.contenido; track item.subtitulo) {
-          <div class="help-section">
-            <h3>{{ item.subtitulo }}</h3>
-            <p>{{ item.texto }}</p>
-          </div>
+    <div class="carpeta-tapa paper-grunge">
+      <!-- La hoja mecanografiada que la carpeta contiene -->
+      <article
+        class="hoja paper-grunge--v3"
+        role="tabpanel"
+        [id]="'panel-' + seccion.id">
+        <header class="hoja-encabezado">
+          <h1 class="hoja-titulo">{{ seccion.titulo }}</h1>
+          <span class="hoja-referencia">Reglamento · {{ seccion.pestania }}</span>
+        </header>
+
+        @for (a of seccion.apartados; track a.subtitulo) {
+          <section class="apartado">
+            <h2 class="apartado-subtitulo">{{ a.subtitulo }}</h2>
+            @if (lineas(a.texto).length > 1) {
+              <ul class="apartado-lista">
+                @for (linea of lineas(a.texto); track linea) {
+                  <li>{{ linea }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="apartado-texto">{{ a.texto }}</p>
+            }
+          </section>
         }
-      }
-
-      <!-- Canjes -->
-      @if (seccionActiva === 'canjes') {
-        <div class="section-header">
-          <h2>{{ canjes.titulo }}</h2>
-        </div>
-        @for (item of canjes.contenido; track item.subtitulo) {
-          <div class="help-section">
-            <h3>{{ item.subtitulo }}</h3>
-            <p [innerHTML]="formatTexto(item.texto)"></p>
-          </div>
-        }
-      }
-
-      <!-- Pactos -->
-      @if (seccionActiva === 'pactos') {
-        <div class="section-header">
-          <h2>{{ pactos.titulo }}</h2>
-        </div>
-        @for (item of pactos.contenido; track item.subtitulo) {
-          <div class="help-section">
-            <h3>{{ item.subtitulo }}</h3>
-            <p>{{ item.texto }}</p>
-          </div>
-        }
-      }
-
-      <!-- Misiones Secretas -->
-      @if (seccionActiva === 'misiones-secretas') {
-        <div class="section-header">
-          <h2>{{ misionesSecretas.titulo }}</h2>
-        </div>
-        @for (item of misionesSecretas.contenido; track item.subtitulo) {
-          <div class="help-section">
-            <h3>{{ item.subtitulo }}</h3>
-            <p [innerHTML]="formatTexto(item.texto)"></p>
-
-          </div>
-        }
-      }
+      </article>
     </div>
   </div>
 
-  <button class="volver-btn" (click)="volver()">Volver</button>
+  <button type="button" class="btn-teg-dark ayuda-volver" (click)="volver()">
+    · VOLVER ·
+  </button>
 </div>
