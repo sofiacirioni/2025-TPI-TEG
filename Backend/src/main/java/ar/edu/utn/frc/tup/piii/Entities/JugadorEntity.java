@@ -82,4 +82,28 @@ public class JugadorEntity {
     @Column
     private Color eliminadoPorColor;
 
+    // ── Contadores de combate ─────────────────────────────────────────────
+    // Cada fila de jugadores es por partida, así que estos contadores son el
+    // parte de campaña de este comandante. Se incrementan en vivo durante el
+    // combate (TurnoServiceImpl.resolverInterno) y los lee el resumen de
+    // partida. Ver migración V4.
+
+    @Column(nullable = false)
+    private Integer ataquesLanzados = 0;
+
+    @Column(nullable = false)
+    private Integer conquistas = 0;
+
+    @Column(nullable = false)
+    private Integer tropasAbatidas = 0;
+
+    @Column(nullable = false)
+    private Integer tropasPerdidas = 0;
+
+    @Column(nullable = false)
+    private Integer defensasResistidas = 0;
+
+    @Column(nullable = false)
+    private Integer canjesRealizados = 0;
+
 }

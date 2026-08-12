@@ -553,7 +553,14 @@ export class TableroComponent implements OnInit, OnDestroy {
   }
 
   irAEstadisticas(): void {
-    this.router.navigate(['/estadisticas']);
+    // Con el id de la partida, el parte de campaña se puede recargar (F5) sin
+    // perder el contexto de qué partida hay que mostrar.
+    const idPartida = this.partida?.idPartida;
+    if (idPartida) {
+      this.router.navigate(['/estadisticas', idPartida]);
+    } else {
+      this.router.navigate(['/estadisticas']);
+    }
   }
 
   // ── Pactos ────────────────────────────────────────────────
