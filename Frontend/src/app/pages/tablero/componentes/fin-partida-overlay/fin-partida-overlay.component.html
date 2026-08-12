@@ -1,79 +1,117 @@
-<div #overlayRoot class="fin-overlay" role="dialog" aria-modal="true" aria-label="Fin de partida">
+<div class="fin-overlay" role="dialog" aria-modal="true" aria-label="Fin de partida">
+  <div class="rayos-fondo" aria-hidden="true"></div>
 
-  <!-- Zona 1: Insignia del ganador + medalla TEG -->
-  <div class="zona-insignia">
-    <div class="insignia-wrap">
-      <!-- TODO: reemplazar con asset de insignia ganadora cuando esté disponible en assets/vectors/insignia-ganador.svg -->
-      <img class="insignia"
-           [src]="insigniaUrl"
-           [alt]="'Insignia ' + datos.ganador.color"
-           [style.background-color]="colorGanadorVar" />
-      <!-- TODO: reemplazar con asset de medalla TEG cuando esté disponible en assets/vectors/medalla-teg-oro.svg -->
-      <img class="medalla"
-           src="assets/images/tablero/teg-wax-seal.png"
-           alt="Medalla TEG" />
-    </div>
-  </div>
+  <div class="diario-escena">
+    <!-- Pila de ejemplares debajo: da la sensación de que el diario tiene más páginas -->
+    <img class="diario-pila" src="assets/images/tablero/papel-diario.png" alt="" aria-hidden="true" />
 
-  <!-- Zona 2: Identidad del ganador -->
-  <div class="zona-identidad">
-    <img class="avatar-ganador"
-         [src]="avatarGanador"
-         [alt]="datos.ganador.nombre" />
-    <div class="nombre-ganador" [style.color]="colorGanadorVar">
-      {{ datos.ganador.nombre }}
-    </div>
-  </div>
-  <div class="subtitulo-comandante">· COMANDANTE VICTORIOSO ·</div>
+    <div #diarioRoot class="diario paper-grunge">
+      <div class="diario-masthead">
+        <span class="diario-fecha">{{ fechaFormateada }}</span>
+        <span class="diario-cabecera">DIARIO DE GUERRA</span>
+      </div>
 
-  <!-- Zona 3: Objetivo cumplido -->
-  <div class="zona-objetivo">
-    <div class="separador"></div>
-    <div class="titulo-mision">· MISIÓN CUMPLIDA ·</div>
-    <p class="objetivo-desc">{{ datos.objetivoCumplido.descripcion }}</p>
-    <ul class="objetivo-items">
-      @for (item of datos.objetivoCumplido.items; track item.descripcion) {
-        <li class="objetivo-item">
-          <span class="check">■</span>
-          <span class="item-texto">{{ item.descripcion }}</span>
-          @if (item.valorObjetivo > 0) {
-            <span class="item-valor">{{ item.valorActual }}/{{ item.valorObjetivo }} ✓</span>
-          } @else {
-            <span class="item-valor">✓</span>
-          }
-        </li>
-      }
-    </ul>
-    <div class="separador"></div>
-  </div>
+      <div class="diario-kicker">· EDICIÓN ESPECIAL · OBJETIVO CUMPLIDO ·</div>
+      <h1 class="diario-titulo">{{ titular }}</h1>
+      <div class="diario-regla" aria-hidden="true"></div>
 
-  <!-- Zona 4: Bajas en combate -->
-  <div class="zona-bajas">
-    <div class="titulo-bajas">· BAJAS EN COMBATE ·</div>
-    <div class="lista-bajas">
-      @for (j of datos.clasificacion; track j.id) {
-        <div class="baja-card" [class.eliminado]="j.eliminado">
-          <img class="baja-avatar" [src]="avatarPara(j)" [alt]="j.nombre" />
-          <div class="baja-info">
-            <div class="baja-nombre" [style.color]="colorVarPara(j.color)">
-              {{ j.nombre }}
+      <div class="diario-cuerpo">
+        <!-- Nota principal: el ganador, con la foto grande y la medalla de oro al lado -->
+        <div class="diario-nota diario-nota--principal">
+          <div class="nota-foto-wrap">
+            <img class="nota-foto nota-foto--grande"
+                 [src]="avatarPara(filaGanador.resultado)"
+                 [alt]="filaGanador.resultado.nombre" />
+            <img class="nota-medalla nota-medalla--oro"
+                 [src]="medallaUrl('gold')" alt="" aria-hidden="true" />
+          </div>
+          <div class="nota-texto">
+            <div class="nota-nombre" [style.color]="colorVarPara(filaGanador.resultado.color)">
+              {{ filaGanador.resultado.nombre }}
+              <span class="nota-tag">· GANADOR ·</span>
             </div>
-            <div class="baja-paises">{{ j.cantidadPaises }} países</div>
-            @if (j.eliminado) {
-              <div class="baja-estado">· ELIMINADO ·</div>
-            }
+            <p class="nota-copete">{{ datos.objetivoCumplido.descripcion }}</p>
+            <p class="nota-cuerpo">{{ fraseParaFila(filaGanador) }}</p>
+            <div class="nota-stats">
+              <span>{{ filaGanador.resultado.cantidadPaises }} países</span>
+              <span>{{ filaGanador.resultado.cantidadEjercitos }} ejércitos</span>
+            </div>
+            <p class="nota-cuerpo nota-cuerpo--relleno">{{ textoRelleno[0] }}</p>
           </div>
         </div>
-      }
+
+        @if (filasPodio.length) {
+          <div class="diario-regla diario-regla--fina" aria-hidden="true"></div>
+          <div class="diario-podio">
+            @for (fila of filasPodio; track fila.resultado.id; let i = $index) {
+              <div class="diario-nota diario-nota--podio"
+                   [class.diario-nota--der]="i === 1"
+                   [class.eliminado]="fila.resultado.eliminado">
+                <div class="nota-foto-wrap">
+                  <img class="nota-foto nota-foto--media"
+                       [src]="avatarPara(fila.resultado)" [alt]="fila.resultado.nombre" />
+                  @if (fila.medalla) {
+                    <!-- La segunda columna cuelga la medalla del lado opuesto para
+                         que salga hacia el margen derecho de la hoja. -->
+                    <img class="nota-medalla nota-medalla--podio"
+                         [class.nota-medalla--der]="i === 1"
+                         [src]="medallaUrl(fila.medalla)" alt="" aria-hidden="true" />
+                  }
+                </div>
+                <div class="nota-texto">
+                  <div class="nota-nombre" [style.color]="colorVarPara(fila.resultado.color)">
+                    {{ fila.resultado.nombre }}
+                  </div>
+                  <p class="nota-cuerpo">{{ fraseParaFila(fila) }}</p>
+                  <div class="nota-stats">
+                    <span>{{ fila.resultado.cantidadPaises }} países</span>
+                    @if (fila.resultado.eliminado) {
+                      <span class="nota-eliminado">· ELIMINADO ·</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (filasResto.length) {
+          <div class="diario-regla diario-regla--fina" aria-hidden="true"></div>
+          <div class="diario-resto">
+            @for (fila of filasResto; track fila.resultado.id) {
+              <div class="diario-nota diario-nota--breve" [class.eliminado]="fila.resultado.eliminado">
+                <img class="nota-foto nota-foto--chica"
+                     [src]="avatarPara(fila.resultado)" [alt]="fila.resultado.nombre" />
+                <div class="nota-texto">
+                  <div class="nota-nombre" [style.color]="colorVarPara(fila.resultado.color)">
+                    {{ fila.resultado.nombre }}
+                  </div>
+                  <p class="nota-cuerpo">{{ fraseParaFila(fila) }}</p>
+                  <div class="nota-stats">
+                    <span>{{ fila.resultado.cantidadPaises }} países</span>
+                    @if (fila.resultado.eliminado) {
+                      <span class="nota-eliminado">· ELIMINADO ·</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Relleno: ocupa el sobrante de la hoja para que no quede en blanco.
+             Se recorta por overflow, no empuja el layout. -->
+        <div class="diario-regla diario-regla--fina" aria-hidden="true"></div>
+        <div class="diario-relleno" aria-hidden="true">
+          @for (parrafo of textoRelleno; track $index) {
+            <p>{{ parrafo }}</p>
+          }
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Zona 5: Botón estadísticas -->
-  <button type="button"
-          class="btn-teg-dark btn-ver-estadisticas"
-          [class.disponible]="botonHabilitado"
-          [disabled]="!botonHabilitado"
-          (click)="onClickEstadisticas()">
-    · VER ESTADÍSTICAS ·
+  <button type="button" class="btn-teg-dark btn-continuar" (click)="onClickContinuar()">
+    · CONTINUAR ·
   </button>
 </div>
