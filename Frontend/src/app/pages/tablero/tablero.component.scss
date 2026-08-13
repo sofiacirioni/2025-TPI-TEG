@@ -1735,24 +1735,29 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
 }
 
 // ── Menú de operaciones ────────────────────────────────────────────────
-// Agrupa lo que no es jugar: reglamento y retiro. Va arriba a la izquierda
-// del mapa, lejos de los controles de zoom para no confundirse con ellos.
+// Agrupa lo que no es jugar: reglamento y retiro. Va colgado de la pared al
+// lado del reloj, como un timbre de intendencia. Antes era un pill
+// "· OPERACIONES ·" suelto sobre la mesa, que no se leía como parte de nada.
+//
+// Centrado con el reloj: éste va en top 12px con 92px de alto, así que su eje
+// cae en 58px; el círculo de 28px (.ctrl-btn) arranca 14px más arriba. El right
+// sale de correrlo 12px a la izquierda del reloj (50 + 92 + 12).
 .operaciones {
   position: absolute;
-  top: 12px;
-  right: 236px;
+  top: 44px;
+  right: 154px;
   z-index: calc(var(--z-vignette) + 4);
 }
 
+// El aspecto lo pone .ctrl-btn: es el mismo control circular que los del mapa.
+// Acá sólo se replica la atenuación que .mapa-controles aplica al grupo — no
+// se puede heredar porque este botón vive en otra esquina de la pantalla.
 .operaciones-boton {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  padding: 9px 16px 7px;
-}
+  opacity: 0.4;
+  transition: opacity $transition-fast;
 
-.operaciones-boton--abierto {
-  background: rgba(239, 232, 206, 0.14);
-  border-color: rgba(239, 232, 206, 0.7);
+  &:hover,
+  &.ctrl-btn--activo { opacity: 1; }
 }
 
 .operaciones-menu {

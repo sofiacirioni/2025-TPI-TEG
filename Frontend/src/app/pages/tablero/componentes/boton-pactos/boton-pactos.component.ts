@@ -14,8 +14,13 @@ export class BotonPactosComponent {
 
   @Output() abrir = new EventEmitter<void>();
 
+  /**
+   * Abre siempre, sea o no tu turno. Lo que el turno restringe es **proponer**,
+   * y de eso ya se encarga el overlay deshabilitando su propio botón. Con el
+   * candado acá, romper un tratado —que no depende del turno— era inalcanzable
+   * casi todo el tiempo, porque la única puerta a la lista estaba cerrada.
+   */
   onClick(): void {
-    if (!this.esMiTurno) return;
     this.abrir.emit();
   }
 
@@ -30,6 +35,6 @@ export class BotonPactosComponent {
   get tooltip(): string {
     return this.esMiTurno
       ? 'Pactos y tratados'
-      : 'Solo podés proponer pactos en tu turno.';
+      : 'Pactos y tratados — proponer, sólo en tu turno.';
   }
 }

@@ -6,8 +6,11 @@ import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
+import ar.edu.utn.frc.tup.piii.Repositories.PactoRepository;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
+import ar.edu.utn.frc.tup.piii.Services.PactoService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
+import ar.edu.utn.frc.tup.piii.models.EstadoPacto;
 import ar.edu.utn.frc.tup.piii.models.Simbolo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +53,12 @@ class BotServiceImplTest {
      */
     @Mock
     private EstadoTarjetaRepository estadoTarjetaRepository;
+
+    @Mock
+    private PactoRepository pactoRepository;
+
+    @Mock
+    private PactoService pactoService;
 
     @BeforeEach
     void setUp() {
@@ -240,6 +249,64 @@ class BotServiceImplTest {
         // Reparte sus ejércitos y avanza las fases con normalidad.
         verify(turnoService, atLeastOnce()).agregarFichas(any());
         verify(turnoService, times(3)).cambiarFaseTurno(99L);
+    }
+
+    /**
+     * El bot contesta las propuestas de pacto que le hayan quedado pendientes.
+     * Antes las ignoraba: quedaban en PROPUESTO para siempre y el humano nunca
+     * recibía respuesta.
+     */
+    @Test
+    void executeTurnAsync_conPactoPendiente_loAcepta() throws Exception {
+        JugadorEntity bot = crearBot(7L);
+        JugadorEntity proponente = crearBot(70L);
+
+        PactoEntity propuesta = new PactoEntity();
+        propuesta.setId(500L);
+        propuesta.setEstado(EstadoPacto.PROPUESTO);
+        propuesta.setJugadorA(proponente);
+        propuesta.setJugadorB(bot);
+
+        when(jugadorRepository.findByIdJugador(7L)).thenReturn(Optional.of(bot));
+        when(pactoRepository.findByPartida_IdPartidaAndEstado(99L, EstadoPacto.PROPUESTO))
+                .thenReturn(List.of(propuesta));
+        // Mismos países: nadie saca ventaja, así que firma.
+        when(estadoPaisRepository.findByJugador_IdJugador(anyLong())).thenReturn(List.of());
+
+        botServiceImpl.executeTurnAsync(7L);
+
+        verify(pactoService).aceptar(500L, 7L);
+        verify(pactoService, never()).rechazar(anyLong(), anyLong());
+    }
+
+    /**
+     * No le firma inmunidad a quien ya le saca varios países de ventaja.
+     */
+    @Test
+    void executeTurnAsync_pactoDelQueVaGanando_loRechaza() throws Exception {
+        JugadorEntity bot = crearBot(8L);
+        JugadorEntity lider = crearBot(80L);
+
+        PactoEntity propuesta = new PactoEntity();
+        propuesta.setId(501L);
+        propuesta.setEstado(EstadoPacto.PROPUESTO);
+        propuesta.setJugadorA(lider);
+        propuesta.setJugadorB(bot);
+
+        when(jugadorRepository.findByIdJugador(8L)).thenReturn(Optional.of(bot));
+        when(pactoRepository.findByPartida_IdPartidaAndEstado(99L, EstadoPacto.PROPUESTO))
+                .thenReturn(List.of(propuesta));
+        when(estadoPaisRepository.findByJugador_IdJugador(8L)).thenReturn(List.of());
+        // El proponente domina 6 países contra 0 del bot: demasiada ventaja.
+        when(estadoPaisRepository.findByJugador_IdJugador(80L)).thenReturn(List.of(
+                crearEstadoPais(1L, 1L, lider, 1), crearEstadoPais(2L, 2L, lider, 1),
+                crearEstadoPais(3L, 3L, lider, 1), crearEstadoPais(4L, 4L, lider, 1),
+                crearEstadoPais(5L, 5L, lider, 1), crearEstadoPais(6L, 6L, lider, 1)));
+
+        botServiceImpl.executeTurnAsync(8L);
+
+        verify(pactoService).rechazar(501L, 8L);
+        verify(pactoService, never()).aceptar(anyLong(), anyLong());
     }
 
     /**

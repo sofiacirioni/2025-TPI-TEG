@@ -266,6 +266,10 @@ public class PactoServiceImpl implements PactoService {
     @Transactional(readOnly = true)
     public List<PactoDto> listarActivos(Long partidaId) {
         List<PactoEntity> activos = new ArrayList<>();
+        // Las propuestas todavía sin respuesta también viajan: un pacto ofrecido a
+        // un bot se resuelve recién cuando le toca el turno, y sin mostrarlo el
+        // proponente no tenía ninguna señal de que su oferta existía.
+        activos.addAll(pactoRepository.findByPartida_IdPartidaAndEstado(partidaId, EstadoPacto.PROPUESTO));
         activos.addAll(pactoRepository.findByPartida_IdPartidaAndEstado(partidaId, EstadoPacto.ACTIVO));
         activos.addAll(pactoRepository.findByPartida_IdPartidaAndEstado(partidaId, EstadoPacto.ROTO_VOLUNTARIO));
         return activos.stream().map(this::mapToDto).collect(Collectors.toList());
