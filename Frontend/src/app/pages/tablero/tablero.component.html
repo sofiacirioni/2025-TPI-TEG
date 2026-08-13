@@ -487,7 +487,9 @@
           <div class="ficha-avatar-wrapper">
             <div class="ficha-avatar-circle"
                  [style.background-color]="getColorSolido(jugador.color)">
-              @if (!esEsBot(jugador) && jugador.url) {
+              <!-- Los bots ya tienen su propia fotografía de legajo, así que
+                   dejaron de ser la excepción que iba sin retrato. -->
+              @if (jugador.url) {
                 <img class="ficha-avatar-img"
                      [src]="jugador.url"
                      [alt]="jugador.nombre"

@@ -30,10 +30,14 @@ async function mirar(page: Page, segundos = 3) {
   await page.waitForTimeout(segundos * 1000);
 }
 
-/** Cierra el modal de país si quedó abierto. */
+/**
+ * Cierra el modal de país si quedó abierto. El selector es `.modal-close-x`:
+ * `.btn-modal-cerrar`, que usa flujo-completo.spec.ts, no existe en el markup
+ * y por eso ahí los cierres fallan en silencio.
+ */
 async function cerrarModal(page: Page) {
-  await page.locator('.btn-modal-cerrar').click({ timeout: 1_000 }).catch(() => {});
-  await page.waitForTimeout(200);
+  await page.locator('.modal-close-x').click({ timeout: 1_000 }).catch(() => {});
+  await page.waitForTimeout(300);
 }
 
 /** Avanza a la fase siguiente del turno. */
@@ -47,7 +51,9 @@ async function avanzarFase(page: Page) {
  * fase de incorporación. Devuelve true si llegó a colocar.
  */
 async function colocarEnPais(page: Page, i: number): Promise<boolean> {
-  await page.locator('.mapa-svg path').nth(i).click();
+  // El modal abierto tapa el mapa y se come el click siguiente.
+  await cerrarModal(page);
+  await page.locator('.mapa-svg path').nth(i).click({ timeout: 5_000 }).catch(() => {});
   const modal = page.locator('.modal-pais');
   if (!(await modal.isVisible({ timeout: 1_500 }).catch(() => false))) return false;
 
@@ -61,6 +67,7 @@ async function colocarEnPais(page: Page, i: number): Promise<boolean> {
   await input.fill('1');
   await boton.click();
   await page.waitForTimeout(1_200);
+  await cerrarModal(page);
   return true;
 }
 
@@ -69,7 +76,8 @@ async function colocarEnPais(page: Page, i: number): Promise<boolean> {
  * limítrofe y tirando los dados. Devuelve true si llegó a combatir.
  */
 async function atacarDesde(page: Page, i: number): Promise<boolean> {
-  await page.locator('.mapa-svg path').nth(i).click();
+  await cerrarModal(page);
+  await page.locator('.mapa-svg path').nth(i).click({ timeout: 5_000 }).catch(() => {});
   const modal = page.locator('.modal-pais');
   if (!(await modal.isVisible({ timeout: 1_500 }).catch(() => false))) return false;
 
@@ -97,6 +105,7 @@ async function atacarDesde(page: Page, i: number): Promise<boolean> {
   }
   await page.waitForTimeout(2_000);
   await page.locator('.btn-entendido').click({ timeout: 3_000 }).catch(() => {});
+  await cerrarModal(page);
   return true;
 }
 
