@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -47,7 +48,16 @@ public class BotServiceImpl implements BotService {
     private TurnoService turnoService;
 
     /** Pausa entre fases del bot (ms). Package-private para poder sobreescribirlo en tests. */
-    int cooldownMs = 3000;
+    int cooldownMs = 1500;
+
+    /**
+     * Pausa entre acciones sueltas dentro de una misma fase (ms).
+     *
+     * <p>Sin esto el bot colocaba todos sus ejércitos y lanzaba todos sus
+     * ataques en el mismo instante: en pantalla era un parpadeo del que no se
+     * alcanzaba a leer nada. Ahora cada acción se ve por separado.
+     */
+    int pausaEntreAccionesMs = 2000;
 
     /**
      * Tropas que el bot conserva en el país desde el que ataca.
@@ -121,7 +131,7 @@ public class BotServiceImpl implements BotService {
      * Primero canjea tarjetas si tiene 5 o más (canje obligatorio según reglas TEG).
      * Cada llamada a agregarFichas tiene su propia transacción a través del proxy de TurnoService.
      */
-    private void realizarIncorporacion(Long idJugador) {
+    private void realizarIncorporacion(Long idJugador) throws InterruptedException {
         realizarCanjeSiNecesario(idJugador);
         JugadorEntity bot = jugadorRepository.findByIdJugador(idJugador)
                 .orElseThrow(() -> new IllegalArgumentException("Bot no encontrado: " + idJugador));
@@ -132,7 +142,15 @@ public class BotServiceImpl implements BotService {
         if (misPaises.isEmpty()) return;
 
         Random random = new Random();
+        boolean primera = true;
         while (ejercitosRestantes > 0) {
+            // La pausa va antes de cada colocación menos la primera: así se ve
+            // llegar refuerzo por refuerzo en vez de todos de golpe.
+            if (!primera) {
+                Thread.sleep(pausaEntreAccionesMs);
+            }
+            primera = false;
+
             EstadoPaisEntity pais = misPaises.get(random.nextInt(misPaises.size()));
             // Asignar entre 1 y todos los ejércitos restantes
             int cantidad = ejercitosRestantes == 1 ? 1 : (random.nextInt(ejercitosRestantes) + 1);
@@ -152,8 +170,19 @@ public class BotServiceImpl implements BotService {
     /**
      * Canjea tarjetas si el bot tiene 5 o más (canje obligatorio en TEG).
      * Busca la primera combinación válida: 3 del mismo símbolo o 3 símbolos distintos.
+     *
+     * <p>Nunca deja escapar una excepción: si el canje falla, el bot igual tiene
+     * que jugar su turno. Un canje roto lo dejaba mudo el resto de la partida.
      */
     private void realizarCanjeSiNecesario(Long idJugador) {
+        try {
+            buscarYCanjear(idJugador);
+        } catch (Exception e) {
+            log.warn("Bot {}: no se pudo evaluar el canje, sigue el turno: {}", idJugador, e.getMessage());
+        }
+    }
+
+    private void buscarYCanjear(Long idJugador) {
         List<EstadoTarjetaEntity> disponibles = estadoTarjetaRepository.findByJugadorId(idJugador)
                 .stream().filter(c -> !c.isCanjeada()).collect(Collectors.toList());
         if (disponibles.size() < 5) return;
@@ -165,7 +194,10 @@ public class BotServiceImpl implements BotService {
                     String s1 = disponibles.get(i).getTarjeta().getSimbolo().name();
                     String s2 = disponibles.get(j).getTarjeta().getSimbolo().name();
                     String s3 = disponibles.get(k).getTarjeta().getSimbolo().name();
-                    Set<String> simbolos = Set.of(s1, s2, s3);
+                    // HashSet y no Set.of: Set.of revienta con elementos repetidos,
+                    // y dos tarjetas del mismo símbolo son justamente lo que hay que
+                    // contar acá. Eso rompía el turno entero del bot.
+                    Set<String> simbolos = new HashSet<>(List.of(s1, s2, s3));
                     if (simbolos.size() == 1 || simbolos.size() == 3) {
                         CanjeTarjetasDto dto = new CanjeTarjetasDto(
                                 List.of(disponibles.get(i).getIdEstadoTarjeta(),
@@ -191,8 +223,9 @@ public class BotServiceImpl implements BotService {
      * Lee entidades frescas antes de cada ataque para evitar referencias obsoletas
      * (conquistas previas en el mismo turno podrían cambiar la propiedad de los países).
      */
-    private void realizarAtaque(Long idJugador) {
+    private void realizarAtaque(Long idJugador) throws InterruptedException {
         List<EstadoPaisEntity> misPaises = estadoPaisRepository.findByJugador_IdJugador(idJugador);
+        boolean primerAtaque = true;
 
         for (EstadoPaisEntity pais : misPaises) {
             // Lectura fresca para obtener tropas actualizadas
@@ -219,6 +252,13 @@ public class BotServiceImpl implements BotService {
                 // Sólo ataca cuando tiene ventaja. No es estrategia: es no
                 // regalar tropas en un ataque que ya sabe perdido.
                 if (origenActual.getCantidadTropas() <= destActual.getCantidadTropas()) continue;
+
+                // Un ataque cada dos segundos: encadenados sin pausa, el humano
+                // no llega a ver de dónde a dónde fue cada uno.
+                if (!primerAtaque) {
+                    Thread.sleep(pausaEntreAccionesMs);
+                }
+                primerAtaque = false;
 
                 try {
                     turnoService.ataque(new Ataque(

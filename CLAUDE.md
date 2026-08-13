@@ -11,7 +11,7 @@ Juego de estrategia por turnos implementado como aplicación web fullstack. Mono
 | Base de datos | PostgreSQL 15 (Docker), migraciones con Flyway |
 | Tiempo real | WebSocket (STOMP + SockJS) |
 | Tests E2E | Playwright (`e2e/`) — el frontend no tiene tests unitarios |
-| Tests BE | JUnit + Mockito, 291 tests |
+| Tests BE | JUnit + Mockito, 295 tests |
 | API docs | Swagger `/swagger-ui.html` |
 
 ## URLs de desarrollo
@@ -148,7 +148,8 @@ npx playwright test nombre-test.spec.ts
 - Las fechas `fecha_alta` / `fecha_actualizacion` las escribe Spring Data JPA Auditing sobre las entidades que heredan de `AuditableEntity` (usuarios, salas, partidas, mensajes). `@EnableJpaAuditing` va en `Application` y no en una `@Configuration` aparte, porque `@DataJpaTest` arma su contexto desde esa clase.
 - Los tests usan H2 en memoria (Flyway apagado, esquema generado por Hibernate) para no depender de un Postgres levantado.
 - El CORS está configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
-- Los bots (`BotService`) tienen **una sola dificultad**, deliberadamente básica: refuerzos al azar, ataque al vecino con menos tropas, sin reagrupar y sin jugar el objetivo secreto. Cada fase espera `cooldownMs` (3 s) para que el humano vea lo que hacen. Revisar antes de modificar el flujo de turnos.
+- Los bots (`BotService`) tienen **una sola dificultad**, deliberadamente básica: refuerzos al azar, ataque al vecino con menos tropas conservando 3 de guarnición, sin reagrupar y sin jugar el objetivo secreto. El ritmo sale de `cooldownMs` (1,5 s entre fases) y `pausaEntreAccionesMs` (2 s entre acciones sueltas). Revisar antes de modificar el flujo de turnos.
+- El turno del bot corre en un `@Async` con un `catch` que, ante cualquier excepción, avanza las fases para no colgar la partida. Es una red de seguridad traicionera: un bug adentro del turno no rompe nada visible, el bot simplemente **pasa sin jugar**. Si los bots dejan de actuar, mirar `docker logs teg-backend | grep "Error en turno del bot"` antes que cualquier otra cosa.
 - Las filas BOT de `jugadores` se graban con el `id_usuario` de quien creó la partida: toda consulta que parta del usuario tiene que filtrar por `tipoJugador = HUMANO`.
 - El mapa del tablero es SVG interactivo (`mapa-svg/`).
 - La tabla `estadisticas` y su servicio siguen en el código pero **nadie los escribe**: el histórico sale de agregar `jugadores` contra `partidas`.

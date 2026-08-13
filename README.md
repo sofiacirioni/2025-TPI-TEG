@@ -13,7 +13,7 @@ Juego de estrategia por turnos implementado como aplicación web fullstack. Mono
 | Base de datos | PostgreSQL 15 |
 | Migraciones | Flyway (`Backend/src/main/resources/db/migration`) |
 | Tiempo real | WebSocket (STOMP + SockJS) |
-| Tests BE | JUnit + Mockito, 291 tests (H2 en memoria) |
+| Tests BE | JUnit + Mockito, 295 tests (H2 en memoria) |
 | Tests E2E | Playwright (`e2e/`) |
 | API docs | Swagger `/swagger-ui.html` |
 
@@ -165,7 +165,7 @@ docker compose down -v && docker compose up --build
 ## Comandos útiles
 
 ```bash
-# Tests backend (291 tests)
+# Tests backend (295 tests)
 cd Backend && ./mvnw test
 
 # Tests end-to-end — necesitan la app levantada; Playwright la arranca solo
@@ -211,7 +211,7 @@ correr.
 - **Esquema**: lo gobierna Flyway, no Hibernate. Cambiar una entidad sin agregar la migración correspondiente hace fallar el arranque (`ddl-auto=validate`) — eso es intencional.
 - **CORS**: sale de `FRONTEND_URL` en el `.env` (coma-separado). Default: `localhost:4200` y `localhost`.
 - **Secretos**: viven en `.env`, que está en `.gitignore` y no se commitea. La plantilla es `.env.example`.
-- **Bots**: `BotService` juega automáticamente los turnos de los jugadores bot. Hay **una sola dificultad**, deliberadamente básica: reparte refuerzos al azar, ataca al vecino con menos tropas, no reagrupa y no juega su objetivo secreto. Cada fase espera 3 s (`cooldownMs`) para que el humano vea lo que hace, así que un turno de bot dura unos 15 s. Revisar antes de modificar el flujo de turnos.
+- **Bots**: `BotService` juega automáticamente los turnos de los jugadores bot. Hay **una sola dificultad**, deliberadamente básica: reparte refuerzos al azar, ataca al vecino con menos tropas conservando 3 tropas de guarnición, no reagrupa y no juega su objetivo secreto. El ritmo se controla con dos constantes: `cooldownMs` (1,5 s entre fases) y `pausaEntreAccionesMs` (2 s entre cada colocación y cada ataque, para que se puedan seguir de a una). Un turno de bot dura entre 9 y 30 s según cuántas acciones haga. Revisar antes de modificar el flujo de turnos.
 - **Jugadores bot y usuario**: las filas BOT de `jugadores` se graban con el `id_usuario` de quien creó la partida. Toda consulta que parta del usuario tiene que filtrar por `tipoJugador = HUMANO` (ver `JugadorRepository.findParticipacionesHumanas`).
 - **Mapa SVG**: cargado vía HTTP desde `public/`, parseado con DOMParser. Los países tienen IDs 1-50 = `pais.idPais`.
 - **Caché Angular**: si `npm start` muestra errores de módulos no encontrados pero `ng build` compila bien, borrar `.angular/cache` y reiniciar.
