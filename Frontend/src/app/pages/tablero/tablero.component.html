@@ -380,11 +380,16 @@
   <!-- Menú de operaciones: lo que no es jugar. -->
   <div class="operaciones">
     <button type="button"
-            class="btn-teg-dark operaciones-boton"
-            [class.operaciones-boton--abierto]="menuOperacionesAbierto"
+            class="btn-teg-dark ctrl-btn operaciones-boton"
+            [class.ctrl-btn--activo]="menuOperacionesAbierto"
             (click)="alternarMenuOperaciones()"
+            [attr.aria-expanded]="menuOperacionesAbierto"
             aria-label="Menú de operaciones">
-      · OPERACIONES ·
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <line x1="1" y1="2.5" x2="11" y2="2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="1" y1="6"   x2="11" y2="6"   stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="1" y1="9.5" x2="11" y2="9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
     </button>
 
     @if (menuOperacionesAbierto) {
