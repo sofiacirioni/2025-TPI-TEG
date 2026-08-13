@@ -3,7 +3,10 @@
 .pactos-overlay {
   position: fixed;
   inset: 0;
-  z-index: calc(var(--z-vignette) + 1);
+  // Por encima de los paneles y de los controles del mapa, que viven en +3.
+  // Con +1 el zoom y la brújula quedaban dibujados sobre el wizard.
+  // Por debajo del diario de fin de partida (+20), que manda sobre todo.
+  z-index: calc(var(--z-vignette) + 8);
   background: rgba(4, 2, 1, 0.82);
   backdrop-filter: blur(4px);
   display: flex;

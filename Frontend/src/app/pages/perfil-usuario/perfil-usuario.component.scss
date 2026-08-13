@@ -215,11 +215,14 @@ $linea: rgba(67, 42, 30, 0.42);
 
 // El sello pisa la esquina inferior de la foto, como en un documento real,
 // sin bajar tanto como para tapar el enlace que va debajo.
+// El sello se estampa a caballo del borde de la fotografía: montado sobre
+// ella pero sobresaliendo hacia el papel, que es como queda cuando alguien lo
+// aplica sobre un documento real. Contenido dentro de la foto casi no se leía.
 .legajo-sello {
   position: absolute;
-  right: -26px;
-  bottom: -4px;
-  width: 86px;
+  right: -52px;
+  bottom: -18px;
+  width: 112px;
   pointer-events: none;
 }
 
@@ -455,10 +458,18 @@ $linea: rgba(67, 42, 30, 0.42);
   color: rgba(67, 42, 30, 0.55);
 }
 
+// El registro scrollea dentro de la hoja en lugar de estirarla: con diez
+// campañas la hoja de servicios medía el triple que la libreta y la
+// composición se caía.
 .registro {
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 15.5rem;
+  overflow-y: auto;
+  // La barra nativa rompe el papel; se pinta con los tonos de la tinta.
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67, 42, 30, 0.35) transparent;
 }
 
 .registro-linea + .registro-linea {
