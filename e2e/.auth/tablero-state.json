@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "refresh_token",
+      "value": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzc1NTEwMjgzLCJleHAiOjE3NzYxMTUwODN9.qk9j9pk23Gw7qjox5m0kf-153qUYBhgXPQ5SHgcJdPdtRcPCvKiS9m4F6xAbp2kH",
+      "domain": "localhost",
+      "path": "/api/v1/auth/refresh",
+      "expires": 1776115083.990952,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:4200",
+      "localStorage": [
+        {
+          "name": "salaActual",
+          "value": "{\"idSala\":298,\"nombreSala\":\"DEV-TABLERO\",\"url\":\"NNGGLH\",\"creador\":{\"idUsuario\":202,\"usuario\":\"testuser\",\"correo\":\"test@test.com\",\"imagen\":\"avatar1.png\"}}"
+        }
+      ]
+    }
+  ]
+}
