@@ -192,6 +192,16 @@ Darkest Hour (2017), documentos clasificados de la OSS/MI6.
 7. El botón de volver usa la clase global `.btn-volver`: fijo arriba a 
    la izquierda, con el texto "Volver" y nada más. No crear variantes 
    por pantalla
+8. La viñeta global (`z-index: 9999`) cubre toda la pantalla y llega casi 
+   al negro en las esquinas. Cualquier control que tenga que leerse 
+   siempre va con el token `$z-frente` (10000) o por encima; si no, la 
+   viñeta lo apaga. Fue el bug del botón Volver
+9. El juego es **apaisado**: el tablero no tiene versión vertical. En 
+   teléfonos y tablets sostenidos en vertical se muestra `.aviso-orientacion` 
+   (`styles/_orientacion.scss`), gobernado por `@media (orientation: portrait) 
+   and (pointer: coarse)`. Las dos condiciones son necesarias: sin 
+   `pointer: coarse` una ventana de escritorio angosta también dispararía el 
+   aviso
 
 ### Paleta
 - Fondo papel/mapa: #EFE8CE

@@ -1,3 +1,23 @@
 <div class="vignette-global"></div>
+
+<!-- Aviso de orientación: sólo aparece en teléfonos y tablets sostenidos en
+     vertical. Lo gobierna una media query en styles/_orientacion.scss. -->
+<div class="aviso-orientacion" role="alertdialog" aria-live="polite">
+  <svg class="aviso-orientacion__icono" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <rect x="14" y="4" width="20" height="40" rx="3"
+          stroke="currentColor" stroke-width="2" />
+    <line x1="21" y1="8.5" x2="27" y2="8.5"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <circle cx="24" cy="39" r="1.6" fill="currentColor" />
+  </svg>
+
+  <h1 class="aviso-orientacion__titulo">GIRE EL APARATO</h1>
+  <p class="aviso-orientacion__texto">
+    La mesa de operaciones necesita la pantalla en horizontal.
+    El mapa no entra de otra manera.
+  </p>
+  <p class="aviso-orientacion__firma">· COMANDO SUPREMO ·</p>
+</div>
+
 <app-toast></app-toast>
 <router-outlet></router-outlet>

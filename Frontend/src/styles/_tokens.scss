@@ -57,6 +57,13 @@ $z-ui      : 10;
 $z-modal   : 100;
 $z-vignette: 9999;
 
+// Por encima de la viñeta. La viñeta es un velo fijo que cubre TODA la pantalla
+// y en las esquinas llega casi al negro puro, así que cualquier control que
+// viva por debajo se ve apagado — le pasaba al botón Volver, que justamente se
+// apoya en la esquina superior izquierda. Reservado para lo que tiene que
+// leerse siempre: controles de salida y diálogos.
+$z-frente  : 10000;
+
 // ── TRANSICIONES
 $transition-fast  : 0.2s ease;
 $transition-normal: 0.3s ease;
@@ -81,5 +88,6 @@ $transition-camera: 2s cubic-bezier(0.18, 0.05, 0.08, 1.0);
   --player-verde    : #{$player-verde};
   --player-dorado   : #{$player-dorado};
   --z-vignette      : #{$z-vignette};
+  --z-frente        : #{$z-frente};
   --transition-camera: #{$transition-camera};
 }

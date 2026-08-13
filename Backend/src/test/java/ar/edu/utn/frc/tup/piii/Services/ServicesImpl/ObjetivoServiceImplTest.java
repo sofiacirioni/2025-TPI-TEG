@@ -123,6 +123,56 @@ class ObjetivoServiceImplTest {
     }
 
     @Test
+    void construirFinPartida_cadaComandanteLlevaSuPropiaFoto() {
+        // Las filas BOT se graban con el id_usuario de quien creó la partida, así
+        // que leer usuario.getImagen() ilustraba a los bots con la foto del humano.
+        UsuarioEntity usuario = new UsuarioEntity();
+        usuario.setIdUsuario(1L);
+        usuario.setImagen("assets/images/avatars/SofiCirioni.png");
+
+        ObjetivoEntity objetivo = new ObjetivoEntity();
+        objetivo.setId(1L);
+        objetivo.setDescripcion("Ocupar Asia");
+
+        JugadorEntity humano = new JugadorEntity();
+        humano.setIdJugador(1L);
+        humano.setNombre("testuser");
+        humano.setTipoJugador(ar.edu.utn.frc.tup.piii.models.TipoJugador.HUMANO);
+        humano.setUsuario(usuario);
+        humano.setObjetivo(objetivo);
+
+        JugadorEntity bot = new JugadorEntity();
+        bot.setIdJugador(2L);
+        bot.setNombre("Sgto. BOTANA");
+        bot.setTipoJugador(ar.edu.utn.frc.tup.piii.models.TipoJugador.BOT);
+        bot.setUsuario(usuario);
+
+        PartidaEntity partida = new PartidaEntity();
+        partida.setIdPartida(7L);
+        partida.setJugadores(List.of(humano, bot));
+        humano.setPartida(partida);
+
+        when(jugadorRepository.findById(1L)).thenReturn(Optional.of(humano));
+        when(partidaRepository.findById(7L)).thenReturn(Optional.of(partida));
+        when(objetivoRepository.findById(1L)).thenReturn(Optional.of(objetivo));
+        when(estadoPaisRepository.findEstadoPaisEntitiesByJugador_IdJugador(anyLong()))
+                .thenReturn(List.of());
+        when(modelMapper.map(any(JugadorEntity.class), eq(ar.edu.utn.frc.tup.piii.Dtos.JugadorDto.class)))
+                .thenReturn(new ar.edu.utn.frc.tup.piii.Dtos.JugadorDto());
+
+        var fin = objetivoService.construirFinPartida(1L);
+
+        var fotos = fin.getClasificacion().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        ar.edu.utn.frc.tup.piii.Dtos.JugadorResultadoDto::getNombre,
+                        ar.edu.utn.frc.tup.piii.Dtos.JugadorResultadoDto::getAvatarUrl));
+
+        assertEquals("assets/images/avatars/SofiCirioni.png", fotos.get("testuser"));
+        assertEquals(JugadorEntity.AVATAR_BOT, fotos.get("Sgto. BOTANA"),
+                "el bot no puede llevar la foto del humano que creó la partida");
+    }
+
+    @Test
     void verificarObjetivos_alGanar_noMarcaAlVencedorComoDerrotado() {
         // El cierre de partida marcaba `perdio` para todos, vencedor incluido, y
         // la pizarra de estadísticas lo mostraba tachado junto a los eliminados.

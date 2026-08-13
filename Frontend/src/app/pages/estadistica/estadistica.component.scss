@@ -43,18 +43,35 @@ $escena-ratio: 1.7917;
   background-repeat: no-repeat;
 }
 
-// La foto llega mucho más clara que el resto de los fondos del juego (brillo
-// medio 160/255 contra 74 del tablero). Este velo la lleva a ~72/255. Es un
-// degradado y no un `filter: brightness()` —matemáticamente equivalentes— para
-// poder respetar el foco de la lámpara y oscurecer más los bordes.
+// La foto llega mucho más clara que el resto de los fondos del juego, así que
+// necesita un velo. Es un degradado y no un `filter: brightness()` para poder
+// respetar el foco de la lámpara y oscurecer más los bordes.
+//
+// El velo es marrón cálido y no negro: el negro puro le sacaba a la escena la
+// luz amarilla de lámpara que tienen las demás pantallas y la dejaba apagada.
+// Y arranca más suave en el centro para no perder el foco.
 .escena-oscurecer {
   position: absolute;
   inset: 0;
   background: radial-gradient(
     ellipse 62% 48% at 50% 20%,
-    rgba(0, 0, 0, 0.40) 0%,
-    rgba(0, 0, 0, 0.56) 45%,
-    rgba(0, 0, 0, 0.72) 100%
+    rgba(26, 14, 4, 0.16) 0%,
+    rgba(24, 13, 4, 0.34) 45%,
+    rgba(16, 9, 3, 0.58) 100%
+  );
+  pointer-events: none;
+}
+
+// Halo de la lámpara, el mismo que usan las otras escenas: devuelve el amarillo
+// cálido que el velo se lleva puesto.
+.escena-lampara {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 58% 42% at 50% 18%,
+    rgba(255, 200, 78, 0.16) 0%,
+    rgba(220, 148, 38, 0.07) 40%,
+    transparent 68%
   );
   pointer-events: none;
 }
@@ -311,7 +328,9 @@ $escena-ratio: 1.7917;
     background: #14100c;
   }
 
-  .escena-oscurecer { display: none; }
+  // Sin foto no hay nada que velar ni que iluminar.
+  .escena-oscurecer,
+  .escena-lampara { display: none; }
 
   .pizarra {
     position: absolute;
