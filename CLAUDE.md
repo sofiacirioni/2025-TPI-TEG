@@ -1,17 +1,17 @@
 # TEG - Táctica y Estrategia de Guerra (2025 TPI)
 
-Juego de estrategia por turnos implementado como aplicación web fullstack. Monorepo con Angular 19 (frontend) + Spring Boot 3.3.5 (backend).
+Juego de estrategia por turnos implementado como aplicación web fullstack. Monorepo con Angular 21 (frontend) + Spring Boot 3.3.5 (backend).
 
 ## Stack
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Angular 19, TypeScript 5.8, Bootstrap 5, ng-bootstrap |
+| Frontend | Angular 21 (standalone), TypeScript 5.9, SCSS, GSAP |
 | Backend | Java 17, Spring Boot 3.3.5, Maven |
 | Base de datos | PostgreSQL 15 (Docker), migraciones con Flyway |
 | Tiempo real | WebSocket (STOMP + SockJS) |
-| Tests FE | Jasmine + Karma |
-| Tests BE | JUnit + Mockito |
+| Tests E2E | Playwright (`e2e/`) — el frontend no tiene tests unitarios |
+| Tests BE | JUnit + Mockito, 291 tests |
 | API docs | Swagger `/swagger-ui.html` |
 
 ## URLs de desarrollo
@@ -44,8 +44,8 @@ cd Frontend && npm start
 # Tests backend
 cd Backend && ./mvnw test
 
-# Tests frontend (Karma, headed)
-cd Frontend && npm test
+# Tests end-to-end (Playwright levanta backend y frontend por su cuenta)
+npx playwright test
 
 # Build producción
 cd Frontend && npm run build
@@ -56,11 +56,11 @@ cd Frontend && npm run build
 **Patrón**: Controller → Service (interface) → ServiceImpl → Repository → Entity
 
 ```
-Controller/         # 11 controladores REST
+Controller/         # 13 controladores REST
 Services/           # Interfaces de servicio
 ServicesImpl/       # Implementaciones
-Repositories/       # JPA repositories (13)
-Entities/           # Entidades JPA (16)
+Repositories/       # JPA repositories (14)
+Entities/           # Entidades JPA (18, más AuditableEntity como MappedSuperclass)
 Dtos/               # Data Transfer Objects
 models/             # Enums y modelos de dominio
 configs/            # CORS, WebSocket, Swagger, ModelMapper
@@ -75,26 +75,33 @@ configs/            # CORS, WebSocket, Swagger, ModelMapper
 ```
 src/app/
   core/
-    services/       # 9+ servicios HTTP y de negocio
+    services/       # 13 servicios HTTP y de negocio
     models/
-      class/        # 18+ clases de dominio
+      class/        # Clases de dominio
       interfaces/   # TypeScript interfaces
       enums/        # Color, Simbolo, TipoObjetivo
-  features/
-    InicioSesion/   # Login
-    Registrarse/    # Registro
-    Principal/      # Menú principal
-    Sala/           # Lobby de sala
-    ConfigPartida/  # Configuración de partida
+  pages/
+    intro/          # Animación typewriter de entrada
+    inicio-sesion/  # Login
+    registrarse/    # Registro
+    principal/      # Menú principal
+    sala/           # Lobby de sala
+    config-partida/ # Configuración de partida
     tablero/        # Tablero de juego principal
       componentes/
-        mapa-svg/           # Mapa SVG interactivo
-        acciones-pais/      # Panel de acciones por país
-        jugadores-panel/    # Lista de jugadores
-        dados-modal/        # Modal de dados
-    PerfilUsuario/  # Perfil de usuario
-    Estadistica/    # Estadísticas
-    Ayuda/          # Reglas del juego
+        mapa-svg/             # Mapa SVG interactivo
+        jugadores-panel/      # Lista de jugadores
+        dados-modal/          # Modal de dados
+        chat-partida/         # Chat en tiempo real
+        pactos-overlay/       # Wizard de tratados
+        fin-partida-overlay/  # Diario de guerra
+    perfil-usuario/ # Legajo: libreta de enrolamiento + hoja de servicios
+    estadistica/    # Parte de campaña (pizarra de tiza)
+    creditos/       # Expedientes del equipo
+    ayuda/          # Reglamento (carpeta de archivo con pestañas)
+  shared/
+    components/     # paper-card, stamp, player-token, toast
+  routes/
 ```
 
 ## Convenciones de código
@@ -107,11 +114,11 @@ src/app/
 - Excepciones centralizadas en `GlobalExceptionHandler.java`
 
 ### Frontend (Angular/TypeScript)
-- Componentes standalone (Angular 19)
+- Componentes standalone con la sintaxis de control flow nueva (@if / @for)
 - Archivos de modelo en `core/models/`
 - Servicios en `core/services/`
-- Features en `features/` con estructura propia (component, service, styles)
-- Nombres de carpetas de features en PascalCase
+- Pantallas en `pages/`, cada una con su component + scss
+- Carpetas de pantalla en kebab-case dentro de `pages/`
 
 ## Websocket / Tiempo real
 
@@ -138,10 +145,13 @@ npx playwright test nombre-test.spec.ts
 ## Notas importantes
 
 - El esquema lo gobierna **Flyway**, no Hibernate: la app corre con `ddl-auto=validate`. Al cambiar una entidad hay que agregar una migración nueva en `Backend/src/main/resources/db/migration/` (nunca editar una ya aplicada — Flyway valida el checksum). Sin la migración, el arranque falla a propósito. Reset limpio: `docker compose down -v`.
+- Las fechas `fecha_alta` / `fecha_actualizacion` las escribe Spring Data JPA Auditing sobre las entidades que heredan de `AuditableEntity` (usuarios, salas, partidas, mensajes). `@EnableJpaAuditing` va en `Application` y no en una `@Configuration` aparte, porque `@DataJpaTest` arma su contexto desde esa clase.
 - Los tests usan H2 en memoria (Flyway apagado, esquema generado por Hibernate) para no depender de un Postgres levantado.
 - El CORS está configurado solo para `localhost:4200`. Cambiar en `CorsConfig.java` si se necesitan otros orígenes.
-- Los bots (`BotService`) tienen lógica de juego automática — revisar antes de modificar el flujo de turnos.
+- Los bots (`BotService`) tienen **una sola dificultad**, deliberadamente básica: refuerzos al azar, ataque al vecino con menos tropas, sin reagrupar y sin jugar el objetivo secreto. Cada fase espera `cooldownMs` (3 s) para que el humano vea lo que hacen. Revisar antes de modificar el flujo de turnos.
+- Las filas BOT de `jugadores` se graban con el `id_usuario` de quien creó la partida: toda consulta que parta del usuario tiene que filtrar por `tipoJugador = HUMANO`.
 - El mapa del tablero es SVG interactivo (`mapa-svg/`).
+- La tabla `estadisticas` y su servicio siguen en el código pero **nadie los escribe**: el histórico sale de agregar `jugadores` contra `partidas`.
 
 ## Design System — TEG Online
 
@@ -172,6 +182,9 @@ Darkest Hour (2017), documentos clasificados de la OSS/MI6.
    · ACCIÓN ·
 6. Los colores de jugador sobre fondo #EFE8CE deben tener contraste 
    mínimo 3:1 — no modificar sin verificar accesibilidad
+7. El botón de volver usa la clase global `.btn-volver`: fijo arriba a 
+   la izquierda, con el texto "Volver" y nada más. No crear variantes 
+   por pantalla
 
 ### Paleta
 - Fondo papel/mapa: #EFE8CE
