@@ -260,9 +260,7 @@ public class PartidaServiceImpl implements PartidaService {
                                 partidaEntity.getJugadores().stream()
                                                 .map(j -> {
                                                         JugadorDto dto = modelMapper.map(j, JugadorDto.class);
-                                                        if (j.getUsuario() != null) {
-                                                                dto.setUrl(j.getUsuario().getImagen());
-                                                        }
+                                                        dto.setUrl(j.avatarUrl());
                                                         dto.setCantidadTarjetas(
                                                                         tarjetasPorJugador.getOrDefault(j.getIdJugador(), 0L).intValue());
                                                         return dto;

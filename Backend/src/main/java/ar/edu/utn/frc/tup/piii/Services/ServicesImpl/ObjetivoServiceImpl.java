@@ -410,9 +410,7 @@ public class ObjetivoServiceImpl implements ObjetivoService {
         ObjetivoProgresoDto progresoGanador = calcularProgreso(idJugadorGanador);
 
         JugadorDto ganadorDto = modelMapper.map(ganador, JugadorDto.class);
-        if (ganador.getUsuario() != null) {
-            ganadorDto.setUrl(ganador.getUsuario().getImagen());
-        }
+        ganadorDto.setUrl(ganador.avatarUrl());
 
         // Incluye a todos los jugadores (también al ganador) para que el diario de fin de
         // partida pueda mostrar la cantidad de países de cada uno en un único ranking.

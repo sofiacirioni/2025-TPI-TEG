@@ -30,6 +30,76 @@ async function mirar(page: Page, segundos = 3) {
   await page.waitForTimeout(segundos * 1000);
 }
 
+/** Cierra el modal de país si quedó abierto. */
+async function cerrarModal(page: Page) {
+  await page.locator('.btn-modal-cerrar').click({ timeout: 1_000 }).catch(() => {});
+  await page.waitForTimeout(200);
+}
+
+/** Avanza a la fase siguiente del turno. */
+async function avanzarFase(page: Page) {
+  await page.locator('.btn-avanzar').click({ timeout: 5_000 }).catch(() => {});
+  await page.waitForTimeout(1_200);
+}
+
+/**
+ * Coloca un refuerzo en el país número `i` del mapa, si es propio y estamos en
+ * fase de incorporación. Devuelve true si llegó a colocar.
+ */
+async function colocarEnPais(page: Page, i: number): Promise<boolean> {
+  await page.locator('.mapa-svg path').nth(i).click();
+  const modal = page.locator('.modal-pais');
+  if (!(await modal.isVisible({ timeout: 1_500 }).catch(() => false))) return false;
+
+  const input = modal.locator('input[type="number"]').first();
+  const boton = modal.locator('button:has-text("COLOCAR")');
+  if (!(await input.isVisible({ timeout: 500 }).catch(() => false)) ||
+      !(await boton.isVisible({ timeout: 500 }).catch(() => false))) {
+    await cerrarModal(page);
+    return false;
+  }
+  await input.fill('1');
+  await boton.click();
+  await page.waitForTimeout(1_200);
+  return true;
+}
+
+/**
+ * Lanza un ataque desde el país número `i`, eligiendo el primer enemigo
+ * limítrofe y tirando los dados. Devuelve true si llegó a combatir.
+ */
+async function atacarDesde(page: Page, i: number): Promise<boolean> {
+  await page.locator('.mapa-svg path').nth(i).click();
+  const modal = page.locator('.modal-pais');
+  if (!(await modal.isVisible({ timeout: 1_500 }).catch(() => false))) return false;
+
+  const boton = modal.locator('button:has-text("ATACAR")');
+  const select = modal.locator('select').first();
+  if (!(await boton.isVisible({ timeout: 500 }).catch(() => false)) ||
+      !(await select.isVisible({ timeout: 500 }).catch(() => false))) {
+    await cerrarModal(page);
+    return false;
+  }
+
+  // La primera opción suele ser el placeholder; se toma la siguiente.
+  const opciones = await select.locator('option').count();
+  if (opciones < 2) {
+    await cerrarModal(page);
+    return false;
+  }
+  await select.selectOption({ index: 1 });
+  await boton.click();
+
+  // Panel de dados: se elige la cantidad y el combate se resuelve solo.
+  const dados = page.locator('.ted-dice-btn').first();
+  if (await dados.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    await dados.click();
+  }
+  await page.waitForTimeout(2_000);
+  await page.locator('.btn-entendido').click({ timeout: 3_000 }).catch(() => {});
+  return true;
+}
+
 // Va a nivel de archivo y no dentro del describe: activar el video obliga a
 // Playwright a levantar un worker nuevo, y eso sólo puede declararse acá.
 test.use({
@@ -87,16 +157,7 @@ test.describe('Recorrido de demostración', () => {
     await page.locator('.tramite-cerrar').click();
     await mirar(page, 1);
 
-    // ── 6. Créditos — expedientes clasificados ────────────────────────
-    await page.goto('/creditos');
-    await mirar(page, 2);
-    // Scroll lento por la columna de carpetas.
-    for (let i = 0; i < 6; i++) {
-      await page.mouse.wheel(0, 500);
-      await mirar(page, 1);
-    }
-
-    // ── 7. Tablero ────────────────────────────────────────────────────
+    // ── 6. Tablero ────────────────────────────────────────────────────
     // El setup deja una partida iniciada; si no corrió, se salta esta parte.
     if (!existsSync(URL_FILE)) {
       console.warn('Sin partida preparada: correr primero el proyecto "setup".');
@@ -115,17 +176,48 @@ test.describe('Recorrido de demostración', () => {
     await page.locator('.objetivo-modal').click();
     await mirar(page, 1);
 
-    // Un país del mapa: abre el modal con sus acciones.
-    await page.locator('.mapa-svg path').nth(12).click();
-    await mirar(page, 5);
-    const cerrarPais = page.locator('.modal-close-x').first();
-    if (await cerrarPais.isVisible().catch(() => false)) {
-      await cerrarPais.click();
+    // ── 7. Un turno jugado ────────────────────────────────────────────
+    const totalPaises = await page.locator('.mapa-svg path').count();
+
+    // Incorporación: se reparten refuerzos en un par de países propios.
+    let colocados = 0;
+    for (let i = 0; i < totalPaises && colocados < 2; i++) {
+      if (await colocarEnPais(page, i)) {
+        colocados++;
+        await mirar(page, 2);
+      }
     }
 
-    // El chat de la partida, en el bloc de notas de la derecha.
-    await page.locator('.chat-panel').scrollIntoViewIfNeeded().catch(() => {});
-    await mirar(page, 4);
+    // Ataque: se avanza de fase y se lanza un combate con dados.
+    await avanzarFase(page);
+    await mirar(page, 2);
+
+    for (let i = 0; i < totalPaises; i++) {
+      if (await atacarDesde(page, i)) {
+        // Los dados y el resultado del combate son lo más vistoso del juego.
+        await mirar(page, 6);
+        break;
+      }
+    }
+    // El historial de la derecha registra lo que acaba de pasar.
+    await mirar(page, 3);
+
+    // Tratados: el wizard de pactos, aunque no se llegue a firmar.
+    const btnPacto = page.locator('.btn-pacto, [class*="pacto"]:is(button)').first();
+    if (await btnPacto.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await btnPacto.click();
+      await page.waitForSelector('.pactos-overlay', { timeout: 5_000 }).catch(() => {});
+      await mirar(page, 6);
+      await page.keyboard.press('Escape');
+      await mirar(page, 1);
+    }
+
+    // Reagrupamiento y cierre del turno: los bots juegan a continuación.
+    await avanzarFase(page);
+    await mirar(page, 3);
+    await avanzarFase(page);
+    // Cada bot tarda unos 15 s; se muestran dos turnos de máquina.
+    await mirar(page, 30);
 
     // ── 8. Fin de partida — el diario de guerra ───────────────────────
     // El diario se dispara con el evento WebSocket FIN_PARTIDA y vive sólo

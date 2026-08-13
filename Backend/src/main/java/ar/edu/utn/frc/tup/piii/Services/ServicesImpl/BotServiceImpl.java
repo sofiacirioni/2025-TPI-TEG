@@ -50,6 +50,16 @@ public class BotServiceImpl implements BotService {
     int cooldownMs = 3000;
 
     /**
+     * Tropas que el bot conserva en el país desde el que ataca.
+     *
+     * <p>Sin este piso el bot atacaba hasta quedarse con una sola tropa en
+     * todos sus países, que es exactamente el estado en el que cualquiera se
+     * lo lleva puesto en el turno siguiente. Seguía siendo fácil de ganar,
+     * pero además se suicidaba solo.
+     */
+    private static final int TROPAS_MINIMAS_EN_ORIGEN = 3;
+
+    /**
      * Ejecuta el turno completo del bot de forma asíncrona:
      *   1. Fase INCORPORACION: distribuye ejércitos aleatoriamente.
      *   2. Avanza a ATAQUE (cooldown).
@@ -176,7 +186,8 @@ public class BotServiceImpl implements BotService {
     }
 
     /**
-     * Ataca países vecinos con menos tropas que el país atacante.
+     * Ataca países vecinos con menos tropas que el atacante, conservando
+     * siempre {@value #TROPAS_MINIMAS_EN_ORIGEN} tropas en el país de origen.
      * Lee entidades frescas antes de cada ataque para evitar referencias obsoletas
      * (conquistas previas en el mismo turno podrían cambiar la propiedad de los países).
      */
@@ -186,7 +197,7 @@ public class BotServiceImpl implements BotService {
         for (EstadoPaisEntity pais : misPaises) {
             // Lectura fresca para obtener tropas actualizadas
             EstadoPaisEntity origen = estadoPaisRepository.findById(pais.getIdEstadoPais()).orElse(null);
-            if (origen == null || origen.getCantidadTropas() <= 1) continue;
+            if (origen == null || origen.getCantidadTropas() < TROPAS_MINIMAS_EN_ORIGEN) continue;
 
             // Vecinos enemigos ordenados por menos tropas (más fáciles primero)
             List<EstadoPaisEntity> atacables = estadoPaisService
@@ -199,11 +210,15 @@ public class BotServiceImpl implements BotService {
             for (EstadoPaisEntity objetivo : atacables) {
                 // Re-leer origen para tropas actuales tras ataques previos
                 EstadoPaisEntity origenActual = estadoPaisRepository.findById(origen.getIdEstadoPais()).orElse(null);
-                if (origenActual == null || origenActual.getCantidadTropas() <= 1) break;
+                if (origenActual == null || origenActual.getCantidadTropas() < TROPAS_MINIMAS_EN_ORIGEN) break;
 
                 // Re-leer objetivo para verificar que sigue siendo enemigo
                 EstadoPaisEntity destActual = estadoPaisRepository.findById(objetivo.getIdEstadoPais()).orElse(null);
                 if (destActual == null || destActual.getJugador().getIdJugador().equals(idJugador)) continue;
+
+                // Sólo ataca cuando tiene ventaja. No es estrategia: es no
+                // regalar tropas en un ataque que ya sabe perdido.
+                if (origenActual.getCantidadTropas() <= destActual.getCantidadTropas()) continue;
 
                 try {
                     turnoService.ataque(new Ataque(

@@ -88,7 +88,7 @@ public class ResumenPartidaServiceImpl implements ResumenPartidaService {
                 .idJugador(j.getIdJugador())
                 .nombre(j.getNombre())
                 .color(j.getColor() != null ? j.getColor().name() : null)
-                .avatarUrl(j.getUsuario() != null ? j.getUsuario().getImagen() : null)
+                .avatarUrl(j.avatarUrl())
                 .esBot(j.getTipoJugador() == TipoJugador.BOT)
                 .paises(paises)
                 .ejercitos(j.getEjercito() != null ? j.getEjercito() : 0)

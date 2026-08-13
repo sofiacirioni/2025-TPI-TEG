@@ -188,7 +188,8 @@
   object-fit: cover;
   border: 1px solid rgba(67, 42, 30, 0.5);
   // Fotos de diario: viradas a sepia y con bastante contraste.
-  filter: grayscale(0.75) sepia(0.35) contrast(1.12);
+  // Sin filtro: los avatares ya vienen en blanco y negro con trama, y
+  // grayscale+sepia encima les aplastaba el contraste.
 
   &--grande { width: 168px; height: 190px; }
   &--media  { width: 78px;  height: 88px;  }

@@ -77,7 +77,7 @@ public class JugadorServiceImpl implements JugadorService {
 
         Jugador bot = new Jugador();
         bot.setIdJugador(null);
-        bot.setNombre("Bot_" + UUID.randomUUID().toString().substring(0, 8));
+        bot.setNombre(nombreDeBotLibre(jugadoresEnSala));
         bot.setTipoJugador(TipoJugador.BOT);
         bot.setColor(colorLibre);
         bot.setPartida(null);
@@ -94,6 +94,40 @@ public class JugadorServiceImpl implements JugadorService {
         bot.setSala(sala);
 
         return modelMapper.map(jugadorEntity, Jugador.class);
+    }
+
+    /**
+     * Apellidos de la tropa automática. La broma es evidente pero el prefijo
+     * "Sgto." mantiene el registro militar, y todos empiezan con BOT- para que
+     * en la mesa se distingan de un vistazo de los jugadores humanos.
+     */
+    private static final List<String> APELLIDOS_BOT = List.of(
+            "BOTACCIO", "BOTARDO", "BOTANA", "BOTOX", "BOTELLA",
+            "BOTIJA", "BOTINES", "BOTAFOGO", "BOTERO", "BOTAVARA",
+            "BOTTICELLI", "BOTALON");
+
+    private static final String RANGO_BOT = "Sgto. ";
+
+    /**
+     * Elige un apellido que no esté usado en la sala. Con 12 apellidos para un
+     * máximo de 5 bots siempre hay alguno libre; el fallback numerado está por
+     * si algún día cambia ese máximo.
+     */
+    private String nombreDeBotLibre(List<JugadorEntity> jugadoresEnSala) {
+        Set<String> ocupados = jugadoresEnSala.stream()
+                .map(JugadorEntity::getNombre)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<String> libres = APELLIDOS_BOT.stream()
+                .map(a -> RANGO_BOT + a)
+                .filter(n -> !ocupados.contains(n))
+                .collect(Collectors.toList());
+
+        if (libres.isEmpty()) {
+            return RANGO_BOT + "BOT " + (jugadoresEnSala.size() + 1);
+        }
+        return libres.get(new Random().nextInt(libres.size()));
     }
 
     public Color obtenerColorDisponible(Sala sala, Long excluirIdJugador) {
