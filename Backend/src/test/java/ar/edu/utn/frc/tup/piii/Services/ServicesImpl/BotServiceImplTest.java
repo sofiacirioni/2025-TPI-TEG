@@ -8,6 +8,7 @@ import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
+import ar.edu.utn.frc.tup.piii.models.Simbolo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -54,8 +55,9 @@ class BotServiceImplTest {
     void setUp() {
         // @Lazy @Autowired no lo inyecta @InjectMocks — lo seteamos manualmente
         ReflectionTestUtils.setField(botServiceImpl, "turnoService", turnoService);
-        // Eliminar el cooldown de 3 s para que los tests corran instantáneamente
+        // Eliminar las pausas para que los tests corran instantáneamente
         botServiceImpl.cooldownMs = 0;
+        botServiceImpl.pausaEntreAccionesMs = 0;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -68,6 +70,16 @@ class BotServiceImplTest {
         bot.setPartida(partida);
         bot.setEjercito(0);
         return bot;
+    }
+
+    private EstadoTarjetaEntity crearTarjeta(Simbolo simbolo) {
+        TarjetaEntity tarjeta = new TarjetaEntity();
+        tarjeta.setSimbolo(simbolo);
+
+        EstadoTarjetaEntity estado = new EstadoTarjetaEntity();
+        estado.setTarjeta(tarjeta);
+        estado.setCanjeada(false);
+        return estado;
     }
 
     private EstadoPaisEntity crearEstadoPais(Long idEstado, Long idPais, JugadorEntity jugador, int tropas) {
@@ -194,6 +206,40 @@ class BotServiceImplTest {
         botServiceImpl.executeTurnAsync(4L);
 
         verify(turnoService, atLeastOnce()).ataque(any(Ataque.class));
+    }
+
+    /**
+     * Con 5 tarjetas donde dos comparten símbolo, el bot tiene que seguir jugando.
+     *
+     * <p>Era el bug que dejaba a los bots pasando el turno sin hacer nada a partir
+     * de cierta altura de la partida: la combinación se evaluaba con {@code Set.of},
+     * que lanza IllegalArgumentException ante elementos repetidos. La excepción
+     * escapaba de la incorporación y el turno entero caía en la rama de
+     * recuperación. Como hace falta juntar 5 tarjetas, aparecía recién promediando
+     * la partida y ya no se iba más.
+     */
+    @Test
+    void executeTurnAsync_conTarjetasDelMismoSimbolo_igualJuegaElTurno() throws Exception {
+        JugadorEntity bot = crearBot(6L);
+        bot.setEjercito(2);
+
+        EstadoPaisEntity ep = crearEstadoPais(50L, 1L, bot, 2);
+
+        // GALEON repetido: el trío (0,1,2) tiene dos símbolos, que no es canje válido,
+        // pero tampoco puede hacer explotar el turno.
+        when(estadoTarjetaRepository.findByJugadorId(6L)).thenReturn(List.of(
+                crearTarjeta(Simbolo.GALEON), crearTarjeta(Simbolo.GALEON),
+                crearTarjeta(Simbolo.CANION), crearTarjeta(Simbolo.GALEON),
+                crearTarjeta(Simbolo.CANION)));
+
+        when(jugadorRepository.findByIdJugador(6L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(6L)).thenReturn(List.of(ep));
+
+        botServiceImpl.executeTurnAsync(6L);
+
+        // Reparte sus ejércitos y avanza las fases con normalidad.
+        verify(turnoService, atLeastOnce()).agregarFichas(any());
+        verify(turnoService, times(3)).cambiarFaseTurno(99L);
     }
 
     /**
