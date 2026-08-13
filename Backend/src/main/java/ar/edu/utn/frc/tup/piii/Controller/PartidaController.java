@@ -1,7 +1,9 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.PartidaDto;
+import ar.edu.utn.frc.tup.piii.Dtos.ResumenPartidaDto;
 import ar.edu.utn.frc.tup.piii.Services.PartidaService;
+import ar.edu.utn.frc.tup.piii.Services.ResumenPartidaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.*;
 import jakarta.validation.Valid;
@@ -30,6 +32,15 @@ public class PartidaController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private ResumenPartidaService resumenPartidaService;
+
+    /** Parte de campaña de una partida jugada — lo consume la pizarra de estadísticas. */
+    @GetMapping("/{idPartida}/resumen")
+    public ResponseEntity<ResumenPartidaDto> obtenerResumen(@PathVariable Long idPartida) {
+        return ResponseEntity.ok(resumenPartidaService.obtenerResumen(idPartida));
+    }
 
     @PostMapping("/crear/{idSala}")
     public ResponseEntity<?> crearPartida(

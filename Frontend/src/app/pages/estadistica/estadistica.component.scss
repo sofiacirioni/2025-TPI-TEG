@@ -1,0 +1,348 @@
+@import '../../../styles/tokens';
+
+// Proporción de black-board-scene.webp (2752x1536).
+$escena-ratio: 1.7917;
+
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.pizarra-escena {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #080604;
+}
+
+// Caja con la relación de aspecto de la foto, dimensionada para CUBRIR el
+// viewport. Es la referencia de la que cuelga la pizarra en porcentajes: si el
+// fondo se escala o se recorta, el contenido lo acompaña.
+.escena-fondo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  // El ratio va por custom property a propósito: si se interpola el número
+  // directo, Sass resuelve `max()` en compilación —tiene su propia función
+  // max()— y emite algo que el browser descarta, dejando la caja sin tamaño.
+  // Con var() adentro, Sass no puede evaluarlo y lo deja pasar como CSS.
+  --ratio: #{$escena-ratio};
+  // Acercamiento sobre el encuadre mínimo: agranda la pizarra (y con ella todo
+  // el contenido, que está en cqw) a costa de recortar los bordes de la sala.
+  // Con 1.22 se conservan la lámpara y el escritorio; más que eso empieza a
+  // comerse la biblioteca y la radio, que son lo que le da vida a la escena.
+  --zoom: 1.22;
+  width: calc(max(100vw, 100vh * var(--ratio)) * var(--zoom));
+  height: calc(max(100vh, 100vw / var(--ratio)) * var(--zoom));
+
+  background-image: url('/assets/images/black-board-scene.webp');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+// La foto llega mucho más clara que el resto de los fondos del juego (brillo
+// medio 160/255 contra 74 del tablero). Este velo la lleva a ~72/255. Es un
+// degradado y no un `filter: brightness()` —matemáticamente equivalentes— para
+// poder respetar el foco de la lámpara y oscurecer más los bordes.
+.escena-oscurecer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 62% 48% at 50% 20%,
+    rgba(0, 0, 0, 0.40) 0%,
+    rgba(0, 0, 0, 0.56) 45%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  pointer-events: none;
+}
+
+// Coordenadas medidas sobre la foto: la pizarra ocupa x 25,07%–74,85% y
+// y 23,89%–78,64%. Con `container-type` la tipografía escala con la pizarra.
+.pizarra {
+  position: absolute;
+  left: 25.07%;
+  top: 23.89%;
+  width: 49.78%;
+  height: 54.75%;
+
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  padding: 2.4cqw 2.8cqw;
+  // El proyecto no importa el reboot de Bootstrap, así que no hay border-box
+  // global: sin esto el padding se suma al alto y el pie de la tabla termina
+  // dibujado sobre la pared, fuera de la pizarra.
+  box-sizing: border-box;
+
+  font-family: var(--font-body);
+  color: rgba(238, 234, 222, 0.92);
+  // Polvillo de tiza: un halo mínimo, nunca blanco puro. Va en TODO el texto
+  // porque no afecta la legibilidad.
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 3px rgba(226, 240, 255, 0.10);
+}
+
+// Trazo de tiza real: el filtro SVG desplaza los bordes con ruido para romper
+// la perfección de la fuente. Reservado al texto grande — sobre los números de
+// la tabla los vuelve ilegibles.
+.tiza {
+  filter: url('#trazo-tiza');
+}
+
+.svg-filtros {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.pizarra-aviso {
+  margin: auto;
+  font-family: var(--font-heading);
+  font-size: 2.2cqw;
+  letter-spacing: 0.12em;
+  color: rgba(238, 234, 222, 0.6);
+}
+
+// ── Encabezado ───────────────────────────────────────────────────────
+.pizarra-encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2cqw;
+  border-bottom: 1px solid rgba(238, 234, 222, 0.28);
+  padding-bottom: 0.7cqw;
+}
+
+.pizarra-titulo {
+  font-family: var(--font-heading);
+  // El typography global pone color claro en los h1, que acá viene bien.
+  color: rgba(238, 234, 222, 0.95);
+  font-size: 3.1cqw;
+  letter-spacing: 0.14em;
+  margin: 0;
+}
+
+.pizarra-fecha {
+  font-style: italic;
+  font-size: 1.7cqw;
+  color: rgba(238, 234, 222, 0.6);
+  white-space: nowrap;
+}
+
+// ── Bloque destacado: vencedor + cifras de la campaña ────────────────
+// Encuadrado con tiza para separarlo de la tabla: es lo primero que se lee.
+.pizarra-destacado {
+  display: flex;
+  align-items: stretch;
+  gap: 1.6cqw;
+  margin-top: 1.6cqw;
+}
+
+// Recuadro dibujado con tiza: trazo tenue y esquinas apenas irregulares.
+%recuadro-tiza {
+  border: 1px solid rgba(238, 234, 222, 0.3);
+  border-radius: 3px 5px 4px 6px;
+  box-shadow: inset 0 0 0.9cqw rgba(238, 234, 222, 0.04);
+}
+
+.panel-vencedor {
+  @extend %recuadro-tiza;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25cqw;
+  padding: 1.1cqw 1.5cqw;
+}
+
+.panel-etiqueta {
+  font-family: var(--font-heading);
+  font-size: 1.3cqw;
+  letter-spacing: 0.28em;
+  color: rgba(238, 234, 222, 0.5);
+}
+
+.panel-nombre {
+  font-family: var(--font-heading);
+  font-size: 3.4cqw;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  color: rgba(255, 250, 235, 0.97);
+}
+
+.panel-objetivo {
+  font-style: italic;
+  font-size: 1.5cqw;
+  line-height: 1.3;
+  color: rgba(238, 234, 222, 0.66);
+}
+
+.panel-cifras {
+  display: flex;
+  gap: 1cqw;
+  flex-shrink: 0;
+}
+
+.cifra {
+  @extend %recuadro-tiza;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2cqw;
+  padding: 1.1cqw 1.4cqw;
+  min-width: 7.4cqw;
+
+  b {
+    font-family: var(--font-heading);
+    font-size: 3.2cqw;
+    line-height: 1;
+    color: rgba(255, 250, 235, 0.97);
+  }
+
+  span {
+    font-family: var(--font-heading);
+    font-size: 1.05cqw;
+    letter-spacing: 0.18em;
+    color: rgba(238, 234, 222, 0.5);
+  }
+}
+
+// ── Tabla ────────────────────────────────────────────────────────────
+.pizarra-tabla {
+  width: 100%;
+  margin-top: 1.6cqw;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th {
+    font-family: var(--font-heading);
+    font-size: 1.35cqw;
+    letter-spacing: 0.1em;
+    font-weight: normal;
+    color: rgba(238, 234, 222, 0.55);
+    text-align: right;
+    padding-bottom: 0.7cqw;
+    border-bottom: 1px solid rgba(238, 234, 222, 0.25);
+  }
+
+  td {
+    font-size: 1.75cqw;
+    text-align: right;
+    padding: 1.05cqw 0;
+    border-bottom: 1px solid rgba(238, 234, 222, 0.09);
+  }
+
+  .col-nombre  { text-align: left;  width: 23%; }
+  .col-estado  { text-align: right; width: 14%; }
+}
+
+.dato-menor {
+  font-size: 0.82em;
+  color: rgba(238, 234, 222, 0.5);
+}
+
+// Cuadradito de tiza con el color del comandante.
+.tiza-color {
+  display: inline-block;
+  width: 1.1cqw;
+  height: 1.1cqw;
+  margin-right: 0.6cqw;
+  border-radius: 1px;
+  vertical-align: baseline;
+}
+
+.etiqueta-bot {
+  font-family: var(--font-heading);
+  font-size: 0.66em;
+  letter-spacing: 0.14em;
+  margin-left: 0.5cqw;
+  color: rgba(238, 234, 222, 0.42);
+}
+
+// El vencedor va subrayado con tiza; los eliminados, tachados.
+.fila-ganador td {
+  color: rgba(255, 250, 235, 1);
+  border-bottom-color: rgba(238, 234, 222, 0.45);
+}
+
+.fila-eliminado td {
+  color: rgba(238, 234, 222, 0.45);
+  text-decoration: line-through;
+  text-decoration-color: rgba(238, 234, 222, 0.35);
+  text-decoration-thickness: 1px;
+
+  // La columna de estado explica POR QUÉ está tachada la fila: tacharla a ella
+  // también la vuelve ilegible.
+  &.col-estado {
+    text-decoration: none;
+  }
+}
+
+// "por <color>" va en su propio renglón: al lado de ELIMINADO parte la palabra.
+.col-estado .dato-menor {
+  display: block;
+  line-height: 1.2;
+}
+
+.pizarra-nota {
+  margin: auto 0 0;
+  padding-top: 1cqw;
+  font-size: 1.15cqw;
+  font-style: italic;
+  color: rgba(238, 234, 222, 0.38);
+}
+
+// En pantallas angostas la pizarra de la foto queda demasiado chica para leer
+// la tabla: se abandona la escena y el parte pasa a ocupar todo el ancho.
+@media (max-width: 900px), (max-height: 560px) {
+  .escena-fondo {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    transform: none;
+    background: #14100c;
+  }
+
+  .escena-oscurecer { display: none; }
+
+  .pizarra {
+    position: absolute;
+    inset: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    container-type: normal;
+    padding: 1.4rem;
+    overflow-y: auto;
+
+    // Sin la foto, el escalado por contenedor deja de tener sentido.
+    font-size: 13px;
+
+    .pizarra-titulo    { font-size: 20px; }
+    .pizarra-fecha     { font-size: 12px; }
+    .pizarra-destacado { flex-direction: column; gap: 10px; margin-top: 12px; }
+    .panel-vencedor    { padding: 10px 12px; gap: 2px; }
+    .panel-etiqueta    { font-size: 10px; }
+    .panel-nombre      { font-size: 20px; }
+    .panel-objetivo    { font-size: 12px; }
+    .panel-cifras      { gap: 8px; }
+    .cifra             { padding: 8px 10px; min-width: 62px;
+                         b { font-size: 20px; } span { font-size: 9px; } }
+    .pizarra-tabla th  { font-size: 10px; }
+    .pizarra-tabla td  { font-size: 12px; padding: 6px 0; }
+    .tiza-color        { width: 8px; height: 8px; margin-right: 5px; }
+    .pizarra-nota      { font-size: 10px; }
+
+    // El filtro de tiza necesita tamaños grandes para leerse como textura.
+    .tiza { filter: none; }
+  }
+}

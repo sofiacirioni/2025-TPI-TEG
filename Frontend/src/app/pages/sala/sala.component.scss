@@ -362,16 +362,4 @@
   gap: 0.75rem;
 }
 
-.sala-volver {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--color-mar);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(184, 216, 213, 0.35);
-  transition: opacity var(--transition-fast);
-
-  &:hover {
-    opacity: 0.75;
-  }
-}
+// El volver de esta pantalla usa .btn-volver, la clase global.

@@ -1,0 +1,232 @@
+@import '../../../styles/tokens';
+
+// El cartón de la carpeta: dos tonos, la tapa de adelante más clara que la
+// de atrás para que se lea el espesor.
+$carton      : #E0CFA6;
+$carton-atras: #C6B287;
+$linea       : rgba(67, 42, 30, 0.35);
+
+:host {
+  display: block;
+}
+
+.ayuda-escena {
+  box-sizing: border-box;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  position: relative;
+  min-height: 100vh;
+  padding: $space-8 $space-6 $space-12;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.carpeta {
+  position: relative;
+  z-index: 3;
+  width: min(1060px, 100%);
+}
+
+// Incrustada en el tablero: el fondo de mesa y el botón de cierre los pone el
+// overlay que la contiene, así que acá sólo queda la carpeta.
+.ayuda-escena--incrustada {
+  min-height: 0;
+  padding: 0;
+
+  .carpeta { width: min(940px, 100%); }
+  .hoja    { min-height: 0; max-height: 62vh; overflow-y: auto; }
+}
+
+// Asoma arriba y a la derecha, como el cartón de atrás de una carpeta real.
+// Es la pieza que le da volumen: sin ella la tapa parece una hoja suelta.
+.carpeta-atras {
+  position: absolute;
+  left: 10px;
+  right: -10px;
+  top: 30px;
+  bottom: -9px;
+  background: $carton-atras;
+  border-radius: $radius-md 10px $radius-md $radius-md;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.6);
+}
+
+// ── Pestañas ───────────────────────────────────────────────────────────
+.carpeta-pestanias {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  // Sin separación: los troqueles inclinados de dos pestañas contiguas ya
+  // dibujan la V que las separa. Con gap, entre medio se ve la mesa y las
+  // pestañas parecen agujeros.
+  gap: 0;
+  padding-left: 18px;
+}
+
+.pestania {
+  position: relative;
+  // Cada pestaña mide lo que dice, como una carpeta rotulada a mano. Con
+  // flex:1 el conjunto se lee como una barra de tabs moderna.
+  flex: 0 0 auto;
+  height: 44px;
+  border: 0;
+  padding: $space-2 $space-6 10px;
+  background: $carton-atras;
+  color: rgba(74, 53, 32, 0.85);
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, pointer;
+  transition: filter $transition-fast, background $transition-fast;
+
+  // El troquel: los lados apenas inclinados, como el cartón cortado a
+  // máquina. Con clip-path no hace falta ningún asset por pestaña.
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 100%, 0 100%);
+  border-radius: 6px 6px 0 0;
+  // Las que están detrás quedan en sombra dentro del fichero.
+  filter: brightness(0.93);
+
+  &:hover {
+    filter: brightness(1);
+  }
+}
+
+// La activa sube, se aclara hasta el tono de la tapa y se funde con ella.
+.pestania--activa {
+  background: $carton;
+  color: $color-oscuro;
+  height: 52px;
+  margin-top: -8px;
+  filter: none;
+  z-index: 1;
+
+  &:hover {
+    filter: none;
+  }
+}
+
+// ── Tapa delantera ─────────────────────────────────────────────────────
+.carpeta-tapa {
+  position: relative;
+  z-index: 1;
+  // Solapa con la base de las pestañas para que no quede costura visible.
+  margin-top: -3px;
+  padding: $space-6;
+  background: $carton;
+  border-radius: $radius-md $radius-md 6px 6px;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+// ── La hoja de adentro ─────────────────────────────────────────────────
+.hoja {
+  // Que la carpeta ocupe la mesa aunque la sección sea corta, sin saltar de
+  // tamaño al cambiar de pestaña.
+  min-height: 58vh;
+  padding: $space-6 $space-8 $space-8;
+  background: $color-claro;
+  color: $color-oscuro;
+  font-family: var(--font-body);
+  // Apoyada dentro de la carpeta, no encuadrada con escuadra.
+  transform: rotate(-0.25deg);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.32);
+}
+
+.hoja-encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-4;
+  border-bottom: 1px solid $linea;
+  padding-bottom: $space-2;
+}
+
+// El typography global pinta los h1 en claro; sobre papel sería invisible.
+.hoja-titulo {
+  margin: 0;
+  font-size: $text-h3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $color-oscuro;
+}
+
+.hoja-referencia {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: rgba(67, 42, 30, 0.5);
+  white-space: nowrap;
+}
+
+.apartado {
+  margin-top: $space-4;
+}
+
+.apartado-subtitulo {
+  margin: 0 0 $space-1;
+  font-family: var(--font-heading);
+  font-size: 0.86rem;
+  letter-spacing: 0.05em;
+  color: $color-oscuro;
+}
+
+.apartado-texto {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.apartado-lista {
+  margin: 0;
+  padding-left: $space-4;
+  font-size: 0.86rem;
+  line-height: 1.6;
+
+  li {
+    margin-bottom: 2px;
+  }
+}
+
+// ── Pantallas angostas ─────────────────────────────────────────────────
+// Cinco pestañas en fila dejan de ser legibles: pasan a dos filas y la
+// carpeta pierde el cartón de atrás, que sólo aporta volumen.
+@media (max-width: 720px) {
+  .ayuda-escena {
+    padding: $space-6 $space-3 $space-10;
+  }
+
+  .carpeta-pestanias {
+    flex-wrap: wrap;
+    padding-left: 0;
+    gap: 2px;
+  }
+
+  .pestania {
+    flex: 1 1 30%;
+    padding-left: $space-2;
+    padding-right: $space-2;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .pestania--activa {
+    margin-top: 0;
+    height: 44px;
+  }
+
+  .carpeta-atras { display: none; }
+
+  .hoja {
+    padding: $space-4;
+    transform: none;
+  }
+}

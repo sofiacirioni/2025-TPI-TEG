@@ -238,8 +238,9 @@ app-paper-card {
   background: transparent;
 }
 
-// ── Botón volver ──────────────────────────────────────────────
-.creditos-volver {
-  text-align: center;
-  padding: 2rem 0 3rem;
+// El botón de volver es global (.btn-volver): mismo lugar en todas las
+// pantallas. Acá sólo queda aire al pie para que la última carpeta no
+// termine pegada al borde.
+.creditos-columna {
+  padding-bottom: 3rem;
 }

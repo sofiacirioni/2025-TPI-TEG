@@ -377,6 +377,29 @@
   </div>
 
   <!-- ── Controles de zoom — borde inferior derecho del mapa ── -->
+  <!-- Menú de operaciones: lo que no es jugar. -->
+  <div class="operaciones">
+    <button type="button"
+            class="btn-teg-dark operaciones-boton"
+            [class.operaciones-boton--abierto]="menuOperacionesAbierto"
+            (click)="alternarMenuOperaciones()"
+            aria-label="Menú de operaciones">
+      · OPERACIONES ·
+    </button>
+
+    @if (menuOperacionesAbierto) {
+      <div class="operaciones-menu paper-grunge--v4">
+        <button type="button" class="operaciones-item" (click)="abrirReglamento()">
+          Consultar reglamento
+        </button>
+        <button type="button" class="operaciones-item operaciones-item--riesgo"
+                (click)="pedirConfirmacionRetiro()">
+          Retirarse de la campaña
+        </button>
+      </div>
+    }
+  </div>
+
   <div class="mapa-controles">
     <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -487,7 +510,9 @@
           <div class="ficha-avatar-wrapper">
             <div class="ficha-avatar-circle"
                  [style.background-color]="getColorSolido(jugador.color)">
-              @if (!esEsBot(jugador) && jugador.url) {
+              <!-- Los bots ya tienen su propia fotografía de legajo, así que
+                   dejaron de ser la excepción que iba sin retrato. -->
+              @if (jugador.url) {
                 <img class="ficha-avatar-img"
                      [src]="jugador.url"
                      [alt]="jugador.nombre"
@@ -654,4 +679,42 @@
     [jugadores]="partida?.jugadores ?? []"
     [resultado]="resultadoPropuesta"
     (respondido)="onRespuestaPacto()" />
+}
+
+<!-- ── Reglamento consultado desde la mesa ──────────────────────────────
+     Reutiliza la misma carpeta de archivo de la pantalla de ayuda, en modo
+     incrustado: no duplica el contenido de las reglas. -->
+@if (reglamentoAbierto) {
+  <div class="reglamento-overlay" (click)="reglamentoAbierto = false">
+    <div class="reglamento-caja" (click)="$event.stopPropagation()">
+      <app-ayuda [incrustado]="true"></app-ayuda>
+      <button type="button" class="btn-teg-dark reglamento-cerrar"
+              (click)="reglamentoAbierto = false">
+        · CERRAR ·
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ── Confirmación de retiro ──────────────────────────────────────────
+     Retirarse cierra la campaña sin desenlace, así que se pregunta antes. -->
+@if (confirmandoRetiro) {
+  <div class="retiro-overlay" (click)="confirmandoRetiro = false">
+    <div class="retiro-parte paper-grunge--v6" (click)="$event.stopPropagation()">
+      <h2 class="retiro-titulo">· ORDEN DE RETIRO ·</h2>
+      <p class="retiro-texto">
+        Al retirarse abandona la campaña y no podrá volver a ella. La partida
+        se cierra sin vencedor y no sumará a su hoja de servicios.
+      </p>
+      <div class="retiro-acciones">
+        <!-- Sobre papel claro va la variante clara (texto oscuro). -->
+        <button type="button" class="btn-teg-light" (click)="confirmandoRetiro = false">
+          · SEGUIR EN EL FRENTE ·
+        </button>
+        <button type="button" class="btn-teg-danger" (click)="confirmarRetiro()">
+          · RETIRARSE ·
+        </button>
+      </div>
+    </div>
+  </div>
 }

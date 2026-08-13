@@ -278,9 +278,9 @@ public class EstadoPaisServiceImplTest {
     @Test
     void testAgrupacionFichas_exitoso() {
 
-        EstadoPaisServiceImpl sutSpy = Mockito.spy(estadoPaisService);
-        doReturn(true).when(sutSpy).sonLimitrofes(10L, 20L);
-
+        // agrupacionFichas ya no valida adyacencia: esa regla se movió al chequeo de
+        // conectividad por BFS de TurnoServiceImpl.moverFichas. Acá solo se prueba el
+        // traslado de tropas. sonLimitrofes tiene sus propios tests más abajo.
         MoverFichas moverFichas = new MoverFichas();
         moverFichas.setIdJugador(1L);
         moverFichas.setIdPaisOrigen(10L);
@@ -309,7 +309,7 @@ public class EstadoPaisServiceImplTest {
         when(estadoPaisRepository.save(estadoOrigen)).thenReturn(estadoOrigen);
         when(estadoPaisRepository.save(estadoDestino)).thenReturn(estadoDestino);
 
-        boolean resultado = sutSpy.agrupacionFichas(moverFichas);
+        boolean resultado = estadoPaisService.agrupacionFichas(moverFichas);
 
         assertTrue(resultado);
         assertEquals(2, estadoOrigen.getCantidadTropas());
@@ -320,15 +320,13 @@ public class EstadoPaisServiceImplTest {
     }
 
     @Test
-    void testAgrupacionFichas_noSonLimitrofes() {
-        EstadoPaisServiceImpl sutSpy = Mockito.spy(estadoPaisService);
-        doReturn(false).when(sutSpy).sonLimitrofes(10L, 20L);
-
+    void testAgrupacionFichas_fichasInsuficientes() {
+        // El origen debe conservar al menos 1 ficha: mover las 5 que tiene es inválido.
         MoverFichas moverFichas = new MoverFichas();
         moverFichas.setIdJugador(1L);
         moverFichas.setIdPaisOrigen(10L);
         moverFichas.setIdPaisDestino(20L);
-        moverFichas.setCantidadFichas(3L);
+        moverFichas.setCantidadFichas(5L);
 
         EstadoPaisEntity estadoOrigen = new EstadoPaisEntity();
         estadoOrigen.setCantidadTropas(5);
@@ -346,10 +344,11 @@ public class EstadoPaisServiceImplTest {
                 .thenReturn(Optional.of(estadoDestino));
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            sutSpy.agrupacionFichas(moverFichas);
+            estadoPaisService.agrupacionFichas(moverFichas);
         });
 
-        assertEquals("Los paises no son limitrofes", ex.getMessage());
+        assertEquals("Las fichas no son suficientes", ex.getMessage());
+        verify(estadoPaisRepository, never()).save(any(EstadoPaisEntity.class));
     }
 
     @Test

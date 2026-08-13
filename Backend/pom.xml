@@ -43,19 +43,21 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 Database — desarrollo local (runtime para que spring-boot:run lo incluya) -->
-        <!-- Ambos drivers coexisten; Spring Boot solo conecta al configurado en el perfil activo -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- PostgreSQL — producción -->
+        <!-- PostgreSQL — único motor de base de datos (dev y prod) -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Flyway — versionado del esquema y datos semilla -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
         <!-- Validaciones con anotaciones como @NotBlank, @Email -->
@@ -123,6 +125,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- H2 en memoria — SOLO para los tests, para que `mvnw test` no
+             necesite un Postgres levantado. La aplicación nunca lo usa. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
 

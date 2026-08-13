@@ -58,7 +58,9 @@ public class JugadoresControllerTest {
 
         assertNotNull(botCreado, "El bot no debe ser null");
         assertNotNull(botCreado.getNombre(), "El nombre del bot no debe ser null");
-        assertTrue(botCreado.getNombre().startsWith("Bot_"), "El nombre del bot debe comenzar con 'Bot_'");
+        // Los bots llevan nombre de tropa: "Sgto. BOTACCIO", "Sgto. BOTANA"…
+        assertTrue(botCreado.getNombre().startsWith("Sgto. BOT"),
+                "El nombre del bot debe tener el formato 'Sgto. BOT...', y fue: " + botCreado.getNombre());
         assertEquals(TipoJugador.BOT, botCreado.getTipoJugador(), "El tipo de jugador debe ser BOT");
         assertNotNull(botCreado.getColor(), "El color del bot no debe ser null");
         assertEquals(sala.getIdSala(), botCreado.getSala().getIdSala(), "El bot debe pertenecer a la sala correcta");

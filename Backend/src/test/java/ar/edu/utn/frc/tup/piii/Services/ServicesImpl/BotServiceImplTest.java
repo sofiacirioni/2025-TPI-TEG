@@ -4,6 +4,7 @@ import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
+import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
@@ -39,6 +40,15 @@ class BotServiceImplTest {
 
     @Mock
     private JugadorRepository jugadorRepository;
+
+    /**
+     * Necesario desde que realizarIncorporacion() arranca con el canje obligatorio de
+     * tarjetas. Sin este mock el campo queda null, la incorporación lanza NPE y el bot
+     * cae en la rama de recuperación del catch — con lo cual nunca distribuye ni ataca.
+     * Sin stubear: Mockito devuelve lista vacía y el bot sigue de largo (no hay canje).
+     */
+    @Mock
+    private EstadoTarjetaRepository estadoTarjetaRepository;
 
     @BeforeEach
     void setUp() {
@@ -100,7 +110,9 @@ class BotServiceImplTest {
         JugadorEntity bot = crearBot(2L);
         bot.setEjercito(3);
 
-        EstadoPaisEntity ep = crearEstadoPais(10L, 1L, bot, 2);
+        // 3 tropas es el mínimo con el que el bot se anima a atacar; con menos
+        // ni siquiera mira a sus vecinos.
+        EstadoPaisEntity ep = crearEstadoPais(10L, 1L, bot, 3);
 
         when(jugadorRepository.findByIdJugador(2L)).thenReturn(Optional.of(bot));
         when(estadoPaisRepository.findByJugador_IdJugador(2L)).thenReturn(List.of(ep));
@@ -111,6 +123,28 @@ class BotServiceImplTest {
 
         verify(turnoService, atLeastOnce()).agregarFichas(any());
         verify(turnoService, times(3)).cambiarFaseTurno(99L);
+    }
+
+    /**
+     * El bot conserva una guarnición mínima: con menos de 3 tropas en el país
+     * de origen no ataca. Antes atacaba hasta quedarse con una sola tropa en
+     * todos sus países, lo que lo dejaba servido para el turno siguiente.
+     */
+    @Test
+    void realizarAtaque_conGuarnicionMinima_noAtaca() throws Exception {
+        JugadorEntity bot = crearBot(3L);
+        bot.setEjercito(0);
+
+        EstadoPaisEntity debil = crearEstadoPais(20L, 2L, bot, 2);
+
+        when(jugadorRepository.findByIdJugador(3L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(3L)).thenReturn(List.of(debil));
+
+        botServiceImpl.executeTurnAsync(3L);
+
+        // Ni siquiera pregunta por los vecinos: descarta el país antes.
+        verify(estadoPaisService, never()).getLimitesEstadoPaisEntity(anyLong());
+        verify(turnoService, never()).ataque(any());
     }
 
     /**

@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PartidaEventDto {
-    /** ATAQUE_INICIADO | ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA | FIN_PARTIDA */
+    /** ATAQUE_INICIADO | ATAQUE | CONQUISTA | FIN_TURNO | INCORPORACION | REAGRUPAMIENTO | TARJETA_OBTENIDA | TARJETA_CANJEADA | FIN_PARTIDA | PACTO_* | CHAT */
     private String tipo;
     private String jugadorNombre;
     private String jugadorColor;

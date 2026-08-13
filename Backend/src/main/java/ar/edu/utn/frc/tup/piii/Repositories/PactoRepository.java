@@ -23,6 +23,15 @@ public interface PactoRepository extends JpaRepository<PactoEntity, Long> {
                                                  @Param("idB") Long idB,
                                                  @Param("idPartida") Long idPartida);
 
+    /**
+     * Todos los pactos en los que intervino alguna de estas participaciones.
+     * Se recibe la lista completa de un usuario para resolver su diplomacia
+     * acumulada en una sola consulta.
+     */
+    @Query("SELECT p FROM PactoEntity p " +
+            "WHERE p.jugadorA.idJugador IN :idsJugador OR p.jugadorB.idJugador IN :idsJugador")
+    List<PactoEntity> findByJugadorIdIn(@Param("idsJugador") List<Long> idsJugador);
+
     @Query("SELECT p FROM PactoEntity p WHERE p.partida.idPartida = :idPartida " +
             "AND (p.jugadorA.idJugador = :idJugador OR p.jugadorB.idJugador = :idJugador) " +
             "AND p.estado IN (ar.edu.utn.frc.tup.piii.models.EstadoPacto.ACTIVO, " +

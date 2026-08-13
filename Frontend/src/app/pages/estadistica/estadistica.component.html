@@ -1,46 +1,113 @@
-<div class="body w-100 m-0">
-  <div class="d-flex justify-content-between align-items-center mb-3 w-100 m-0">
-    <button class="fs-3 px-3 rounded-circle border" aria-label="Volver">
-      <a  [routerLink]="['../principal']" id="volver">
+<div class="pizarra-escena">
+  <!-- Filtro de tiza: desplaza levemente los bordes del trazo con ruido, para que
+       el texto grande no se vea como una fuente digital perfecta. Solo se aplica
+       a los títulos y al nombre del vencedor: sobre los números de la tabla
+       arruinaría la legibilidad. -->
+  <svg class="svg-filtros" aria-hidden="true" focusable="false">
+    <filter id="trazo-tiza">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" result="ruido" />
+      <feDisplacementMap in="SourceGraphic" in2="ruido" scale="2.4"
+                         xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
 
-      </a>
-    </button>
-    <div class="user-icon d-flex justify-content-center align-items-center">
-      <i class="bi bi-person fs-4 text-white"></i>
-    </div>
+  <!-- La escena mantiene la relación de aspecto de la foto y cubre el viewport.
+       La pizarra se posiciona en % contra ella, así queda siempre calzada sobre
+       la pizarra real de la imagen sin importar el tamaño de la ventana. -->
+  <div class="escena-fondo">
+    <div class="escena-oscurecer" aria-hidden="true"></div>
+
+    <section class="pizarra">
+      @if (cargando) {
+        <p class="pizarra-aviso">Recuperando el parte…</p>
+      } @else if (error || !resumen) {
+        <p class="pizarra-aviso">No hay parte de campaña para mostrar.</p>
+      } @else {
+        <header class="pizarra-encabezado">
+          <h1 class="pizarra-titulo tiza">PARTE DE CAMPAÑA</h1>
+          <span class="pizarra-fecha">{{ fechaFormateada }}</span>
+        </header>
+
+        <!-- Bloque destacado: lo que se quiere leer primero, encuadrado con tiza -->
+        <div class="pizarra-destacado">
+          <div class="panel panel-vencedor">
+            @if (resumen.ganadorNombre) {
+              <span class="panel-etiqueta">VENCEDOR</span>
+              <span class="panel-nombre tiza" [style.color]="colorVarPara(resumen.ganadorColor)">
+                {{ resumen.ganadorNombre }}
+              </span>
+              @if (resumen.objetivoCumplido) {
+                <span class="panel-objetivo">{{ resumen.objetivoCumplido }}</span>
+              }
+            } @else {
+              <span class="panel-etiqueta">RESULTADO</span>
+              <span class="panel-nombre tiza">CAMPAÑA SIN RESOLVER</span>
+              <span class="panel-objetivo">La partida no llegó a un desenlace.</span>
+            }
+          </div>
+
+          <div class="panel-cifras">
+            <div class="cifra">
+              <b class="tiza">{{ resumen.turnosJugados }}</b>
+              <span>TURNOS</span>
+            </div>
+            <div class="cifra">
+              <b class="tiza">{{ resumen.tratadosFirmados }}</b>
+              <span>TRATADOS</span>
+            </div>
+            <div class="cifra">
+              <b class="tiza">{{ resumen.tratadosRotos }}</b>
+              <span>ROTOS</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="pizarra-tabla">
+          <thead>
+            <tr>
+              <th class="col-nombre">COMANDANTE</th>
+              <th>PAÍSES</th>
+              <th>EJÉRC.</th>
+              <th>ATAQ.</th>
+              <th>CONQ.</th>
+              <th>EFECT.</th>
+              <th>BAJAS</th>
+              <th class="col-estado">ESTADO</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of resumen.comandantes; track c.idJugador) {
+              <tr [class.fila-eliminado]="c.eliminado" [class.fila-ganador]="c.ganador">
+                <td class="col-nombre">
+                  <span class="tiza-color" [style.background]="colorVarPara(c.color)" aria-hidden="true"></span>
+                  {{ c.nombre }}
+                  @if (c.esBot) { <span class="etiqueta-bot">BOT</span> }
+                </td>
+                <td>{{ c.paises }} <span class="dato-menor">({{ c.porcentajeMapa }}%)</span></td>
+                <td>{{ c.ejercitos }}</td>
+                <td>{{ c.ataquesLanzados }}</td>
+                <td>{{ c.conquistas }}</td>
+                <td>{{ c.efectividad }}%</td>
+                <td>
+                  {{ c.tropasAbatidas }}<span class="dato-menor"> / {{ c.tropasPerdidas }}</span>
+                </td>
+                <td class="col-estado">
+                  {{ estadoDe(c) }}
+                  @if (c.eliminado && c.eliminadoPor) {
+                    <span class="dato-menor">por {{ nombreColor(c.eliminadoPor) }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <p class="pizarra-nota">
+          Efectividad = conquistas sobre ataques lanzados · Bajas = infligidas / sufridas
+        </p>
+      }
+    </section>
   </div>
 
-  <div class="w-50 m-auto">
-    <div class="text-center mb-4">
-      <h2 class="titulo-estadisticas jugar">Estadísticas</h2>
-    </div>
-
-    <table class="table table-bordered text-center custom-table">
-      <thead class="">
-      <tr>
-        <th>JUGADOR</th>
-        <th>ID PARTIDA</th>
-        <th>FECHA PARTIDA</th>
-        <th>PAISES CONQUISTADOS</th>
-        <th>PAISES PERDIDOS</th>
-        <th>GANADOR</th>
-        <th>PORCENTAJE CONQUISTA</th>
-      </tr>
-      </thead>
-      <tbody>
-        @for (e of estadisticas; track e.id) {
-          <tr >
-          <td>{{ e.colorJugador }}</td>
-          <td>{{ e.idPartida }}</td>
-          <td>{{ e.fecha | date: 'dd/MM/yyyy' }}</td>
-          <td>{{ e.paisesConquistados }}</td>
-          <td>{{ e.paisesPerdidos }}</td>
-          <td>{{ e.ganador ? 'SI' : 'NO' }}</td>
-          <td>{{ e.porcentajeMundo }}%</td>
-          </tr>
-        }
-      </tbody>
-
-    </table>
-  </div>
+  <button type="button" class="btn-volver" (click)="volver()">Volver</button>
 </div>

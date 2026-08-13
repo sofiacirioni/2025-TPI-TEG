@@ -1,7 +1,11 @@
 // Environment configuration for production
+//
+// Rutas relativas a propósito: en producción el frontend lo sirve el mismo
+// Nginx que proxya /api y /ws al backend (ver Frontend/nginx.conf), así que
+// resuelven contra el origen actual y el stack funciona en cualquier host
+// (localhost, IP de red, dominio real) sin recompilar.
 export const environment = {
   production: true,
-  apiUrl: 'https://api.teg.com/api/v1', // Cambiar por la URL de producción real
-  wsUrl: 'https://api.teg.com/ws' // Cambiar por la URL de producción real
+  apiUrl: '/api/v1',
+  wsUrl: '/ws'
 };
-

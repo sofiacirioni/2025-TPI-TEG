@@ -7,6 +7,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -16,22 +19,27 @@ import static org.mockito.Mockito.*;
 public class UsuariosServiceImplTest {
     private UsuarioRepository usuarioRepository;
     private ModelMapper modelMapper;
+    private PasswordEncoder passwordEncoder;
     private UsuarioServiceImpl usuarioService;
 
     @BeforeEach
     void setUp() {
         usuarioRepository = mock(UsuarioRepository.class);
         modelMapper = new ModelMapper();
+        // Encoder real (no mock): así el test ejercita el hashing de verdad, que es
+        // justamente lo que cambió cuando actualizarUsuario migró a BCrypt.
+        passwordEncoder = new BCryptPasswordEncoder();
         usuarioService = new UsuarioServiceImpl();
         usuarioService.usuarioRepository = usuarioRepository;
         usuarioService.modelMapper = modelMapper;
+        usuarioService.passwordEncoder = passwordEncoder;
     }
 
     @Test
     void testActualizarUsuario_correcto() {
         UsuarioEntity entity = new UsuarioEntity();
         entity.setCorreo("user@domain.com");
-        entity.setContrasenia("oldpass");
+        entity.setContrasenia(passwordEncoder.encode("oldpass"));
 
         when(usuarioRepository.findByCorreo("user@domain.com")).thenReturn(Optional.of(entity));
         when(usuarioRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -39,7 +47,9 @@ public class UsuariosServiceImplTest {
         Usuario actualizado = usuarioService.actualizarUsuario("user@domain.com", "oldpass", "newpass", "imagen.png");
 
         assertNotNull(actualizado);
-        assertEquals("newpass", actualizado.getContrasenia());
+        // La contraseña se guarda hasheada, no en texto plano.
+        assertNotEquals("newpass", actualizado.getContrasenia());
+        assertTrue(passwordEncoder.matches("newpass", actualizado.getContrasenia()));
         assertEquals("imagen.png", actualizado.getImagen());
     }
 
@@ -47,12 +57,25 @@ public class UsuariosServiceImplTest {
     void testActualizarUsuario_contraseniaIncorrecta() {
         UsuarioEntity entity = new UsuarioEntity();
         entity.setCorreo("user@domain.com");
-        entity.setContrasenia("Clave321!");
+        entity.setContrasenia(passwordEncoder.encode("Clave321!"));
 
         when(usuarioRepository.findByCorreo("user@domain.com")).thenReturn(Optional.of(entity));
 
+        // La actual que se envía no coincide con la almacenada.
+        assertThrows(ResponseStatusException.class,
+                () -> usuarioService.actualizarUsuario("user@domain.com", "ClaveEquivocada!", "Clave123!", "img"));
+    }
 
-        assertThrows(IllegalArgumentException.class, () -> usuarioService.actualizarUsuario("user@domain.com", "Clave321!", "Clave123!", "img"));
+    @Test
+    void testActualizarUsuario_nuevaIgualALaActual() {
+        UsuarioEntity entity = new UsuarioEntity();
+        entity.setCorreo("user@domain.com");
+        entity.setContrasenia(passwordEncoder.encode("Clave321!"));
+
+        when(usuarioRepository.findByCorreo("user@domain.com")).thenReturn(Optional.of(entity));
+
+        assertThrows(ResponseStatusException.class,
+                () -> usuarioService.actualizarUsuario("user@domain.com", "Clave321!", "Clave321!", "img"));
     }
 
     @Test

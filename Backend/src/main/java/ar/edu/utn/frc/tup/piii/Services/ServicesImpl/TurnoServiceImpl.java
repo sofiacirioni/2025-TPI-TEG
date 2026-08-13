@@ -655,6 +655,9 @@ public class TurnoServiceImpl implements TurnoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudieron canjear los ejercitos.");
         }
 
+        jugadorEntity.setCanjesRealizados(jugadorEntity.getCanjesRealizados() + 1);
+        jugadorRepository.save(jugadorEntity);
+
         PartidaEventDto evento = new PartidaEventDto();
         evento.setTipo("TARJETA_CANJEADA");
         evento.setJugadorNombre(jugadorEntity.getNombre());
@@ -985,6 +988,19 @@ public class TurnoServiceImpl implements TurnoService {
         estadoPaisAtacante.setCantidadTropas(estadoPaisAtacante.getCantidadTropas() - perdidasAtacante);
         estadoPaisDefensor.setCantidadTropas(estadoPaisDefensor.getCantidadTropas() - perdidasDefensor);
 
+        // Contadores del parte de campaña. Se toma el defensor ACÁ, antes de que
+        // una eventual conquista cambie el propietario del país. resolverInterno
+        // es el único punto por el que pasan los tres caminos de ataque (bot,
+        // flujo dual y defensa), así que alcanza con instrumentarlo una vez.
+        JugadorEntity defensorPrevio = estadoPaisDefensor.getJugador();
+        jugador.setAtaquesLanzados(jugador.getAtaquesLanzados() + 1);
+        jugador.setTropasPerdidas(jugador.getTropasPerdidas() + perdidasAtacante);
+        jugador.setTropasAbatidas(jugador.getTropasAbatidas() + perdidasDefensor);
+        if (defensorPrevio != null) {
+            defensorPrevio.setTropasPerdidas(defensorPrevio.getTropasPerdidas() + perdidasDefensor);
+            defensorPrevio.setTropasAbatidas(defensorPrevio.getTropasAbatidas() + perdidasAtacante);
+        }
+
         boolean conquista = false;
         boolean cartaOtorgada = false;
         boolean victoriaInmediata = false;
@@ -997,6 +1013,7 @@ public class TurnoServiceImpl implements TurnoService {
                     jugador.getIdJugador());
 
             jugador.setConsquisto(true);
+            jugador.setConquistas(jugador.getConquistas() + 1);
             jugadorRepository.save(jugador);
             conquista = true;
 
@@ -1065,6 +1082,18 @@ public class TurnoServiceImpl implements TurnoService {
         } else {
             estadoPaisRepository.save(estadoPaisDefensor);
             estadoPaisRepository.save(estadoPaisAtacante);
+            // El defensor aguantó el ataque y conserva el país.
+            if (defensorPrevio != null) {
+                defensorPrevio.setDefensasResistidas(defensorPrevio.getDefensasResistidas() + 1);
+            }
+        }
+
+        // Persistir los contadores de ambos lados. El atacante ya se guarda dentro
+        // del bloque de conquista, pero en el camino sin conquista nadie lo hace.
+        jugadorRepository.save(jugador);
+        if (defensorPrevio != null
+                && !defensorPrevio.getIdJugador().equals(jugador.getIdJugador())) {
+            jugadorRepository.save(defensorPrevio);
         }
 
         response.setConquista(conquista);

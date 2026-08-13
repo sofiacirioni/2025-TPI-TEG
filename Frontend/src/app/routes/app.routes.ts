@@ -24,6 +24,8 @@ export const routes: Routes = [
   { path: 'perfilUsuario', component: PerfilUsuario, canActivate: [authGuard] },
   { path: 'entrarCrearSala', component: SalaComponent, canActivate: [authGuard] },
   { path: 'configPartida', component: ConfigPartidaComponent, canActivate: [authGuard] },
+  // El parte de campaña es de UNA partida: lleva su id para que sobreviva a un F5.
+  { path: 'estadisticas/:idPartida', component: EstadisticaComponent, canActivate: [authGuard] },
   { path: 'estadisticas', component: EstadisticaComponent, canActivate: [authGuard] },
   { path: 'juego/:url', component: TableroComponent, canActivate: [authGuard] },
 

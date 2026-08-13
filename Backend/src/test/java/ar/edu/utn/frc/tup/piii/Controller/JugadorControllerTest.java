@@ -68,7 +68,7 @@ class JugadorControllerTest {
     void testFinalizarPartida() {
         ResponseEntity<String> response = controller.finalizarPartida(3L);
         verify(jugadorService).finalizarPartida(3L);
-        assertEquals("Voto de reanudación registrado", response.getBody());
+        assertEquals("Retiro registrado", response.getBody());
     }
 
     @Test
