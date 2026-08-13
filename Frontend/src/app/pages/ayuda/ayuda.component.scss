@@ -186,13 +186,6 @@ $linea       : rgba(67, 42, 30, 0.35);
   }
 }
 
-.ayuda-volver {
-  position: fixed;
-  left: $space-8;
-  bottom: $space-6;
-  z-index: 4;
-}
-
 // ── Pantallas angostas ─────────────────────────────────────────────────
 // Cinco pestañas en fila dejan de ser legibles: pasan a dos filas y la
 // carpeta pierde el cartón de atrás, que sólo aporta volumen.
@@ -225,11 +218,5 @@ $linea       : rgba(67, 42, 30, 0.35);
   .hoja {
     padding: $space-4;
     transform: none;
-  }
-
-  .ayuda-volver {
-    position: static;
-    display: flex;
-    margin: $space-6 auto 0;
   }
 }

@@ -125,12 +125,6 @@ export class PerfilUsuario implements OnInit {
     return this.formatearDiaMes(d.getMonth() + 1, d.getDate());
   }
 
-  /** Fecha de la campaña más reciente: el registro viene ordenado por fecha. */
-  get ultimaSalida(): string {
-    const ultima = this.historial?.campanias?.[0];
-    return ultima ? this.fechaCampania(ultima) : 'Sin salidas';
-  }
-
   // ── Página derecha: hoja de servicios ────────────────────────────────
 
   get sinCampanias(): boolean {

@@ -299,14 +299,6 @@ $escena-ratio: 1.7917;
   color: rgba(238, 234, 222, 0.38);
 }
 
-// ── Botón, fuera de la pizarra ───────────────────────────────────────
-.btn-volver {
-  position: absolute;
-  right: 2.5rem;
-  bottom: 2rem;
-  z-index: 2;
-}
-
 // En pantallas angostas la pizarra de la foto queda demasiado chica para leer
 // la tabla: se abandona la escena y el parte pasa a ocupar todo el ancho.
 @media (max-width: 900px), (max-height: 560px) {

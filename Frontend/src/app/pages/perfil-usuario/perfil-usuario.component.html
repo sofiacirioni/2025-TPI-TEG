@@ -31,10 +31,6 @@
             <dt>Alta</dt>
             <dd class="manuscrito manuscrito--chico">{{ fechaAltaFormateada }}</dd>
           </div>
-          <div class="legajo-campo">
-            <dt>Última salida</dt>
-            <dd class="manuscrito manuscrito--chico">{{ ultimaSalida }}</dd>
-          </div>
         </dl>
 
         @if (aviso) {
@@ -226,9 +222,7 @@
     </section>
   </div>
 
-  <button type="button" class="btn-teg-dark legajo-volver" (click)="volver()">
-    · VOLVER AL CUARTEL ·
-  </button>
+  <button type="button" class="btn-volver" (click)="volver()">Volver</button>
 </div>
 
 <!-- ── Trámite: rectificación de clave ───────────────────────────────── -->

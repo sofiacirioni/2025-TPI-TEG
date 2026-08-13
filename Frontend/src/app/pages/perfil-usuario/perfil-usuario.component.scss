@@ -47,10 +47,13 @@ $linea: rgba(67, 42, 30, 0.42);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.62);
 }
 
+// Proporción de pasaporte: abierto mide algo más ancho que alto (176×125mm
+// en el formato real). Con dos hojas de 285px, el alto tiene que rondar los
+// 400 para que la libreta no parezca un cuaderno.
 .libreta-hoja {
   width: 285px;
-  min-height: 500px;
-  padding: $space-6 $space-4;
+  min-height: 395px;
+  padding: $space-4;
   background-color: $color-claro;
   color: $color-oscuro;
   font-family: var(--font-body);
@@ -99,10 +102,10 @@ $linea: rgba(67, 42, 30, 0.42);
 
 // ── Campos del formulario ──────────────────────────────────────────────
 .legajo-campos {
-  margin: $space-6 0 0;
+  margin: $space-4 0 0;
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-3;
 }
 
 .legajo-campo {
@@ -150,7 +153,7 @@ $linea: rgba(67, 42, 30, 0.42);
 // ── Trámites al margen ─────────────────────────────────────────────────
 .legajo-tramites {
   margin-top: auto;
-  padding-top: $space-6;
+  padding-top: $space-4;
   display: flex;
   flex-direction: column;
   gap: $space-2;
@@ -163,7 +166,7 @@ $linea: rgba(67, 42, 30, 0.42);
 }
 
 .legajo-firmas {
-  margin-top: $space-6;
+  margin-top: $space-4;
   display: flex;
   gap: $space-4;
 }
@@ -183,9 +186,9 @@ $linea: rgba(67, 42, 30, 0.42);
 // ── Página derecha: la fotografía sellada ──────────────────────────────
 .legajo-foto {
   position: relative;
-  width: 150px;
-  height: 190px;
-  margin-top: $space-4;
+  width: 118px;
+  height: 148px;
+  margin-top: $space-3;
   border: 1px solid $linea;
   background: rgba(67, 42, 30, 0.06);
   display: flex;
@@ -193,12 +196,13 @@ $linea: rgba(67, 42, 30, 0.42);
   justify-content: center;
 }
 
+// Sin filtro: los avatares ya son ilustraciones en blanco y negro con trama,
+// y el grayscale+sepia encima les aplastaba el contraste y hacía vibrar la
+// trama, que era lo que se veía raro.
 .legajo-foto-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  // Fotografía de documento: sin color y con el contraste subido.
-  filter: grayscale(1) contrast(1.15) sepia(0.22);
 }
 
 .legajo-foto-vacia {
@@ -213,9 +217,9 @@ $linea: rgba(67, 42, 30, 0.42);
 // sin bajar tanto como para tapar el enlace que va debajo.
 .legajo-sello {
   position: absolute;
-  right: -30px;
+  right: -26px;
   bottom: -4px;
-  width: 104px;
+  width: 86px;
   pointer-events: none;
 }
 
@@ -545,13 +549,6 @@ $linea: rgba(67, 42, 30, 0.42);
 }
 
 // ── Volver ─────────────────────────────────────────────────────────────
-.legajo-volver {
-  position: fixed;
-  left: $space-8;
-  bottom: $space-6;
-  z-index: 4;
-}
-
 // ── Trámites (overlays) ────────────────────────────────────────────────
 .tramite-overlay {
   position: fixed;
@@ -673,7 +670,6 @@ $linea: rgba(67, 42, 30, 0.42);
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    filter: grayscale(1) contrast(1.12) sepia(0.2);
   }
 
   &:hover { border-color: rgba(67, 42, 30, 0.8); }
@@ -711,11 +707,5 @@ $linea: rgba(67, 42, 30, 0.42);
   .servicios {
     transform: none;
     flex-basis: 100%;
-  }
-
-  .legajo-volver {
-    position: static;
-    display: flex;
-    margin: $space-6 auto 0;
   }
 }
