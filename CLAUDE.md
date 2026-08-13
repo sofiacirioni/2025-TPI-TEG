@@ -179,7 +179,13 @@ Darkest Hour (2017), documentos clasificados de la OSS/MI6.
 4. Ningún elemento de UI debe verse "moderno" — sin bordes redondeados 
    grandes, sin sombras de colores, sin gradientes vibrantes
 5. Los botones siguen el patrón pill con Special Elite y puntos medios: 
-   · ACCIÓN ·
+   · ACCIÓN · — y la variante la decide el FONDO sobre el que se apoyan, 
+   no la pantalla: `.btn-teg-dark` (borde y texto claros) sobre fondo 
+   oscuro —mesa, overlay, escena—, `.btn-teg-light` (borde y texto 
+   oscuros) sobre papel claro, y `.btn-teg-primary` (relleno verde) sólo 
+   cuando ninguno de los dos contrasta lo suficiente. `.btn-teg-danger` 
+   queda para acciones irreversibles. Un botón claro sobre un overlay 
+   negro no se lee: fue el bug de la interfaz de tratados.
 6. Los colores de jugador sobre fondo #EFE8CE deben tener contraste 
    mínimo 3:1 — no modificar sin verificar accesibilidad
 7. El botón de volver usa la clase global `.btn-volver`: fijo arriba a 
