@@ -139,6 +139,7 @@ export class PerfilUsuario implements OnInit {
   }
 
   resultadoDe(c: CampaniaHistorial): string {
+    if (c.estado === 'ABANDONADA') return 'ABANDONADA';
     if (!c.terminada) return 'EN CURSO';
     if (c.ganador) return 'VICTORIA';
     if (c.eliminado) return 'ELIMINADO';

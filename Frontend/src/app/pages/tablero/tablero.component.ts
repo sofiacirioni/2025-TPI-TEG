@@ -15,6 +15,7 @@ import { FinPartidaOverlayComponent } from './componentes/fin-partida-overlay/fi
 import { BotonPactosComponent } from './componentes/boton-pactos/boton-pactos.component';
 import { PactosOverlayComponent } from './componentes/pactos-overlay/pactos-overlay.component';
 import { RespuestaPactoOverlayComponent } from './componentes/respuesta-pacto-overlay/respuesta-pacto-overlay.component';
+import { AyudaComponent } from '../ayuda/ayuda.component';
 import {
   AtaqueDto,
   AtaqueResponseDto,
@@ -56,7 +57,7 @@ interface HistorialItem {
 @Component({
   selector: 'app-tablero',
   standalone: true,
-  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent, ObjetivoQuemadoComponent, FinPartidaOverlayComponent, BotonPactosComponent, PactosOverlayComponent, RespuestaPactoOverlayComponent],
+  imports: [MapaSvgComponent, CommonModule, FormsModule, NombrePaisPipe, FaseDisplayPipe, TableroEventDisplayComponent, ObjetivoRevelacionComponent, ObjetivoQuemadoComponent, FinPartidaOverlayComponent, BotonPactosComponent, PactosOverlayComponent, RespuestaPactoOverlayComponent, AyudaComponent],
   templateUrl: 'tablero.component.html',
   styleUrl: 'tablero.component.scss',
 })
@@ -225,6 +226,44 @@ export class TableroComponent implements OnInit, OnDestroy {
 
   get faseActual(): string {
     return this.getTurnoActual()?.fase ?? '';
+  }
+
+  // ── Menú de operaciones ────────────────────────────────────────────
+  // Un solo botón agrupa lo que no es jugar: consultar el reglamento y
+  // retirarse. Sueltos serían dos controles más en una pantalla ya cargada.
+  menuOperacionesAbierto = false;
+  reglamentoAbierto = false;
+  confirmandoRetiro = false;
+
+  alternarMenuOperaciones(): void {
+    this.menuOperacionesAbierto = !this.menuOperacionesAbierto;
+  }
+
+  abrirReglamento(): void {
+    this.reglamentoAbierto = true;
+    this.menuOperacionesAbierto = false;
+  }
+
+  pedirConfirmacionRetiro(): void {
+    this.confirmandoRetiro = true;
+    this.menuOperacionesAbierto = false;
+  }
+
+  /**
+   * Retirarse de la campaña. Es irreversible y no cuenta como derrota: la
+   * partida queda ABANDONADA y no suma al historial de nadie.
+   */
+  confirmarRetiro(): void {
+    const idJugador = this.jugadorUsuario?.idJugador;
+    if (!idJugador) return;
+
+    this.confirmandoRetiro = false;
+    this.tableroServicio.retirarseDeLaPartida(idJugador).subscribe({
+      next: () => this.router.navigate(['/principal']),
+      error: () => {
+        this.notificationService.error('No se pudo registrar el retiro.');
+      },
+    });
   }
 
   get jugadorActualTurno(): JugadorDto | undefined {

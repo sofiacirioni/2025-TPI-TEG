@@ -33,6 +33,16 @@ $linea       : rgba(67, 42, 30, 0.35);
   width: min(1060px, 100%);
 }
 
+// Incrustada en el tablero: el fondo de mesa y el botón de cierre los pone el
+// overlay que la contiene, así que acá sólo queda la carpeta.
+.ayuda-escena--incrustada {
+  min-height: 0;
+  padding: 0;
+
+  .carpeta { width: min(940px, 100%); }
+  .hoja    { min-height: 0; max-height: 62vh; overflow-y: auto; }
+}
+
 // Asoma arriba y a la derecha, como el cartón de atrás de una carpeta real.
 // Es la pieza que le da volumen: sin ella la tapa parece una hoja suelta.
 .carpeta-atras {

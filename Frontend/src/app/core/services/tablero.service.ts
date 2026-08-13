@@ -160,6 +160,15 @@ export class TableroServicio {
     return this.http.post<void>(`${this.apiUrl}/chat/enviar`, { idPartida, idJugador, texto });
   }
 
+  /**
+   * El jugador se retira de la campaña. Cuando todos los humanos se retiraron
+   * la partida se cierra como ABANDONADA y deja de figurar como en curso.
+   */
+  retirarseDeLaPartida(idJugador: number): Observable<string> {
+    return this.http.post(`${this.apiUrl}/jugador/${idJugador}/finalizarPartida`, {},
+      { responseType: 'text' });
+  }
+
 
 
 

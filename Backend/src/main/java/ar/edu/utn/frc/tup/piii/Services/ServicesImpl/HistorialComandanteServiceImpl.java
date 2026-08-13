@@ -92,6 +92,8 @@ public class HistorialComandanteServiceImpl implements HistorialComandanteServic
                     .idPartida(partida.getIdPartida())
                     .fecha(resumen.getFecha())
                     .terminada(terminada)
+                    .estado(partida.getEstadoPartida() != null
+                            ? partida.getEstadoPartida().name() : null)
                     .puesto(terminada ? puesto : 0)
                     .comandantes(clasificacion.size())
                     .turnosJugados(resumen.getTurnosJugados())

@@ -70,7 +70,10 @@ public class HistorialComandanteDto {
     public static class CampaniaDto {
         private Long idPartida;
         private LocalDate fecha;
+        /** Sólo las TERMINADA suman al acumulado. */
         private boolean terminada;
+        /** EN_JUEGO, PAUSADA, TERMINADA o ABANDONADA — para rotular la fila. */
+        private String estado;
         /** Puesto en la clasificación final, 1 = vencedor. 0 si sigue en curso. */
         private int puesto;
         private int comandantes;

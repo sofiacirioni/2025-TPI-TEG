@@ -242,7 +242,12 @@ public class JugadorServiceImpl implements JugadorService {
             }
 
             PartidaEntity partida = jugador.getPartida();
-            partida.setEstadoPartida(EstadoPartida.TERMINADA);
+            // Retirarse no es ganar ni perder: nadie llegó a un desenlace, así
+            // que la campaña queda abandonada y no suma al historial de nadie.
+            // Si hubiera vencedor, el estado lo pone TurnoServiceImpl.
+            partida.setEstadoPartida(partida.getGanador() != null
+                    ? EstadoPartida.TERMINADA
+                    : EstadoPartida.ABANDONADA);
             partidaRepository.save(partida);
         }
     }

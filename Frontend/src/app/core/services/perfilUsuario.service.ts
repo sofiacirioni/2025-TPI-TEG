@@ -9,8 +9,11 @@ export interface CampaniaHistorial {
   idPartida: number;
   /** Jackson serializa LocalDate como [año, mes, día]. */
   fecha: number[] | string;
+  /** Sólo las terminadas suman al acumulado. */
   terminada: boolean;
-  /** 1 = vencedor. 0 si la campaña sigue en curso. */
+  /** EN_JUEGO, PAUSADA, TERMINADA o ABANDONADA. */
+  estado?: string;
+  /** 1 = vencedor. 0 si la campaña no llegó a un desenlace. */
   puesto: number;
   comandantes: number;
   turnosJugados: number;

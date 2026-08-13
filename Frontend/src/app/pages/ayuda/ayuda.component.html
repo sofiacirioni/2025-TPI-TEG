@@ -1,7 +1,9 @@
 <!-- El reglamento como carpeta de archivo sobre la mesa: una pestaña por
      sección y la hoja mecanografiada adentro. -->
-<div class="ayuda-escena scene-game">
-  <div class="lamp-overlay" aria-hidden="true"></div>
+<div class="ayuda-escena" [class.scene-game]="!incrustado" [class.ayuda-escena--incrustada]="incrustado">
+  @if (!incrustado) {
+    <div class="lamp-overlay" aria-hidden="true"></div>
+  }
 
   <div class="carpeta">
     <!-- Tapa trasera: el cartón que asoma por arriba y por el costado -->
@@ -51,5 +53,7 @@
     </div>
   </div>
 
-  <button type="button" class="btn-volver" (click)="volver()">Volver</button>
+  @if (!incrustado) {
+    <button type="button" class="btn-volver" (click)="volver()">Volver</button>
+  }
 </div>

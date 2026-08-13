@@ -1733,3 +1733,137 @@ $card-globo  : #8F6B1A;  // dorado oscuro — globo aerostático
   from { transform: scale(0.92); opacity: 0; }
   to   { transform: scale(1);    opacity: 1; }
 }
+
+// ── Menú de operaciones ────────────────────────────────────────────────
+// Agrupa lo que no es jugar: reglamento y retiro. Va arriba a la izquierda
+// del mapa, lejos de los controles de zoom para no confundirse con ellos.
+.operaciones {
+  position: absolute;
+  top: 12px;
+  right: 236px;
+  z-index: calc(var(--z-vignette) + 4);
+}
+
+.operaciones-boton {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  padding: 9px 16px 7px;
+}
+
+.operaciones-boton--abierto {
+  background: rgba(239, 232, 206, 0.14);
+  border-color: rgba(239, 232, 206, 0.7);
+}
+
+.operaciones-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  padding: $space-2;
+  background: $color-claro;
+  border-radius: $radius-sm;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.operaciones-item {
+  width: 100%;
+  padding: $space-2 $space-3;
+  background: none;
+  border: 0;
+  border-radius: $radius-sm;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: $color-oscuro;
+  cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, pointer;
+  transition: background $transition-fast;
+
+  &:hover { background: rgba(67, 42, 30, 0.09); }
+}
+
+.operaciones-item--riesgo {
+  color: $color-sello;
+  border-top: 1px solid rgba(67, 42, 30, 0.18);
+  margin-top: 2px;
+  padding-top: $space-2;
+}
+
+// ── Reglamento sobre la mesa ───────────────────────────────────────────
+.reglamento-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-vignette) + 9);
+  background: rgba(4, 2, 1, 0.84);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-6;
+}
+
+.reglamento-caja {
+  position: relative;
+  width: min(980px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-4;
+}
+
+.reglamento-cerrar {
+  flex-shrink: 0;
+}
+
+// ── Orden de retiro ────────────────────────────────────────────────────
+.retiro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-vignette) + 9);
+  background: rgba(4, 2, 1, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-6;
+}
+
+.retiro-parte {
+  box-sizing: border-box;
+  width: min(430px, 100%);
+  padding: $space-6;
+  background: $color-claro;
+  color: $color-oscuro;
+  border-radius: $radius-sm;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.7);
+  text-align: center;
+}
+
+// El typography global pinta los h2 en claro; sobre papel sería invisible.
+.retiro-titulo {
+  margin: 0 0 $space-3;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  color: $color-oscuro;
+}
+
+.retiro-texto {
+  margin: 0 0 $space-6;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.retiro-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  align-items: center;
+
+  .btn-teg-light,
+  .btn-teg-danger {
+    width: 100%;
+    font-size: 11px;
+  }
+}

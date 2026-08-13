@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 /** Un apartado dentro de una sección: el subtítulo y su texto. */
 interface Apartado {
@@ -22,6 +22,13 @@ interface Seccion {
   styleUrl: './ayuda.component.scss',
 })
 export class AyudaComponent {
+
+  /**
+   * Cuando el reglamento se abre desde el tablero va incrustado en un overlay:
+   * no dibuja su propio fondo de mesa ni su botón de volver, que los pone el
+   * contenedor. Así la carpeta es una sola y no se duplica el contenido.
+   */
+  @Input() incrustado = false;
 
   readonly secciones: Seccion[] = [
     {

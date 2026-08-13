@@ -110,10 +110,15 @@ public class JugadorController {
         return ResponseEntity.ok("Voto de reanudación registrado");
     }
 
+    /**
+     * El jugador se retira de la campaña. Cuando todos los humanos se
+     * retiraron, la partida se cierra como ABANDONADA y deja de figurar como
+     * en curso.
+     */
     @PostMapping("/{idJugador}/finalizarPartida")
     public ResponseEntity<String> finalizarPartida(@PathVariable Long idJugador) {
         jugadorService.finalizarPartida(idJugador);
-        return ResponseEntity.ok("Voto de reanudación registrado");
+        return ResponseEntity.ok("Retiro registrado");
     }
 
     @GetMapping("/sala/{idSala}/jugadores")
