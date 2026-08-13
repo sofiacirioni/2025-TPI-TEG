@@ -1,0 +1,246 @@
+/* Expedientes Clasificados — layout carpetas apiladas */
+
+// ── Textura de papel (replicada sin importar _surfaces.scss) ──
+$papel-textura: repeating-linear-gradient(
+  44deg,
+  rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+  transparent 1px, transparent 9px
+);
+
+// ── Página ────────────────────────────────────────────────────
+.creditos-page {
+  min-height: 100vh;
+  width: 100%;
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+// ── Columna central ───────────────────────────────────────────
+.creditos-columna {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3rem 1rem 4rem;
+}
+
+// ── Título-papel (ahora PaperCardComponent) ────────────────────
+app-paper-card {
+  display: block;
+  margin-bottom: 2rem;
+}
+
+// Sello posicionado dentro del paper-card (transform/opacity los maneja StampComponent)
+.titulo-sello {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 96px;
+}
+
+.titulo-principal {
+  color: var(--color-oscuro);
+  margin-bottom: 0.2rem;
+}
+
+.titulo-subtitulo {
+  color: rgba(67, 42, 30, 0.6);
+  margin-bottom: 0;
+}
+
+// ── Carpetas apiladas ─────────────────────────────────────────
+.carpeta {
+  position: relative;
+  background-color: #C4A06A;   // manila folder
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.07) 0px, rgba(88, 58, 24, 0.07) 1px,
+    transparent 1px, transparent 9px
+  );
+  border-radius: 2px;
+  padding: 1.25rem;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.55),
+              inset 0 0 24px rgba(50, 28, 8, 0.10);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  // Superposición: todas menos la primera solapan 24px hacia arriba
+  & + & {
+    margin-top: -24px;
+  }
+
+  &:hover {
+    z-index: 10 !important;
+    transform: rotate(0deg) translateY(-6px) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.70);
+  }
+}
+
+// Rotaciones y z-index individuales
+.carpeta--1 { transform: rotate(-2deg);    z-index: 1; }
+.carpeta--2 { transform: rotate(1.5deg);   z-index: 2; }
+.carpeta--3 { transform: rotate(-1deg);    z-index: 3; }
+.carpeta--4 { transform: rotate(2.5deg);   z-index: 4; }
+.carpeta--5 { transform: rotate(-1.5deg);  z-index: 5; }
+.carpeta--6 { transform: rotate(2deg);     z-index: 6; }
+.carpeta--7 { transform: rotate(-0.5deg);  z-index: 7; }
+
+// ── Interior de carpeta ───────────────────────────────────────
+.carpeta-interior {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.carpeta--foto-der .carpeta-interior {
+  flex-direction: row-reverse;
+}
+
+// ── Foto ──────────────────────────────────────────────────────
+.carpeta-foto {
+  flex: 0 0 150px;
+  position: relative;
+  background-color: var(--color-claro);
+  background-image: $papel-textura;
+  padding: 0.5rem;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.40);
+  overflow: visible; // necesario para que el clip SVG sobresalga
+}
+
+// ── Clip SVG ──────────────────────────────────────────────────
+// viewBox del SVG: 11.12 × 24.07 → ratio ≈ 1:2.17
+// A 28px de ancho → ~61px de alto.
+// top: -16px → el clip arranca 16px sobre la foto y la mitad inferior la abraza.
+.clip-foto {
+  position: absolute;
+  top: -22px;
+  width: 28px;
+  height: auto;
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.55));
+}
+
+// Clip izquierdo: foto en lado izquierdo de la carpeta
+.clip-foto--left {
+  left: 6px;
+}
+
+// Clip derecho: foto en lado derecho (.carpeta--foto-der)
+.clip-foto--right {
+  right: 6px;
+}
+
+.expediente-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 1px;
+}
+
+// Acento lateral por color de jugador
+.carpeta-foto--naranja { border-left: 4px solid var(--player-naranja); }
+.carpeta-foto--rojo    { border-left: 4px solid var(--player-rojo); }
+.carpeta-foto--purpura { border-left: 4px solid var(--player-purpura); }
+.carpeta-foto--verde   { border-left: 4px solid var(--player-verde); }
+.carpeta-foto--azul    { border-left: 4px solid var(--player-azul); }
+.carpeta-foto--sello   { border-left: 4px solid var(--color-sello); }
+.carpeta-foto--dorado  { border-left: 4px solid var(--player-dorado); }
+
+// ── Badge legajo (debajo de la foto) ─────────────────────────
+.expediente-legajo {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-claro);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.expediente-legajo--naranja { background-color: var(--player-naranja); }
+.expediente-legajo--rojo    { background-color: var(--player-rojo); }
+.expediente-legajo--purpura { background-color: var(--player-purpura); }
+.expediente-legajo--verde   { background-color: var(--player-verde); }
+.expediente-legajo--azul    { background-color: var(--player-azul); }
+.expediente-legajo--sello   { background-color: var(--color-medio); }
+.expediente-legajo--dorado  { background-color: var(--player-dorado); }
+
+// ── Info de la carpeta ────────────────────────────────────────
+.carpeta-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.expediente-alias {
+  color: var(--color-oscuro);
+  margin-bottom: 0.15rem;
+}
+
+.expediente-subtitulo {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-medio);
+  text-decoration: underline;
+  margin-bottom: 0.75rem;
+}
+
+.expediente-campo {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--color-oscuro);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1px;
+}
+
+.expediente-valor {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--color-medio);
+  margin-bottom: 0.5rem;
+}
+
+.expediente-frase {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--color-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+// ── Habilidades ───────────────────────────────────────────────
+.habilidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0.25rem;
+}
+
+.expediente-habilidad {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid rgba(67, 42, 30, 0.45);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-oscuro);
+  background: transparent;
+}
+
+// El botón de volver es global (.btn-volver): mismo lugar en todas las
+// pantallas. Acá sólo queda aire al pie para que la última carpeta no
+// termine pegada al borde.
+.creditos-columna {
+  padding-bottom: 3rem;
+}

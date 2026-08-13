@@ -1,0 +1,1 @@
+export { SlideInDirective } from './slide-in.directive';

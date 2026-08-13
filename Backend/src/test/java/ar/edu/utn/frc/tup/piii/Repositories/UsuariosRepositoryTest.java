@@ -6,9 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+
 import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @DataJpaTest
 public class UsuariosRepositoryTest {
     @Autowired
@@ -22,8 +25,7 @@ public class UsuariosRepositoryTest {
     @BeforeEach
     void setUp() {
         usuario = new UsuarioEntity();
-        usuario.setNombre("Carlos");
-        usuario.setApellido("Lopez");
+        usuario.setUsuario("carlos");
         usuario.setCorreo("carlos@gmail.com");
         usuario.setContrasenia("Segura123@");
         usuario.setImagen("img.png");
@@ -33,25 +35,11 @@ public class UsuariosRepositoryTest {
     }
 
     @Test
-    void testFindByCorreoAndContrasenia_found() {
-        Optional<UsuarioEntity> resultado = usuarioRepository.findByCorreoAndContrasenia("carlos@gmail.com", "Segura123@");
-
-        assertTrue(resultado.isPresent(), "El usuario debería estar presente");
-        assertEquals("Carlos", resultado.get().getNombre());
-    }
-
-    @Test
-    void testFindByCorreoAndContrasenia_notFound() {
-        Optional<UsuarioEntity> resultado = usuarioRepository.findByCorreoAndContrasenia("otro@mail.com", "123");
-        assertTrue(resultado.isEmpty(), "No debería encontrar un usuario con credenciales incorrectas");
-    }
-
-    @Test
     void testFindByCorreo_found() {
         Optional<UsuarioEntity> resultado = usuarioRepository.findByCorreo("carlos@gmail.com");
 
         assertTrue(resultado.isPresent());
-        assertEquals("Lopez", resultado.get().getApellido());
+        assertEquals("carlos", resultado.get().getUsuario());
     }
 
     @Test
@@ -66,7 +54,7 @@ public class UsuariosRepositoryTest {
         Optional<UsuarioEntity> resultado = usuarioRepository.findByIdUsuario(usuario.getIdUsuario());
 
         assertTrue(resultado.isPresent());
-        assertEquals("Carlos", resultado.get().getNombre());
+        assertEquals("carlos", resultado.get().getUsuario());
     }
 
     @Test
@@ -76,5 +64,3 @@ public class UsuariosRepositoryTest {
         assertTrue(resultado.isEmpty());
     }
 }
-
-

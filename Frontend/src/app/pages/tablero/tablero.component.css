@@ -1,0 +1,286 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: 8px;
+  box-sizing: border-box;
+  background-image: url('/assets/images/map-scene-wall.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* ─── Contenedor principal ─────────────────────────────── */
+.tablero-layout {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.tablero-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+}
+
+/* ─── Header (opciones) ─────────────────────────────────── */
+.tablero-header {
+  flex-shrink: 0;
+}
+
+/* ─── Info de turno ─────────────────────────────────────── */
+.turno-info {
+  flex-shrink: 0;
+}
+
+#turn-info {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #FFF8E1;
+  border: 1px solid #D7CCC8;
+  color: #3E2723;
+  box-shadow: 3px 3px 2px rgba(0, 0, 0, 0.2);
+  transform: rotate(-1deg);
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 2px;
+  white-space: pre;
+}
+
+/* ─── Botón obtener tarjeta ─────────────────────────────── */
+.accion-carta {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* ─── Grid principal: mapa + cartas + jugadores ─────────── */
+.tablero-grid {
+  display: grid;
+  grid-template-columns: 1fr 180px 200px;
+  grid-template-rows: 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.tablero-mapa {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  /* Marco de papel sobre la mesa — efecto mapa físico */
+  background-color: #EFE8CE;
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 2px solid rgba(67, 42, 30, 0.55);
+  /* Borde interno doble para simular margen de documento */
+  outline: 4px solid rgba(67, 42, 30, 0.18);
+  outline-offset: -8px;
+  border-radius: 2px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    inset 0 0 40px rgba(50, 28, 8, 0.10);
+}
+
+.tablero-cartas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding: 6px;
+  background-color: var(--bg-paper-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.tablero-jugadores {
+  overflow-y: auto;
+  background-color: var(--bg-paper-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px;
+}
+
+/* ─── Carta individual ─────────────────────────────────── */
+.carta-item {
+  background-color: var(--bg-paper);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 0.8rem;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.carta-item h5 {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+}
+
+.carta-item p {
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+}
+
+.estado-positivo {
+  color: #1a7a4a;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.estado-negativo {
+  color: #a93226;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* ─── Botón Avanzar ─────────────────────────────────────── */
+.tablero-avanzar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.btnAvanzar {
+  background: var(--accent-red);
+  color: white;
+  font-family: var(--font-heading);
+  font-size: clamp(14px, 2vw, 20px);
+  font-weight: 700;
+  padding: 10px 28px;
+  border-radius: 40px;
+  border: 2px solid #731212;
+  box-shadow: 0 4px 0 #581010;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.2s ease;
+}
+
+.btnAvanzar:hover {
+  background-color: #C0392B;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #581010;
+}
+
+.btnAvanzar:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+/* ─── Botón genérico TEG ────────────────────────────────── */
+.btn-teg {
+  padding: 6px 14px;
+  background-color: var(--accent-red);
+  color: #fff;
+  border: 1px solid #731212;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.btn-teg:hover {
+  background-color: #C0392B;
+}
+
+.btn-teg.btn-secondary {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.btn-teg.btn-secondary:hover {
+  background-color: var(--text-secondary);
+  color: var(--bg-paper);
+}
+
+.btn-teg.btn-sm {
+  padding: 3px 8px;
+  font-size: 0.7rem;
+}
+
+/* ─── Modal de canje ────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--accent-gold);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.modal-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.btn-close-custom {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.btn-close-custom:hover {
+  color: var(--accent-red);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.combo-item {
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.combo-item:hover {
+  border-color: var(--accent-gold);
+  background-color: var(--bg-paper-dark);
+}
+
+.combo-item.selected {
+  border-color: var(--accent-red);
+  background-color: #FFF0ED;
+}
+
+.combo-item p {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.combo-item ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.85rem;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

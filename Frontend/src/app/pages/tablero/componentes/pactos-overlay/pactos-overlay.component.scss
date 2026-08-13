@@ -1,0 +1,425 @@
+@import '../../../../../styles/tokens';
+
+.pactos-overlay {
+  position: fixed;
+  inset: 0;
+  // Por encima de los paneles y de los controles del mapa, que viven en +3.
+  // Con +1 el zoom y la brújula quedaban dibujados sobre el wizard.
+  // Por debajo del diario de fin de partida (+20), que manda sobre todo.
+  z-index: calc(var(--z-vignette) + 8);
+  background: rgba(4, 2, 1, 0.82);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  overflow-y: auto;
+}
+
+.pactos-content {
+  width: min(90vw, 720px);
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--color-claro);
+  padding: $space-3 $space-4;
+}
+
+// ── Header ────────────────────────────────────
+.pactos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.pactos-titulo-grupo { flex: 1; }
+
+.pactos-titulo {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  letter-spacing: 0.25em;
+  color: var(--color-claro);
+  margin: 0;
+}
+
+.pactos-subtitulo {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(239, 232, 206, 0.6);
+  margin: $space-1 0 0;
+}
+
+// Close button minimalista — sin recuadro. Mismo patrón que .modal-close-x del
+// tablero (background:none, sin border, hover en color sello + scale).
+.pactos-cerrar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(239, 232, 206, 0.7);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  transition: color 150ms ease, transform 150ms ease;
+
+  &:hover, &:focus-visible {
+    color: var(--color-claro);
+    transform: scale(1.18);
+    outline: none;
+  }
+}
+
+// ── Secciones ────────────────────────────────
+.pactos-seccion {
+  margin-bottom: $space-6;
+}
+
+.pactos-seccion-tit {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: rgba(239, 232, 206, 0.7);
+  margin: 0 0 $space-3;
+  border-bottom: 1px dashed rgba(239, 232, 206, 0.25);
+  padding-bottom: $space-2;
+}
+
+.pactos-vacio {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: rgba(239, 232, 206, 0.5);
+  text-align: center;
+  padding: $space-4;
+}
+
+// ── Cards de pactos activos ───────────────────
+.pactos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.pacto-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: $space-3;
+  align-items: center;
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border: 1px solid rgba(67, 42, 30, 0.4);
+  padding: $space-3;
+  color: var(--color-oscuro);
+}
+
+.pacto-card__jugadores {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+}
+
+.pacto-jug {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pacto-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(67, 42, 30, 0.6);
+}
+
+.pacto-nombre {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.pacto-sep {
+  font-family: var(--font-heading);
+  color: rgba(67, 42, 30, 0.55);
+  font-size: 14px;
+}
+
+.pacto-tipo {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--color-oscuro);
+}
+
+.pacto-desc {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(67, 42, 30, 0.85);
+  margin-top: 2px;
+}
+
+.pacto-badge-ruptura {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: var(--color-sello);
+  color: var(--color-claro);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.pacto-vigente {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: rgba(67, 42, 30, 0.55);
+}
+
+.pacto-btn-romper {
+  font-size: 9px;
+  padding: 6px 10px 4px;
+}
+
+// ── Acciones ────────────────────────────────
+.pactos-acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+}
+
+.pactos-btn-proponer {
+  font-size: 13px;
+  padding: 14px 36px 10px;
+}
+
+.pactos-aclaracion {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(239, 232, 206, 0.5);
+  margin: 0;
+}
+
+// ── Wizard ──────────────────────────────────
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.wizard-step-tit {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: rgba(239, 232, 206, 0.85);
+  margin: 0;
+  text-align: center;
+}
+
+.tipo-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+
+  @media (min-width: 720px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.tipo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--color-claro);
+  border: 1px solid rgba(67, 42, 30, 0.4);
+  padding: $space-3;
+  color: var(--color-oscuro);
+  text-align: center;
+  cursor: pointer;
+  font-family: var(--font-body);
+
+  &.selected {
+    box-shadow: 0 0 0 2px var(--color-sello);
+  }
+
+  &.deshabilitado {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.tipo-card-symbol {
+  width: 192px;
+  height: 192px;
+  object-fit: contain;
+  margin-bottom: $space-2;
+  filter:
+    drop-shadow(0 1px 2px rgba(20, 10, 4, 0.45))
+    drop-shadow(0 0 6px rgba(20, 10, 4, 0.20));
+}
+
+.tipo-card-titulo {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  margin-bottom: $space-2;
+}
+
+.tipo-card-desc {
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.receptor-lista {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.receptor-card {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+  padding: $space-3;
+  background: var(--color-claro);
+  border: 1px solid rgba(67, 42, 30, 0.4);
+  color: var(--color-oscuro);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+
+  &.deshabilitado {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.receptor-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(67, 42, 30, 0.6);
+  flex: 0 0 auto;
+}
+
+.receptor-info {
+  flex: 1;
+}
+
+.receptor-nombre {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+.receptor-stats {
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(67, 42, 30, 0.75);
+}
+
+.receptor-aviso {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-sello);
+  font-style: italic;
+}
+
+.detalles-paises {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+
+  @media (min-width: 600px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.detalle-col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  label {
+    font-family: var(--font-heading);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: rgba(239, 232, 206, 0.85);
+  }
+
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    background-color: var(--color-claro);
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23432A1E' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
+      repeating-linear-gradient(
+        44deg,
+        rgba(88, 58, 24, 0.05) 0px, rgba(88, 58, 24, 0.05) 1px,
+        transparent 1px, transparent 9px
+      );
+    background-repeat: no-repeat, repeat;
+    background-position: right 10px center, 0 0;
+    color: var(--color-oscuro);
+    border: 1px solid rgba(67, 42, 30, 0.4);
+    border-radius: 1px;
+    padding: 7px 28px 5px 10px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+    outline: none;
+    box-shadow: inset 0 1px 0 rgba(255, 250, 230, 0.4);
+    transition: border-color 120ms ease;
+
+    &:hover { border-color: rgba(67, 42, 30, 0.65); }
+    &:focus-visible {
+      border-color: var(--color-sello);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 250, 230, 0.4),
+        0 0 0 1px rgba(160, 21, 21, 0.3);
+    }
+
+    option {
+      background: var(--color-claro);
+      color: var(--color-oscuro);
+      font-family: var(--font-body);
+    }
+  }
+}
+
+.detalles-vista {
+  background: rgba(239, 232, 206, 0.08);
+  border-left: 2px solid var(--color-sello);
+  padding: $space-3;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.5;
+
+  strong {
+    font-style: normal;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-top: $space-3;
+}

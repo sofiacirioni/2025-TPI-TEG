@@ -32,8 +32,7 @@ public class SalaRepositoryTest {
     @BeforeEach
     void setUp() {
         usuario = new UsuarioEntity();
-        usuario.setNombre("Carlos");
-        usuario.setApellido("Lopez");
+        usuario.setUsuario("Carlos");
         usuario.setCorreo("carlos@example.com");
         usuario.setContrasenia("Segura123@");
         usuario.setImagen("img.png");

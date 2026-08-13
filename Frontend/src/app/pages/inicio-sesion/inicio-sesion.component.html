@@ -1,0 +1,114 @@
+<div class="login-screen">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+    <!-- Tarjeta Pase de Acceso -->
+    <div class="pase-card paper-grunge"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="40"
+         [delay]="0"
+         [slideDuration]="600">
+
+      <!-- Borde decorativo SVG con esquinas redondeadas -->
+      <img class="pase-border-svg" src="/assets/vectors/deco-border.svg" alt="" aria-hidden="true">
+
+      <!-- Contenedor interno — margin: 16px alinea con el borde deco -->
+      <div class="pase-inner">
+
+        <!-- Encabezado -->
+        <div class="pase-header">
+          <span class="pase-header-text">BUNKER SUBTERRANEO — SALA DE OPERACIONES</span>
+          <span class="pase-nivel">Nivel: 3</span>
+        </div>
+
+        <!-- Título -->
+        <div class="pase-titulo">
+          <span>· PASE DE ACCESO ·</span>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="pase-body">
+          <p class="pase-instruccion">Presente estas credenciales ante los puestos de guardia.</p>
+
+          <!-- Campo identificación -->
+          <div class="pase-campo">
+            <label class="pase-label" for="nombreUsuario">IDENTIFICACION:</label>
+            <div class="pase-input-wrap">
+              <div class="pase-input-wrapper">
+                <input
+                  id="nombreUsuario"
+                  type="text"
+                  class="pase-input"
+                  formControlName="nombreUsuario"
+                  autocomplete="username"
+                  placeholder="Usuario">
+              </div>
+              @if (loginForm.get('nombreUsuario')?.touched && loginForm.get('nombreUsuario')?.invalid) {
+                <span class="pase-error">▸ Campo requerido</span>
+              }
+            </div>
+          </div>
+
+          <!-- Campo clave con toggle -->
+          <div class="pase-campo">
+            <label class="pase-label" for="contrasenia">CLAVE SECRETA:</label>
+            <div class="pase-input-wrap">
+              <div class="pase-input-wrapper">
+                <input
+                  id="contrasenia"
+                  [type]="showPassword ? 'text' : 'password'"
+                  class="pase-input"
+                  formControlName="contrasenia"
+                  autocomplete="current-password"
+                  placeholder="Contraseña">
+                <button
+                  type="button"
+                  class="toggle-password"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                  @if (!showPassword) {
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  }
+                  @if (showPassword) {
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (loginForm.get('contrasenia')?.touched && loginForm.get('contrasenia')?.invalid) {
+                <span class="pase-error">▸ Campo requerido</span>
+              }
+            </div>
+          </div>
+
+          <!-- Sello oficial -->
+          <div class="pase-sello-wrap">
+            <app-stamp type="teg-stamp" [rotation]="8" [opacity]="0.55" [blend]="true"></app-stamp>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Acciones -->
+    <div class="pase-actions"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="24"
+         [delay]="150"
+         [slideDuration]="500">
+      <button type="submit" class="btn-teg-primary" [disabled]="loginForm.invalid">· ENTREGAR ·</button>
+      <div class="pase-registro">
+        <span class="pase-registro-texto">¿No tiene credenciales?</span>
+        <a class="pase-registro-link" [routerLink]="['../registrarse']">Solicitar pase</a>
+      </div>
+    </div>
+
+  </form>
+</div>

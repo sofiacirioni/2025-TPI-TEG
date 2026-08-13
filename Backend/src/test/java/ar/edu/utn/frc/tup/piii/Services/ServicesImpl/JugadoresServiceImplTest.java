@@ -228,7 +228,9 @@ public class JugadoresServiceImplTest {
         assertEquals(EstadoJugador.ELIMINADO, bot1.getEstadoJugador());
         verify(jugadorRepository).save(bot1);
 
-        assertEquals(EstadoPartida.TERMINADA, partida.getEstadoPartida());
+        // Nadie ganó: los comandantes se retiraron. La campaña queda abandonada
+        // y no suma al historial de ninguno.
+        assertEquals(EstadoPartida.ABANDONADA, partida.getEstadoPartida());
         verify(partidaRepository).save(partida);
     }
     @Test

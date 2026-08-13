@@ -1,0 +1,69 @@
+# ============================================================
+# TEG — stack completo en un comando:
+#
+#     docker compose up --build
+#
+# Levanta PostgreSQL, el backend (que aplica las migraciones de
+# Flyway al arrancar: esquema + tablero + usuarios de prueba) y
+# el frontend servido por Nginx en http://localhost
+#
+# Las variables salen del archivo .env de la raíz (ver .env.example).
+# ============================================================
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: teg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-tegdb}
+      POSTGRES_USER: ${DB_USER:-teg}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-teg}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Publicado en localhost para poder correr el backend fuera de Docker
+    # (npm start) contra esta misma base. No queda expuesto a la red.
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-teg} -d ${DB_NAME:-tegdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: teg-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-tegdb}
+      DB_USER: ${DB_USER:-teg}
+      DB_PASSWORD: ${DB_PASSWORD:-teg}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-WARN}
+    # No se publica al host: Nginx lo alcanza por la red interna de Docker.
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: teg-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+    name: teg-postgres-data

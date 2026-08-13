@@ -1,0 +1,18 @@
+<div class="toast-container">
+  @for (n of notifications; track n.id) {
+    <div
+      class="toast toast--{{ n.type }}"
+      [class.show]="n.visible"
+      [class.hide]="!n.visible"
+      [style.--paper-bg]="getBackgroundColor(n.type)"
+      (click)="dismiss(n.id)"
+    >
+      <div class="toast-paper">
+        <div class="toast-header">
+          <span class="toast-type">{{ getLabel(n.type) }}</span>
+        </div>
+        <div class="toast-msg">{{ n.displayText }}</div>
+      </div>
+    </div>
+  }
+</div>

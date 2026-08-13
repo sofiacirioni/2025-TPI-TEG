@@ -1,7 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
-import ar.edu.utn.frc.tup.piii.Entities.EstadoPaisEntity;
-import ar.edu.utn.frc.tup.piii.Entities.LimiteEntity;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +19,7 @@ public class EstadoPaisController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity <EstadoPaisDto> getEstadoPais(@PathVariable Long id) {
+    public ResponseEntity<EstadoPaisDto> getEstadoPais(@PathVariable Long id) {
         EstadoPaisDto estadoPaisDto = estadoPaisService.getEstadoPais(id);
         return ResponseEntity.ok(estadoPaisDto);
     }
@@ -32,12 +30,12 @@ public class EstadoPaisController {
     }
 
     @PostMapping("")
-    public ResponseEntity <EstadoPaisDto> createEstadoPais(@RequestBody EstadoPaisDto estadoPaisDto) {
+    public ResponseEntity<EstadoPaisDto> createEstadoPais(@RequestBody EstadoPaisDto estadoPaisDto) {
         return ResponseEntity.ok(estadoPaisService.createEstadoPais(estadoPaisDto));
     }
 
     @PutMapping("")
-    public ResponseEntity <EstadoPaisDto> updateEstadoPais(@RequestBody EstadoPaisDto estadoPaisDto) {
+    public ResponseEntity<EstadoPaisDto> updateEstadoPais(@RequestBody EstadoPaisDto estadoPaisDto) {
         return ResponseEntity.ok(estadoPaisService.updateEstadoPais(estadoPaisDto));
     }
 }

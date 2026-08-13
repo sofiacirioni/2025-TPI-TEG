@@ -1,0 +1,88 @@
+// ── FICHAS DE JUGADORES
+// SVGs reales: red-player.svg, blue-player.svg, green-player.svg,
+//              orange-player.svg, purple-player.svg, gold-player.svg
+// Sello:       top-secret-stamp.svg
+
+.player-token {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &__count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
+    background: #1C0E05;
+    color: #EFE8CE;
+    font-family: 'Roboto Slab', serif;
+    font-weight: 700;
+    font-size: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(239, 232, 206, 0.4);
+    line-height: 1;
+    z-index: 1;
+  }
+
+  &--lg {
+    width: 40px;
+    height: 40px;
+
+    .player-token__count {
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      top: -6px;
+      right: -6px;
+    }
+  }
+}
+
+// Mapeo color-nombre → SVG real
+// data-player acepta: rojo, azul, naranja, purpura, verde, dorado
+$_player-svg-map: (
+  'rojo'    : 'red-player',
+  'azul'    : 'blue-player',
+  'naranja' : 'orange-player',
+  'purpura' : 'purple-player',
+  'verde'   : 'green-player',
+  'dorado'  : 'gold-player',
+);
+
+$_player-color-map: (
+  'rojo'    : #A01515,
+  'azul'    : #1A4080,
+  'naranja' : #BF6800,
+  'purpura' : #6B2490,
+  'verde'   : #1E7A50,
+  'dorado'  : #6B4C00,
+);
+
+@each $name, $color in $_player-color-map {
+  .player-token[data-player="#{$name}"] {
+    background-color: $color;
+  }
+  .player-color--#{$name} {
+    background-color: $color;
+    color: white;
+  }
+  .player-border--#{$name} {
+    border-color: $color;
+  }
+}

@@ -1,0 +1,40 @@
+:host {
+  display: inline-block;
+}
+
+.token {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &--sm .token-img { width: 24px; height: 24px; }
+  &--md .token-img { width: 40px; height: 40px; }
+  &--lg .token-img { width: 64px; height: 64px; }
+}
+
+.token-img {
+  display: block;
+  object-fit: contain;
+}
+
+.token-count {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #EFE8CE;
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 999px;
+  min-width: 16px;
+  text-align: center;
+
+  .token--lg & {
+    font-size: 13px;
+    padding: 3px 6px;
+  }
+}

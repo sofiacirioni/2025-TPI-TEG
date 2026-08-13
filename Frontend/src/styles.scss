@@ -1,0 +1,38 @@
+// ═══════════════════════════════════════════════════════
+// TEG 2025 — Sistema de Diseño Global
+// Orden: fuentes → tokens → overrides Bootstrap → Bootstrap → UI
+// Nota: se usa @import (no @use) porque:
+//   1. Los @use deben preceder a todo otro rule en Dart Sass
+//   2. Los overrides de variables Bootstrap requieren @import
+//   3. @extend entre archivos requiere @import
+// ═══════════════════════════════════════════════════════
+
+// 1. Fuentes locales (TTF)
+@import 'styles/fonts';
+
+// 2. Tokens de diseño y variables CSS nativas
+@import 'styles/tokens';
+
+// 3. Overrides de Bootstrap (deben ir ANTES de bootstrap/scss/variables)
+@import 'styles/bootstrap-override';
+
+// 4. Bootstrap SCSS parcial (solo lo necesario)
+// Bootstrap 5.3 requiere este orden: functions → variables → variables-dark → maps → mixins
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/helpers';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/dropdown';
+
+// 5. Sistema de diseño TEG
+@import 'styles/typography';
+@import 'styles/cursors';
+@import 'styles/surfaces';
+@import 'styles/players';
+@import 'styles/buttons';
+@import 'styles/vignette';

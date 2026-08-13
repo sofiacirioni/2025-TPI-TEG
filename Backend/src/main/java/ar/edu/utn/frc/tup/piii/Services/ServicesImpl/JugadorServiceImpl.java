@@ -3,8 +3,6 @@ package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 import ar.edu.utn.frc.tup.piii.Dtos.JugadorDto;
 import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
 import ar.edu.utn.frc.tup.piii.Entities.PartidaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.SalaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.PartidaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.SalaRepository;
@@ -33,16 +31,6 @@ public class JugadorServiceImpl implements JugadorService {
     public PartidaRepository partidaRepository;
     @Autowired
     public ObjetivoService objetivoService;
-    @Autowired
-    private EstadisticaService estadisticaService;
-    @Autowired
-    private PartidaService partidaService;
-
-    @Autowired
-    private SalaRepository salaRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     public Jugador crearJugador(Jugador jugador, Usuario usuarioActual, Sala sala) {
         if (jugadorRepository.findByNombreAndSala_IdSala(jugador.getNombre(), sala.getIdSala()).isPresent()) {
@@ -89,7 +77,7 @@ public class JugadorServiceImpl implements JugadorService {
 
         Jugador bot = new Jugador();
         bot.setIdJugador(null);
-        bot.setNombre("Bot_" + UUID.randomUUID().toString().substring(0, 8));
+        bot.setNombre(nombreDeBotLibre(jugadoresEnSala));
         bot.setTipoJugador(TipoJugador.BOT);
         bot.setColor(colorLibre);
         bot.setPartida(null);
@@ -103,11 +91,45 @@ public class JugadorServiceImpl implements JugadorService {
         JugadorEntity jugadorEntity = modelMapper.map(bot, JugadorEntity.class);
         jugadorEntity = jugadorRepository.save(jugadorEntity);
 
-
         bot.setSala(sala);
 
         return modelMapper.map(jugadorEntity, Jugador.class);
     }
+
+    /**
+     * Apellidos de la tropa automática. La broma es evidente pero el prefijo
+     * "Sgto." mantiene el registro militar, y todos empiezan con BOT- para que
+     * en la mesa se distingan de un vistazo de los jugadores humanos.
+     */
+    private static final List<String> APELLIDOS_BOT = List.of(
+            "BOTACCIO", "BOTARDO", "BOTANA", "BOTOX", "BOTELLA",
+            "BOTIJA", "BOTINES", "BOTAFOGO", "BOTERO", "BOTAVARA",
+            "BOTTICELLI", "BOTALON");
+
+    private static final String RANGO_BOT = "Sgto. ";
+
+    /**
+     * Elige un apellido que no esté usado en la sala. Con 12 apellidos para un
+     * máximo de 5 bots siempre hay alguno libre; el fallback numerado está por
+     * si algún día cambia ese máximo.
+     */
+    private String nombreDeBotLibre(List<JugadorEntity> jugadoresEnSala) {
+        Set<String> ocupados = jugadoresEnSala.stream()
+                .map(JugadorEntity::getNombre)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<String> libres = APELLIDOS_BOT.stream()
+                .map(a -> RANGO_BOT + a)
+                .filter(n -> !ocupados.contains(n))
+                .collect(Collectors.toList());
+
+        if (libres.isEmpty()) {
+            return RANGO_BOT + "BOT " + (jugadoresEnSala.size() + 1);
+        }
+        return libres.get(new Random().nextInt(libres.size()));
+    }
+
     public Color obtenerColorDisponible(Sala sala, Long excluirIdJugador) {
         List<Color> todosLosColores = Arrays.asList(Color.values());
 
@@ -120,40 +142,32 @@ public class JugadorServiceImpl implements JugadorService {
                 .map(JugadorEntity::getColor)
                 .collect(Collectors.toSet());
 
-
         return todosLosColores.stream()
                 .filter(c -> !coloresUsados.contains(c))
                 .findFirst()
                 .orElse(null);
     }
 
+    @Override
+    @Transactional
+    public void eliminarJugadorDeSala(Long idJugador, Usuario solicitante) {
+        JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jugador no encontrado"));
 
-//    public Jugador eliminarJugador(Long idJugador, Long idUsuarioCreador) {
-//        JugadorEntity jugador = jugadorRepository.findByIdJugador(idJugador)
-//                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-//
-//        SalaEntity sala = jugador.getSala();
-//        if (!sala.getCreador().getIdUsuario().equals(idUsuarioCreador)) {
-//            throw new IllegalArgumentException("Solo el creador puede eliminar jugadores");
-//        }
-//
-//        jugador.setEstadoJugador(EstadoJugador.ELIMINADO);
-//        jugadorRepository.save(jugador);
-//
-//        PartidaEntity partidaEntity = jugador.getPartida();
-//
-//        if (partidaEntity != null) {
-//            Partida partida = modelMapper.map(partidaEntity, Partida.class);
-//            partidaService.verificarCondicionVictoria(partida);
-//            estadisticaService.registrarEvento(
-//                    "Jugador eliminado por el creador",
-//                    modelMapper.map(jugador, Jugador.class),
-//                    partida
-//            );
-//        }
-//
-//        return modelMapper.map(jugador, Jugador.class);
-//    }
+        Long idCreador = jugador.getSala().getCreador().getIdUsuario();
+        if (!idCreador.equals(solicitante.getIdUsuario())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el anfitrión puede retirar jugadores.");
+        }
+
+        if (jugador.getTipoJugador() != TipoJugador.BOT) {
+            Long idCreadorJugador = jugador.getUsuario() != null ? jugador.getUsuario().getIdUsuario() : null;
+            if (idCreadorJugador != null && idCreadorJugador.equals(idCreador)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El anfitrión no puede retirarse a sí mismo.");
+            }
+        }
+
+        jugadorRepository.deleteById(idJugador);
+    }
 
     @Override
     @Transactional
@@ -176,6 +190,7 @@ public class JugadorServiceImpl implements JugadorService {
             partidaRepository.save(partida);
         }
     }
+
     @Override
     @Transactional
     public void votarReanudar(Long idJugador) {
@@ -195,7 +210,7 @@ public class JugadorServiceImpl implements JugadorService {
 
         if (todosAceptaron) {
             PartidaEntity partida = jugador.getPartida();
-            partida.setEstadoPartida(EstadoPartida.EN_JUEGO );
+            partida.setEstadoPartida(EstadoPartida.EN_JUEGO);
             partidaRepository.save(partida);
         }
     }
@@ -227,11 +242,15 @@ public class JugadorServiceImpl implements JugadorService {
             }
 
             PartidaEntity partida = jugador.getPartida();
-            partida.setEstadoPartida(EstadoPartida.TERMINADA);
+            // Retirarse no es ganar ni perder: nadie llegó a un desenlace, así
+            // que la campaña queda abandonada y no suma al historial de nadie.
+            // Si hubiera vencedor, el estado lo pone TurnoServiceImpl.
+            partida.setEstadoPartida(partida.getGanador() != null
+                    ? EstadoPartida.TERMINADA
+                    : EstadoPartida.ABANDONADA);
             partidaRepository.save(partida);
         }
     }
-
 
     public List<JugadorDto> obtenerJugadoresPorSala(Long idSala) {
         List<JugadorEntity> jugadores = jugadorRepository.findBySala_IdSala(idSala);
@@ -243,8 +262,3 @@ public class JugadorServiceImpl implements JugadorService {
     }
 
 }
-
-
-
-
-

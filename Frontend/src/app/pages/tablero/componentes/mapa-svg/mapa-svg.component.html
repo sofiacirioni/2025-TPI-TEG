@@ -1,0 +1,130 @@
+<svg id="mapa"
+     width="100%"
+     height="100%"
+     viewBox="0 0 1920 1080"
+     preserveAspectRatio="xMidYMid slice"
+     class="mapa-svg">
+
+  <!--
+    CAPA 1: Fondo papel (color-claro) + tinta oceánica (color-mar con opacidad reducida).
+    El color del mar se aplica con baja opacidad para que el fondo de papel prevalezca.
+  -->
+  <rect width="1920" height="1080" style="fill:var(--color-claro)"/>
+
+  <!--
+    CAPA 1b: Textura grunge/vintage del papel envejecido. Opacidad baja (0.35)
+    y mix-blend-mode: multiply para oscurecer sutilmente sin afectar los colores
+    de los países (que se renderizan encima en la CAPA 2). pointer-events: none
+    para que no intercepte los clicks sobre los países.
+  -->
+  <image href="/assets/images/grunge-vintage-old-paper-texture.jpg"
+         x="0" y="0" width="1920" height="1080"
+         preserveAspectRatio="xMidYMid slice"
+         opacity="0.35"
+         style="mix-blend-mode: multiply; pointer-events: none;"/>
+
+  <!--
+    Corrección de centrado: el artwork del mapa tiene ~30 unidades SVG más de
+    espacio vacío en el lado derecho que en el izquierdo. Se desplaza todo el
+    contenido (capas 2–4) 30 unidades a la derecha para centrar visualmente.
+    La CAPA 1 (rect de fondo) queda fuera del grupo para cubrir todo el viewBox.
+  -->
+  <g transform="translate(30, 0)">
+
+  <!--
+    CAPA 2: Rellenos RGBA dinámicos por jugador (~0.4 opacidad).
+    Países sin dueño reciben un tinte sutil del continente para distinguir regiones.
+    Estos paths capturan los eventos de click y hover.
+  -->
+  @for (p of mapaPais; track p.id) {
+    @if (p.forma) {
+      <path
+        [attr.d]="p.forma"
+        [attr.fill]="p.color"
+        stroke="none"
+        [style.filter]="p.opacidad > 1 ? 'brightness(1.3)' : 'none'"
+        style="cursor: pointer; transition: filter 0.15s ease;"
+        (click)="clickPais(p.id, $event)"
+        (mouseenter)="p.opacidad = 1.15"
+        (mouseleave)="p.opacidad = 1"
+      />
+    }
+  }
+
+  <!--
+    CAPA 3: SVG original como imagen estática.
+    Renderiza con todos sus estilos, capas y decoraciones originales:
+    decoraciones (sol, brújula, barcos, logos), bordes de países con
+    color-oscuro (#432A1E), etiquetas de nombres.
+    pointer-events:none permite que los clicks pasen a la capa 2.
+  -->
+  <image
+    [attr.href]="svgAssetUrl"
+    x="0" y="0"
+    width="1920" height="1080"
+    style="pointer-events:none; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;"
+  />
+
+  <!--
+    CAPA 4: Fichas de tropas (encima de todo).
+    SVG del jugador dueño + número de tropas. Fallback a círculo para países neutros con tropas.
+  -->
+  @for (p of mapaPais; track p.id) {
+    @if (p.cx > 0 && p.cy > 0 && p.tropas > 0) {
+      <g pointer-events="none">
+        @if (p.svgToken) {
+          <!-- Símbolo SVG del jugador (28×28) -->
+          <image
+            [attr.href]="p.svgToken"
+            [attr.x]="p.cx - 14"
+            [attr.y]="p.cy - 14"
+            width="28" height="28"
+          />
+          <!-- Cantidad de tropas junto a la ficha -->
+          <text
+            [attr.x]="p.cx + 17"
+            [attr.y]="p.cy + 7"
+            text-anchor="start"
+            font-family="'Roboto Slab', serif"
+            font-size="18"
+            font-weight="700"
+            fill="#EFE8CE"
+            paint-order="stroke"
+            stroke="rgba(67,42,30,0.9)"
+            stroke-width="5"
+          >{{ p.tropas }}</text>
+        } @else {
+          <!-- Fallback: círculo para países sin dueño con tropas -->
+          <circle
+            [attr.cx]="p.cx + 1"
+            [attr.cy]="p.cy + 1"
+            r="14"
+            fill="rgba(0,0,0,0.4)"
+          />
+          <circle
+            [attr.cx]="p.cx"
+            [attr.cy]="p.cy"
+            r="14"
+            [attr.fill]="p.colorSolido"
+            stroke="rgba(239,232,206,0.85)"
+            stroke-width="1.5"
+          />
+          <text
+            [attr.x]="p.cx"
+            [attr.y]="p.cy + 6"
+            text-anchor="middle"
+            font-family="'Special Elite', serif"
+            font-size="14"
+            font-weight="700"
+            fill="#EFE8CE"
+            paint-order="stroke"
+            stroke="rgba(67,42,30,0.7)"
+            stroke-width="3"
+          >{{ p.tropas }}</text>
+        }
+      </g>
+    }
+  }
+
+  </g><!-- /translate(30,0) -->
+</svg>

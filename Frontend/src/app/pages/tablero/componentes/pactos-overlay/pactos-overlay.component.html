@@ -1,0 +1,247 @@
+<div class="pactos-overlay" (click)="onBackdropClick()">
+  <div class="pactos-content" (click)="$event.stopPropagation()">
+
+    <!-- Header común a todas las vistas -->
+    <div class="pactos-header">
+      <div class="pactos-titulo-grupo">
+        <h2 class="pactos-titulo">PACTOS Y TRATADOS</h2>
+        <p class="pactos-subtitulo">· Diplomacia y acuerdos del frente ·</p>
+      </div>
+      <button class="pactos-cerrar" (click)="cerrar.emit()" aria-label="Cerrar">✕</button>
+    </div>
+
+    @if (vista === 'lista') {
+      <!-- ═══ SECCIÓN 1: Pactos activos ═══ -->
+      <section class="pactos-seccion">
+        <h3 class="pactos-seccion-tit">TRATADOS VIGENTES</h3>
+
+        @if (pactosActivos.length === 0) {
+          <p class="pactos-vacio">No hay tratados vigentes en este momento.</p>
+        } @else {
+          <div class="pactos-lista">
+            @for (p of pactosActivos; track p.id) {
+              <article class="pacto-card">
+                <div class="pacto-card__jugadores">
+                  <div class="pacto-jug">
+                    <div class="pacto-avatar" [style.background-color]="colorVar(p.colorJugadorA)"></div>
+                    <span class="pacto-nombre" [style.color]="colorVar(p.colorJugadorA)">
+                      {{ p.nombreJugadorA }}
+                    </span>
+                  </div>
+                  <span class="pacto-sep">·</span>
+                  <div class="pacto-jug">
+                    <div class="pacto-avatar" [style.background-color]="colorVar(p.colorJugadorB)"></div>
+                    <span class="pacto-nombre" [style.color]="colorVar(p.colorJugadorB)">
+                      {{ p.nombreJugadorB }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="pacto-card__info">
+                  <div class="pacto-tipo">{{ tituloTipoPacto(p.tipo) }}</div>
+                  <div class="pacto-desc">{{ descripcionPacto(p) }}</div>
+                  @if (p.estado === 'ROTO_VOLUNTARIO') {
+                    <span class="pacto-badge-ruptura"
+                          title="El pacto fue roto pero aún se respeta hasta que termine el período de gracia.">
+                      EN RUPTURA
+                    </span>
+                  }
+                </div>
+
+                <div class="pacto-card__acciones">
+                  @if (esParteDelPacto(p) && p.estado === 'ACTIVO') {
+                    <button class="btn-teg-danger pacto-btn-romper"
+                            [disabled]="enviando"
+                            (click)="romperPacto(p)">
+                      · ROMPER ·
+                    </button>
+                  } @else {
+                    <span class="pacto-vigente">VIGENTE</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- ═══ SECCIÓN 2: Acción ═══ -->
+      <section class="pactos-seccion pactos-acciones">
+        <button class="btn-teg-primary pactos-btn-proponer"
+                [disabled]="!esMiTurno"
+                (click)="irAWizard()">
+          · PROPONER NUEVO PACTO ·
+        </button>
+        @if (!esMiTurno) {
+          <p class="pactos-aclaracion">Solo podés proponer pactos durante tu turno.</p>
+        }
+      </section>
+    }
+
+    @if (vista === 'wizard-tipo') {
+      <!-- ═══ Wizard Paso 1: Elegir tipo ═══ -->
+      <div class="wizard-step">
+        <h3 class="wizard-step-tit">PASO 1 — TIPO DE PACTO</h3>
+        <div class="tipo-cards">
+          <button class="tipo-card"
+                  [class.selected]="tipoSeleccionado === 'PACTO_PAISES'"
+                  (click)="seleccionarTipo('PACTO_PAISES')">
+            <img class="tipo-card-symbol"
+                 src="assets/images/tablero/countries-pact-symbol.png"
+                 alt="" aria-hidden="true">
+            <div class="tipo-card-titulo">PACTO ENTRE PAÍSES</div>
+            <div class="tipo-card-desc">
+              Cada jugador designa un país suyo que el otro no puede atacar.
+            </div>
+          </button>
+
+          <button class="tipo-card"
+                  [class.selected]="tipoSeleccionado === 'PACTO_MUNDIAL'"
+                  (click)="seleccionarTipo('PACTO_MUNDIAL')">
+            <img class="tipo-card-symbol"
+                 src="assets/images/tablero/global-pact-symbol.png"
+                 alt="" aria-hidden="true">
+            <div class="tipo-card-titulo">NO AGRESIÓN MUNDIAL</div>
+            <div class="tipo-card-desc">
+              Ningún jugador puede atacar al otro en ningún país del mapa.
+            </div>
+          </button>
+
+          <button class="tipo-card"
+                  [class.selected]="tipoSeleccionado === 'PACTO_ZONA_INTERNACIONAL'"
+                  [class.deshabilitado]="continentesDisponibles.length === 0"
+                  [attr.title]="continentesDisponibles.length === 0
+                    ? 'No tenés un continente con todos los países menos uno.'
+                    : null"
+                  (click)="seleccionarTipo('PACTO_ZONA_INTERNACIONAL')">
+            <img class="tipo-card-symbol"
+                 src="assets/images/tablero/continental-pact-symbol.png"
+                 alt="" aria-hidden="true">
+            <div class="tipo-card-titulo">ZONA INTERNACIONAL</div>
+            <div class="tipo-card-desc">
+              Cuando tenés un continente entero salvo un país, podés proponer un pacto al dueño de ese país restante.
+            </div>
+          </button>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="btn-teg-dark" (click)="volverAlInicioWizard()">· VOLVER ·</button>
+          <button class="btn-teg-primary"
+                  [disabled]="!tipoSeleccionado"
+                  (click)="avanzarASelecionReceptor()">
+            · SIGUIENTE ·
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (vista === 'wizard-receptor') {
+      <!-- ═══ Wizard Paso 2: Elegir receptor ═══ -->
+      <div class="wizard-step">
+        <h3 class="wizard-step-tit">PASO 2 — JUGADOR RECEPTOR</h3>
+
+        @if (jugadoresVisiblesParaReceptor().length === 0) {
+          <p class="pactos-vacio">No hay jugadores disponibles para este tipo de pacto.</p>
+        } @else {
+          <div class="receptor-lista">
+            @for (j of jugadoresVisiblesParaReceptor(); track j.idJugador) {
+              <button class="receptor-card"
+                      [class.deshabilitado]="yaHayPactoActivoCon(j)"
+                      [disabled]="yaHayPactoActivoCon(j)"
+                      (click)="seleccionarReceptor(j)">
+                <div class="receptor-avatar" [style.background-color]="colorVar(j.color)"></div>
+                <div class="receptor-info">
+                  <div class="receptor-nombre" [style.color]="colorVar(j.color)">
+                    {{ j.nombre }}
+                  </div>
+                  <div class="receptor-stats">
+                    {{ cantidadPaisesJugador(j) }} países · {{ cantidadEjercitosJugador(j) }} ejércitos
+                  </div>
+                  @if (yaHayPactoActivoCon(j)) {
+                    <div class="receptor-aviso">Ya hay un pacto activo entre ustedes</div>
+                  }
+                </div>
+              </button>
+            }
+          </div>
+        }
+
+        <div class="wizard-actions">
+          <button class="btn-teg-dark" (click)="volverASeleccionTipo()">· VOLVER ·</button>
+        </div>
+      </div>
+    }
+
+    @if (vista === 'wizard-detalles') {
+      <!-- ═══ Wizard Paso 3: Detalles ═══ -->
+      <div class="wizard-step">
+        <h3 class="wizard-step-tit">PASO 3 — DETALLES</h3>
+
+        @if (tipoSeleccionado === 'PACTO_PAISES') {
+          <div class="detalles-paises">
+            <div class="detalle-col">
+              <label>Tu país a proteger</label>
+              <select [(ngModel)]="paisProtegidoLocalId">
+                <option [ngValue]="null">— Elegí un país —</option>
+                @for (e of paisesPropios(); track e.pais.idPais) {
+                  <option [ngValue]="e.pais.idPais">{{ e.pais.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="detalle-col">
+              <label>País del aliado a respetar</label>
+              <select [(ngModel)]="paisProtegidoReceptorId">
+                <option [ngValue]="null">— Elegí un país —</option>
+                @for (e of paisesDelReceptor(); track e.pais.idPais) {
+                  <option [ngValue]="e.pais.idPais">{{ e.pais.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <p class="detalles-vista">
+            Te comprometés a no atacar
+            <strong>{{ nombrePaisProtegidoReceptor }}</strong>
+            y <strong>{{ receptorSeleccionado?.nombre }}</strong> se compromete a no atacar
+            <strong>{{ nombrePaisProtegidoLocal }}</strong>.
+          </p>
+        }
+
+        @if (tipoSeleccionado === 'PACTO_MUNDIAL') {
+          <p class="detalles-vista">
+            Vos y <strong>{{ receptorSeleccionado?.nombre }}</strong> no podrán atacarse en ningún país del mapa hasta que se rompa el pacto.
+          </p>
+        }
+
+        @if (tipoSeleccionado === 'PACTO_ZONA_INTERNACIONAL') {
+          <div class="detalles-paises">
+            <div class="detalle-col">
+              <label>Continente</label>
+              <select [(ngModel)]="continenteSeleccionadoId">
+                <option [ngValue]="null">— Elegí un continente —</option>
+                @for (c of continentesDisponibles; track c.idContinente) {
+                  <option [ngValue]="c.idContinente">{{ c.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          @if (continenteSeleccionado) {
+            <p class="detalles-vista">
+              Te comprometés a no atacar
+              <strong>{{ continenteSeleccionado.paisAislado.pais.nombre }}</strong>
+              del continente <strong>{{ continenteSeleccionado.nombre }}</strong>.
+            </p>
+          }
+        }
+
+        <div class="wizard-actions">
+          <button class="btn-teg-dark" (click)="volverASeleccionReceptor()">· VOLVER ·</button>
+          <button class="btn-teg-primary"
+                  [disabled]="!puedeEnviar() || enviando"
+                  (click)="enviarPropuesta()">
+            · ENVIAR PROPUESTA ·
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

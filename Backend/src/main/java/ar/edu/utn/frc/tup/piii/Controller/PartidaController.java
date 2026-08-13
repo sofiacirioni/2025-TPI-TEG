@@ -1,28 +1,25 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.PartidaDto;
-import ar.edu.utn.frc.tup.piii.Dtos.SalaDto;
-import ar.edu.utn.frc.tup.piii.Repositories.UsuarioRepository;
+import ar.edu.utn.frc.tup.piii.Dtos.ResumenPartidaDto;
 import ar.edu.utn.frc.tup.piii.Services.PartidaService;
+import ar.edu.utn.frc.tup.piii.Services.ResumenPartidaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.*;
 import jakarta.validation.Valid;
-import lombok.Getter;
-import lombok.Setter;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/v1/partida")
@@ -30,22 +27,27 @@ public class PartidaController {
     @Autowired
     private PartidaService partidaService;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    // @Autowired
+    // private UsuarioRepository usuarioRepository;
 
     @Autowired
     private UsuarioService usuarioService;
-    // Controller
-    @Autowired
-    private ModelMapper modelMapper;
 
+    @Autowired
+    private ResumenPartidaService resumenPartidaService;
+
+    /** Parte de campaña de una partida jugada — lo consume la pizarra de estadísticas. */
+    @GetMapping("/{idPartida}/resumen")
+    public ResponseEntity<ResumenPartidaDto> obtenerResumen(@PathVariable Long idPartida) {
+        return ResponseEntity.ok(resumenPartidaService.obtenerResumen(idPartida));
+    }
 
     @PostMapping("/crear/{idSala}")
-    public ResponseEntity<?> crearPartida(@PathVariable Long idSala, @RequestParam Long idUsuario) {
-        Usuario usuarioActual = usuarioService.obtenerByIdUsuario(idUsuario);
-        if (usuarioActual == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autorizado");
-        }
+    public ResponseEntity<?> crearPartida(
+            @PathVariable Long idSala,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Usuario usuarioActual = usuarioService.obtenerByCorreo(userDetails.getUsername());
 
         Partida partida = partidaService.crearPartidaYAsignarJugadores(idSala, usuarioActual);
 
@@ -57,12 +59,13 @@ public class PartidaController {
         return ResponseEntity.ok(partidaDto);
     }
 
-
+    // TODO: evaluar si se mantiene para futuras versiones (era usado por opción C "retomar partida", eliminada en 2026-03-27)
     @GetMapping("/disponibles")
     public ResponseEntity<List<Partida>> listarPartidasDisponibles() {
         return ResponseEntity.ok(partidaService.listarPartidasDisponibles());
     }
 
+    // TODO: evaluar si se mantiene para futuras versiones (era usado por opción C "retomar partida", eliminada en 2026-03-27)
     @PostMapping("/{idPartida}/unirse/{idUsuario}")
     public ResponseEntity<Partida> unirseAPartida(@PathVariable Long idPartida, @PathVariable Long idUsuario) {
         return ResponseEntity.ok(partidaService.unirseAPartida(idUsuario, idPartida));
@@ -79,7 +82,8 @@ public class PartidaController {
     }
 
     @PutMapping("/{idPartida}")
-    public ResponseEntity<Partida> guardarPartida(@PathVariable Long idPartida, @Valid @RequestBody PartidaDto partidaDTO,
+    public ResponseEntity<Partida> guardarPartida(@PathVariable Long idPartida,
+            @Valid @RequestBody PartidaDto partidaDTO,
             BindingResult result) {
 
         if (result.hasErrors()) {
@@ -116,7 +120,8 @@ public class PartidaController {
     public ResponseEntity<PartidaDto> accederAPartidaPorUrl(
             @RequestParam String url,
             @RequestParam Long idUsuario) {
-        PartidaDto dto = partidaService.obtenerPartidaActivaPorUrlYUsuario(url, idUsuario);;
+        PartidaDto dto = partidaService.obtenerPartidaActivaPorUrlYUsuario(url, idUsuario);
+        ;
 
         return ResponseEntity.ok(dto);
     }

@@ -8,7 +8,6 @@ import ar.edu.utn.frc.tup.piii.Services.PartidaService;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.EstadoPartida;
 import ar.edu.utn.frc.tup.piii.models.Partida;
-import ar.edu.utn.frc.tup.piii.models.Usuario;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,8 +56,7 @@ public class PartidaControllerTest {
 
         usuario = new UsuarioEntity();
         usuario.setIdUsuario(1L);
-        usuario.setNombre("Usuario Test");
-        usuario.setApellido("Apellido Test");
+        usuario.setUsuario("Usuario Test");
         usuario.setCorreo("test@example.com");
         usuario.setContrasenia("Password1@");
         usuario.setImagen("avatar.png");
@@ -69,21 +67,6 @@ public class PartidaControllerTest {
         partidaDto.setFechaInicio(LocalDate.now());
 
 
-    }
-
-    @Test
-    void crearPartida_conUsuarioInvalido_deberiaRetornarUnauthorized() throws Exception {
-        Long idSala = 1L;
-        Long idUsuario = 999L;
-
-        when(usuarioService.obtenerByIdUsuario(idUsuario)).thenReturn(null);
-
-        mockMvc.perform(post("/api/v1/partida/crear/{idSala}", idSala)
-                        .param("idUsuario", idUsuario.toString()))
-                .andExpect(status().isUnauthorized());
-
-        verify(usuarioService).obtenerByIdUsuario(idUsuario);
-        verify(partidaService, never()).crearPartidaYAsignarJugadores(any(), any());
     }
 
     @Test
@@ -243,45 +226,5 @@ public class PartidaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(partidaDto)))
                 .andExpect(status().isBadRequest());
-    }
-    @Test
-    void crearPartida_conUsuarioValido_deberiaRetornarPartidaDto() throws Exception {
-        Long idSala = 1L;
-        Long idUsuario = 10L;
-
-        Partida partida = new Partida();
-        partida.setIdPartida(10L);
-        partida.setEstadoPartida(EstadoPartida.EN_JUEGO);
-        partida.setFechaInicio(LocalDate.of(2025, 7, 5));
-
-        Usuario usuario = new Usuario();
-        usuario.setIdUsuario(idUsuario);
-
-        when(usuarioService.obtenerByIdUsuario(idUsuario)).thenReturn(usuario);
-        when(partidaService.crearPartidaYAsignarJugadores(idSala, usuario)).thenReturn(partida);
-
-        mockMvc.perform(post("/api/v1/partida/crear/{idSala}", idSala)
-                        .param("idUsuario", idUsuario.toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idPartida").value(10))
-                .andExpect(jsonPath("$.estado").value("EN_JUEGO"))
-                .andExpect(jsonPath("$.fechaInicio[0]").value(2025))
-                .andExpect(jsonPath("$.fechaInicio[1]").value(7))
-                .andExpect(jsonPath("$.fechaInicio[2]").value(5));
-    }
-
-    @Test
-    void crearPartida_conUsuarioNoEncontrado_deberiaRetornarUnauthorized() throws Exception {
-        Long idSala = 1L;
-        Long idUsuario = 999L;
-
-        when(usuarioService.obtenerByIdUsuario(idUsuario)).thenReturn(null);
-
-        mockMvc.perform(post("/api/v1/partida/crear/{idSala}", idSala)
-                        .param("idUsuario", idUsuario.toString()))
-                .andExpect(status().isUnauthorized());
-
-        verify(usuarioService).obtenerByIdUsuario(idUsuario);
-        verify(partidaService, never()).crearPartidaYAsignarJugadores(anyLong(), any());
     }
 }

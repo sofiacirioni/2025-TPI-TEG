@@ -1,9 +1,7 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
-import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
-import ar.edu.utn.frc.tup.piii.Dtos.UsarTarjetaEnPaisDto;
 import ar.edu.utn.frc.tup.piii.Entities.*;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
@@ -12,22 +10,22 @@ import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class BotServiceImplTest {
+
     @InjectMocks
     private BotServiceImpl botServiceImpl;
 
@@ -41,238 +39,188 @@ class BotServiceImplTest {
     private EstadoPaisRepository estadoPaisRepository;
 
     @Mock
-    private EstadoTarjetaRepository estadoTarjetaRepository;
-
-    @Mock
     private JugadorRepository jugadorRepository;
 
-    @Test
-    void faseReagrupar_deberiaCambiarFase() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setPartida(new PartidaEntity());
+    /**
+     * Necesario desde que realizarIncorporacion() arranca con el canje obligatorio de
+     * tarjetas. Sin este mock el campo queda null, la incorporación lanza NPE y el bot
+     * cae en la rama de recuperación del catch — con lo cual nunca distribuye ni ataca.
+     * Sin stubear: Mockito devuelve lista vacía y el bot sigue de largo (no hay canje).
+     */
+    @Mock
+    private EstadoTarjetaRepository estadoTarjetaRepository;
 
-        boolean resultado = botServiceImpl.faseReagrupar(bot);
-
-        assertFalse(resultado);
-        verify(turnoService).cambiarFaseTurno(bot.getPartida().getIdPartida());
+    @BeforeEach
+    void setUp() {
+        // @Lazy @Autowired no lo inyecta @InjectMocks — lo seteamos manualmente
+        ReflectionTestUtils.setField(botServiceImpl, "turnoService", turnoService);
+        // Eliminar el cooldown de 3 s para que los tests corran instantáneamente
+        botServiceImpl.cooldownMs = 0;
     }
 
-    @Test
-    void pedirCarta_deberiaEntregarCartaYUsarlaSiCorresponde() {
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private JugadorEntity crearBot(Long id) {
         JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
+        bot.setIdJugador(id);
         PartidaEntity partida = new PartidaEntity();
+        partida.setIdPartida(99L);
         bot.setPartida(partida);
-
-        PaisEntity pais = new PaisEntity(); pais.setIdPais(10L);
-        EstadoPaisEntity estadoPais = new EstadoPaisEntity(); estadoPais.setPais(pais);
-        estadoPais.setJugador(bot);
-
-        TarjetaEntity tarjeta = new TarjetaEntity(); tarjeta.setPais(pais);
-        EstadoTarjetaEntity tarjetaEstado = new EstadoTarjetaEntity();
-        tarjetaEstado.setTarjeta(tarjeta);
-        tarjetaEstado.setUsada(false);
-
-        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(List.of(estadoPais));
-        when(estadoTarjetaRepository.findByJugador_IdJugador(1L)).thenReturn(List.of(tarjetaEstado));
-
-        boolean resultado = botServiceImpl.pedirCarta(bot);
-
-        assertTrue(resultado);
-        verify(turnoService).entregarTarjetaSiCorresponde(1L, partida.getIdPartida());
-        verify(turnoService).validarUsarTarjetaEnPais(any());
-    }
-    @Test
-    void canjearCarta_deberiaRetornarFalseSiempre() {
-        JugadorEntity bot = new JugadorEntity();
-
-        boolean resultado = botServiceImpl.canjearCarta(bot);
-
-        assertFalse(resultado);
+        bot.setEjercito(0);
+        return bot;
     }
 
-    @Test
-    void usarCarta_deberiaLlamarValidacionDeTarjeta() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
+    private EstadoPaisEntity crearEstadoPais(Long idEstado, Long idPais, JugadorEntity jugador, int tropas) {
+        PaisEntity pais = new PaisEntity();
+        pais.setIdPais(idPais);
 
-        EstadoTarjetaEntity tarjeta = new EstadoTarjetaEntity();
-        tarjeta.setIdEstadoTarjeta(99L);
-
-        boolean resultado = botServiceImpl.usarCarta(bot, tarjeta);
-
-        assertFalse(resultado);
-        verify(turnoService).validarUsarTarjetaEnPais(any(UsarTarjetaEnPaisDto.class));
+        EstadoPaisEntity ep = new EstadoPaisEntity();
+        ep.setIdEstadoPais(idEstado);
+        ep.setPais(pais);
+        ep.setJugador(jugador);
+        ep.setCantidadTropas(tropas);
+        return ep;
     }
 
-    @Test
-    void turnoBot_deberiaEjecutarFlujoCompleto() {
-        Long idJugador = 1L;
+    // ── Tests ──────────────────────────────────────────────────────────────────
 
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(idJugador);
+    /**
+     * Si el bot no tiene ejércitos, executeTurnAsync avanza las 3 fases de todas formas
+     * (incorporación sin acción, ataque vacío, reagrupación).
+     * Como @Async se ignora en tests sin contexto Spring, el método corre de forma síncrona.
+     */
+    @Test
+    void executeTurnAsync_sinEjercitos_avanzaTresFases() throws Exception {
+        JugadorEntity bot = crearBot(1L);
+        when(jugadorRepository.findByIdJugador(1L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(List.of());
+
+        botServiceImpl.executeTurnAsync(1L);
+
+        // INC→ATK, ATK→REAG, REAG→INC (siguiente jugador)
+        verify(turnoService, times(3)).cambiarFaseTurno(99L);
+    }
+
+    /**
+     * El bot con ejércitos distribuye todos sus ejércitos (llama agregarFichas al menos una vez)
+     * y luego avanza las 3 fases.
+     */
+    @Test
+    void executeTurnAsync_conEjercitos_distribuyeYAvanzaFases() throws Exception {
+        JugadorEntity bot = crearBot(2L);
         bot.setEjercito(3);
 
-        PartidaEntity partida = new PartidaEntity();
-        partida.setHostilidad(true);
-        partida.setIdPartida(10L);
-        bot.setPartida(partida);
+        // 3 tropas es el mínimo con el que el bot se anima a atacar; con menos
+        // ni siquiera mira a sus vecinos.
+        EstadoPaisEntity ep = crearEstadoPais(10L, 1L, bot, 3);
 
-        List<EstadoTarjetaEntity> tarjetasEstado = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            EstadoTarjetaEntity estadoTarjeta = new EstadoTarjetaEntity();
-            tarjetasEstado.add(estadoTarjeta);
-        }
-        bot.setTarjetas(tarjetasEstado);
+        when(jugadorRepository.findByIdJugador(2L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(2L)).thenReturn(List.of(ep));
+        when(estadoPaisRepository.findById(10L)).thenReturn(Optional.of(ep));
+        when(estadoPaisService.getLimitesEstadoPaisEntity(10L)).thenReturn(List.of());
 
-        when(jugadorRepository.findByIdJugador(idJugador)).thenReturn(Optional.of(bot));
+        botServiceImpl.executeTurnAsync(2L);
 
-        BotServiceImpl spyService = Mockito.spy(botServiceImpl);
-        doReturn(true).when(spyService).faseDefensa(bot);
-        doReturn(true).when(spyService).faseAtaque(bot);
-        doReturn(true).when(spyService).pedirCarta(bot);
-        doReturn(true).when(spyService).canjearCarta(bot);
-        doReturn(true).when(spyService).faseReagrupar(bot);
-
-        boolean resultado = spyService.turnoBot(idJugador);
-
-        assertTrue(resultado);
-        verify(jugadorRepository).findByIdJugador(idJugador);
-        verify(spyService).faseDefensa(bot);
-        verify(spyService).faseAtaque(bot);
-        verify(spyService).pedirCarta(bot);
-        verify(spyService).canjearCarta(bot);
-        verify(spyService).faseReagrupar(bot);
+        verify(turnoService, atLeastOnce()).agregarFichas(any());
+        verify(turnoService, times(3)).cambiarFaseTurno(99L);
     }
 
+    /**
+     * El bot conserva una guarnición mínima: con menos de 3 tropas en el país
+     * de origen no ataca. Antes atacaba hasta quedarse con una sola tropa en
+     * todos sus países, lo que lo dejaba servido para el turno siguiente.
+     */
     @Test
+    void realizarAtaque_conGuarnicionMinima_noAtaca() throws Exception {
+        JugadorEntity bot = crearBot(3L);
+        bot.setEjercito(0);
 
-    void faseAtaque_deberiaIntentarAtaquesYCambiarFase() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
+        EstadoPaisEntity debil = crearEstadoPais(20L, 2L, bot, 2);
 
-        PartidaEntity partida = new PartidaEntity();
-        partida.setIdPartida(99L);
-        bot.setPartida(partida);
+        when(jugadorRepository.findByIdJugador(3L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(3L)).thenReturn(List.of(debil));
 
-        EstadoPaisEntity paisAtacante = new EstadoPaisEntity();
-        paisAtacante.setIdEstadoPais(10L);
-        paisAtacante.setCantidadTropas(3);
-        PaisEntity paisAtacantePais = new PaisEntity();
-        paisAtacantePais.setIdPais(100L);
-        paisAtacante.setPais(paisAtacantePais);
+        botServiceImpl.executeTurnAsync(3L);
 
-        EstadoPaisEntity paisDefensor1 = new EstadoPaisEntity();
-        paisDefensor1.setIdEstadoPais(11L);
-        paisDefensor1.setCantidadTropas(1);
-        paisDefensor1.setJugador(bot);
-        PaisEntity paisDefensor1Pais = new PaisEntity();
-        paisDefensor1Pais.setIdPais(101L);
-        paisDefensor1.setPais(paisDefensor1Pais);
+        // Ni siquiera pregunta por los vecinos: descarta el país antes.
+        verify(estadoPaisService, never()).getLimitesEstadoPaisEntity(anyLong());
+        verify(turnoService, never()).ataque(any());
+    }
 
-        EstadoPaisEntity paisDefensor2 = new EstadoPaisEntity();
-        paisDefensor2.setIdEstadoPais(12L);
-        paisDefensor2.setCantidadTropas(1);
-        JugadorEntity otroJugador = new JugadorEntity();
-        otroJugador.setIdJugador(2L);
-        paisDefensor2.setJugador(otroJugador);
-        PaisEntity paisDefensor2Pais = new PaisEntity();
-        paisDefensor2Pais.setIdPais(102L);
-        paisDefensor2.setPais(paisDefensor2Pais);
+    /**
+     * El bot no ataca países que le pertenecen: el vecino que es del mismo bot
+     * es filtrado y turnoService.ataque() nunca se llama.
+     */
+    @Test
+    void realizarAtaque_noAtacaPaisesPropioss() throws Exception {
+        JugadorEntity bot = crearBot(3L);
+        bot.setEjercito(0);
 
-        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(List.of(paisAtacante));
-        when(estadoPaisService.getLimitesEstadoPaisEntity(10L)).thenReturn(List.of(paisDefensor1, paisDefensor2));
-        when(turnoService.ataque(any(Ataque.class))).thenReturn(new AtaqueResponseDto(true, List.of(), List.of()));
+        EstadoPaisEntity origen = crearEstadoPais(20L, 1L, bot, 3);
+        EstadoPaisEntity vecinoPropio = crearEstadoPais(21L, 2L, bot, 1); // mismo dueño
 
-        boolean resultado = botServiceImpl.faseAtaque(bot);
+        when(jugadorRepository.findByIdJugador(3L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(3L)).thenReturn(List.of(origen));
+        when(estadoPaisRepository.findById(20L)).thenReturn(Optional.of(origen));
+        when(estadoPaisService.getLimitesEstadoPaisEntity(20L)).thenReturn(List.of(vecinoPropio));
 
-        assertTrue(resultado);
+        botServiceImpl.executeTurnAsync(3L);
+
+        verify(turnoService, never()).ataque(any(Ataque.class));
+        verify(turnoService, times(3)).cambiarFaseTurno(99L);
+    }
+
+    /**
+     * El bot ataca al vecino enemigo con menos tropas cuando tiene más de 1 tropa en origen.
+     */
+    @Test
+    void realizarAtaque_atacaVecinoEnemigo() throws Exception {
+        JugadorEntity bot = crearBot(4L);
+        bot.setEjercito(0);
+
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(99L);
+
+        EstadoPaisEntity origen = crearEstadoPais(30L, 1L, bot, 3);
+        EstadoPaisEntity vecino = crearEstadoPais(31L, 2L, enemigo, 1);
+
+        when(jugadorRepository.findByIdJugador(4L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(4L)).thenReturn(List.of(origen));
+        when(estadoPaisRepository.findById(30L)).thenReturn(Optional.of(origen));
+        when(estadoPaisRepository.findById(31L)).thenReturn(Optional.of(vecino));
+        when(estadoPaisService.getLimitesEstadoPaisEntity(30L)).thenReturn(List.of(vecino));
+        when(turnoService.ataque(any())).thenReturn(new AtaqueResponseDto(true, false, List.of(), List.of(), 0, 0));
+
+        botServiceImpl.executeTurnAsync(4L);
+
         verify(turnoService, atLeastOnce()).ataque(any(Ataque.class));
-        verify(turnoService).cambiarFaseTurno(99L);
     }
+
+    /**
+     * Si turnoService.ataque() lanza excepción (p.ej. territorio ya conquistado),
+     * el bot continúa sin detenerse y sigue avanzando fases.
+     */
     @Test
-    void faseDefensa_conEjercitoVacio_deberiaTerminarInmediatamente() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
+    void realizarAtaque_excepccionEnAtaque_continuaSinDetener() throws Exception {
+        JugadorEntity bot = crearBot(5L);
         bot.setEjercito(0);
 
-        PartidaEntity partida = new PartidaEntity();
-        partida.setIdPartida(99L);
-        bot.setPartida(partida);
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(88L);
 
-        EstadoPaisEntity pais1 = new EstadoPaisEntity();
-        pais1.setIdEstadoPais(10L);
-        List<EstadoPaisEntity> paises = List.of(pais1);
+        EstadoPaisEntity origen = crearEstadoPais(40L, 1L, bot, 4);
+        EstadoPaisEntity vecino = crearEstadoPais(41L, 2L, enemigo, 1);
 
-        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(paises);
+        when(jugadorRepository.findByIdJugador(5L)).thenReturn(Optional.of(bot));
+        when(estadoPaisRepository.findByJugador_IdJugador(5L)).thenReturn(List.of(origen));
+        when(estadoPaisRepository.findById(40L)).thenReturn(Optional.of(origen));
+        when(estadoPaisRepository.findById(41L)).thenReturn(Optional.of(vecino));
+        when(estadoPaisService.getLimitesEstadoPaisEntity(40L)).thenReturn(List.of(vecino));
+        when(turnoService.ataque(any())).thenThrow(new IllegalArgumentException("No se puede atacar su propio país"));
 
-        boolean resultado = botServiceImpl.faseDefensa(bot);
+        botServiceImpl.executeTurnAsync(5L);
 
-        assertTrue(resultado);
-        verify(turnoService, never()).agregarFichas(any(AgregarFichas.class));
-        verify(estadoPaisRepository).saveAll(paises);
-        verify(jugadorRepository).save(bot);
-        verify(turnoService).cambiarFaseTurno(99L);
+        // A pesar de la excepción, las 3 fases deben avanzar
+        verify(turnoService, times(3)).cambiarFaseTurno(99L);
     }
-    @Test
-    void faseDefensa_deberiaEjecutarseCorrectamente() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
-        bot.setEjercito(5);
-
-        PartidaEntity partida = new PartidaEntity();
-        partida.setIdPartida(99L);
-        bot.setPartida(partida);
-
-        EstadoPaisEntity pais = new EstadoPaisEntity();
-        pais.setIdEstadoPais(10L);
-
-        List<EstadoPaisEntity> paises = List.of(pais);
-
-        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(paises);
-        when(turnoService.agregarFichas(any())).thenAnswer(invocation -> {
-            bot.setEjercito(bot.getEjercito() - 1);
-            return true;
-        });
-        when(estadoPaisRepository.saveAll(anyList())).thenReturn(paises);
-        when(jugadorRepository.save(any())).thenReturn(bot);
-        when(turnoService.cambiarFaseTurno(99L)).thenReturn(true);
-
-        boolean resultado = botServiceImpl.faseDefensa(bot);
-
-        assertTrue(resultado);
-        assertEquals(0, bot.getEjercito());
-        verify(turnoService, atLeast(1)).agregarFichas(any());
-        verify(estadoPaisRepository).saveAll(paises);
-        verify(jugadorRepository).save(bot);
-        verify(turnoService).cambiarFaseTurno(99L);
-    }
-    @Test
-    void faseDefensa_conEjercitoCero_noHaceNada() {
-        JugadorEntity bot = new JugadorEntity();
-        bot.setIdJugador(1L);
-        bot.setEjercito(0);
-
-        PartidaEntity partida = new PartidaEntity();
-        partida.setIdPartida(99L);
-        bot.setPartida(partida);
-
-        EstadoPaisEntity pais = new EstadoPaisEntity();
-        pais.setIdEstadoPais(10L);
-        List<EstadoPaisEntity> paises = List.of(pais);
-
-        when(estadoPaisRepository.findByJugador_IdJugador(1L)).thenReturn(paises);
-        when(turnoService.cambiarFaseTurno(99L)).thenReturn(true);
-        when(jugadorRepository.save(any())).thenReturn(bot);
-        when(estadoPaisRepository.saveAll(anyList())).thenReturn(paises);
-
-        boolean resultado = botServiceImpl.faseDefensa(bot);
-
-        assertTrue(resultado);
-        verify(turnoService, never()).agregarFichas(any());
-        verify(turnoService).cambiarFaseTurno(99L);
-        verify(jugadorRepository).save(bot);
-        verify(estadoPaisRepository).saveAll(paises);
-    }
-
 }

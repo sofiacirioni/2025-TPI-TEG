@@ -1,0 +1,137 @@
+// ── SUPERFICIES
+// Fondos con imágenes WebP — no usar gradientes para simular madera.
+// game-scene-table.webp e initial-scene-war-room.webp están en src/assets/images/
+
+.scene-game {
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+  min-height: 100vh;
+}
+
+.scene-intro {
+  background-image: url('/assets/images/initial-scene-war-room.webp');
+  background-size: cover;
+  background-position: center 30%;
+  background-attachment: fixed;
+  position: relative;
+  min-height: 100vh;
+}
+
+// Overlay de luz de lámpara
+.lamp-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 65% 55% at 50% 44%,
+    rgba(255, 200, 78, 0.15) 0%,
+    rgba(220, 148, 38, 0.06) 38%,
+    transparent 65%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+// Textura de papel
+@mixin surface-paper {
+  background-color: #EFE8CE;
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+}
+
+// Overlay de grunge/vintage para reforzar la estética "papel físico envejecido".
+// Se aplica como pseudo-elemento ::before sobre cualquier soporte de papel
+// (paper-card, modales, sobres, hojas, etc.). Blend mode multiply + opacidad 50%
+// hace que la textura oscurezca sutilmente las zonas del papel sin saturar el
+// color base (#EFE8CE). El contenedor necesita `position: relative` y sus hijos
+// directos deben declarar `position` + `z-index >= 1` para quedar por encima.
+//
+// Variación: cada variant usa distinta combinación de `background-position` +
+// transform (flip horizontal/vertical, rotación 180°) para que dos superficies
+// contiguas no muestren exactamente las mismas manchas/marcas. La imagen se
+// cachea una única vez y el browser sólo recompone el blend.
+//
+// Para mantener legibilidad, los hijos directos deben declarar
+// `position: relative; z-index: 1;` — ver cada componente.
+
+@mixin _grunge-pseudo($pos, $xform, $opacity: 0.5) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/images/grunge-vintage-old-paper-texture.jpg');
+  background-size: cover;
+  background-position: $pos;
+  transform: $xform;
+  mix-blend-mode: multiply;
+  opacity: $opacity;
+  pointer-events: none;
+  border-radius: inherit;
+  // z-index: -1 dentro de un isolate keeps la textura DETRÁS del contenido
+  // del contenedor sin que sus hijos necesiten declarar z-index propio.
+  z-index: -1;
+}
+
+// Mixin conveniente para aplicar una variante en SCSS de componente.
+// Uso: @include paper-grunge(3); — si no se pasa n toma 1.
+@mixin paper-grunge($n: 1) {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    @if      $n == 1 { @include _grunge-pseudo(center,       none); }
+    @else if $n == 2 { @include _grunge-pseudo(top left,     scaleX(-1)); }
+    @else if $n == 3 { @include _grunge-pseudo(top right,    scaleY(-1)); }
+    @else if $n == 4 { @include _grunge-pseudo(bottom left,  scale(-1)); }
+    @else if $n == 5 { @include _grunge-pseudo(bottom right, scaleX(-1)); }
+    @else if $n == 6 { @include _grunge-pseudo(30% 70%,      rotate(180deg)); }
+    @else            { @include _grunge-pseudo(center,       none); }
+  }
+}
+
+// Variante sobre ::after, para superficies cuyo ::before ya está ocupado.
+@mixin paper-grunge-after($n: 1) {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    @if      $n == 1 { @include _grunge-pseudo(center,       none); }
+    @else if $n == 2 { @include _grunge-pseudo(top left,     scaleX(-1)); }
+    @else if $n == 3 { @include _grunge-pseudo(top right,    scaleY(-1)); }
+    @else if $n == 4 { @include _grunge-pseudo(bottom left,  scale(-1)); }
+    @else if $n == 5 { @include _grunge-pseudo(bottom right, scaleX(-1)); }
+    @else if $n == 6 { @include _grunge-pseudo(30% 70%,      rotate(180deg)); }
+    @else            { @include _grunge-pseudo(center,       none); }
+  }
+}
+
+// Utility clases globales — aplicables directamente desde plantillas HTML.
+// (Angular ViewEncapsulation NO scopea los selectores definidos en archivos
+// globales como éste, así que `.paper-grunge--v3` en <div> de cualquier
+// componente funciona sin @import.)
+.paper-grunge      { @include paper-grunge(1); }
+.paper-grunge--v2  { @include paper-grunge(2); }
+.paper-grunge--v3  { @include paper-grunge(3); }
+.paper-grunge--v4  { @include paper-grunge(4); }
+.paper-grunge--v5  { @include paper-grunge(5); }
+.paper-grunge--v6  { @include paper-grunge(6); }
+
+.surface-paper { @include surface-paper; }
+
+.surface-paper--card {
+  @include surface-paper;
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
+              inset 0 0 30px rgba(50, 28, 8, 0.12);
+}
+
+.surface-paper--tilt-left   { transform: rotate(-1.2deg); }
+.surface-paper--tilt-right  { transform: rotate(1.8deg);  }
+.surface-paper--tilt-slight { transform: rotate(-0.6deg); }
+
+// Sombras cálidas
+.shadow-mesa-sm { box-shadow: 0 2px 8px  rgba(0, 0, 0, 0.50); }
+.shadow-mesa-md { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.60); }
+.shadow-mesa-lg { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.70); }

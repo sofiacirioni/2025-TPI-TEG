@@ -1,0 +1,195 @@
+<div class="registro-container">
+  <form #f="ngForm" (ngSubmit)="f.form.valid && confirmarContrasenia === usuario.contrasenia && onSubmit()" novalidate>
+
+    <!-- Ficha de incorporación -->
+    <div class="ficha-incorporacion paper-grunge--v3"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="40"
+         [delay]="0"
+         [slideDuration]="600">
+
+      <div class="ficha-inner">
+
+        <!-- Encabezado -->
+        <div class="ficha-header">
+          <span class="ficha-header-izq">Cuerpo de Inteligencia — TEG</span>
+          <span class="ficha-header-der">Form. IC-44</span>
+        </div>
+
+        <!-- Título -->
+        <div class="ficha-titulo">
+          <div class="ficha-titulo-principal">· INCORPORACIÓN ·</div>
+          <div class="ficha-titulo-subtitulo">Complete los datos para solicitar acreditación</div>
+        </div>
+
+        <!-- Sección I -->
+        <div class="ficha-seccion-title">I. Datos de identidad</div>
+
+        <div class="ficha-identidad">
+
+          <!-- Slot de avatar -->
+          <div class="avatar-slot" (click)="toggleGaleria()">
+            @if (usuario.imagen) {
+              <img [src]="usuario.imagen" alt="Avatar seleccionado">
+            } @else {
+              <div class="avatar-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>ELEGIR</span>
+              </div>
+            }
+
+            @if (mostrarGaleria) {
+              <div class="avatar-galeria" (click)="$event.stopPropagation()">
+                @for (img of imagen; track img) {
+                  <img [src]="img"
+                       [class.seleccionada]="usuario.imagen === img"
+                       (click)="seleccionarImagen(img)"
+                       alt="Avatar">
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Campos de identidad -->
+          <div class="identidad-campos">
+
+            <div class="field">
+              <label class="field-label" for="usuarioInput">NOMBRE EN CLAVE</label>
+              <input class="field-input" id="usuarioInput" type="text"
+                     [(ngModel)]="usuario.usuario" name="usuarioInput"
+                     required maxlength="50"
+                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9 _-]+$"
+                     #usuarioRef="ngModel"
+                     placeholder="Usuario"
+                     autocomplete="username">
+              @if (usuarioRef.invalid && (usuarioRef.dirty || usuarioRef.touched)) {
+                @if (usuarioRef.errors?.['required']) {
+                  <span class="field-error">▸ El usuario es obligatorio</span>
+                } @else if (usuarioRef.errors?.['pattern']) {
+                  <span class="field-error">▸ Solo letras, números, guiones y espacios</span>
+                }
+              }
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="correo">CORREO</label>
+              <input class="field-input" id="correo" type="email"
+                     [(ngModel)]="usuario.correo" name="correo"
+                     required email maxlength="100"
+                     #correo="ngModel"
+                     placeholder="Dirección de correo"
+                     autocomplete="email">
+              @if (correo.invalid && (correo.dirty || correo.touched)) {
+                <span class="field-error">▸ Correo inválido</span>
+              }
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sección II -->
+        <div class="ficha-seccion-title">II. Credenciales de acceso</div>
+
+        <div class="ficha-credenciales">
+
+          <div class="field">
+            <label class="field-label" for="contrasenia">CLAVE SECRETA</label>
+            <div class="field-input-wrapper">
+              <input class="field-input" id="contrasenia"
+                     [type]="showPassword ? 'text' : 'password'"
+                     [(ngModel)]="usuario.contrasenia" name="contrasenia"
+                     required minlength="8" maxlength="100"
+                     pattern="^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{8,}$"
+                     #pass="ngModel"
+                     placeholder="Mínimo 8 caracteres"
+                     autocomplete="new-password">
+              <button type="button" class="toggle-password" (click)="togglePassword()"
+                      [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                @if (!showPassword) {
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                }
+                @if (showPassword) {
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (pass.invalid && (pass.dirty || pass.touched)) {
+              @if (pass.errors?.['required']) {
+                <span class="field-error">▸ La contraseña es obligatoria</span>
+              } @else if (pass.errors?.['minlength']) {
+                <span class="field-error">▸ Mínimo 8 caracteres</span>
+              } @else if (pass.errors?.['pattern']) {
+                <span class="field-error">▸ Requiere mayúscula, número y carácter especial</span>
+              }
+            }
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="confirmarClave">CONFIRMAR CLAVE</label>
+            <div class="field-input-wrapper">
+              <input class="field-input" id="confirmarClave"
+                     [type]="showConfirmPassword ? 'text' : 'password'"
+                     [(ngModel)]="confirmarContrasenia" name="confirmarClave"
+                     required maxlength="100"
+                     placeholder="Repetir clave secreta"
+                     autocomplete="new-password">
+              <button type="button" class="toggle-password" (click)="toggleConfirmPassword()"
+                      [attr.aria-label]="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                @if (!showConfirmPassword) {
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                }
+                @if (showConfirmPassword) {
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (confirmarContrasenia && confirmarContrasenia !== usuario.contrasenia) {
+              <span class="field-error">▸ Las claves no coinciden</span>
+            }
+          </div>
+
+        </div>
+
+        <!-- Sello -->
+        <div class="ficha-sello-wrap">
+          <app-stamp type="teg-stamp" [rotation]="8" [opacity]="0.55" [blend]="true"></app-stamp>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="registro-actions"
+         appSlideIn
+         [slideFrom]="'bottom'"
+         [slideDistance]="24"
+         [delay]="150"
+         [slideDuration]="500">
+      <button type="submit" class="btn-teg-primary"
+              [disabled]="f.invalid || confirmarContrasenia !== usuario.contrasenia">
+        · SOLICITAR ·
+      </button>
+      <div class="registro-login">
+        <span class="registro-login-texto">¿Ya tiene credenciales?</span>
+        <a class="registro-login-link" routerLink="/iniciar-sesion">Presentar pase</a>
+      </div>
+    </div>
+
+  </form>
+</div>

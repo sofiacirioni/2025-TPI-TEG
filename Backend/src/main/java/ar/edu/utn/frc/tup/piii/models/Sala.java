@@ -1,8 +1,6 @@
 
 package ar.edu.utn.frc.tup.piii.models;
 
-import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +25,7 @@ public class Sala {
     public boolean listaJugadoresCompleta() {
         return jugadores != null && jugadores.size() >= 2 && jugadores.size() <= 6;
     }
+
     public boolean esCreador(Usuario usuario) {
         return creador != null && creador.getIdUsuario() == usuario.getIdUsuario();
     }

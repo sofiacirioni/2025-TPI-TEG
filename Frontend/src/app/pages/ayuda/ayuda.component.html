@@ -1,0 +1,59 @@
+<!-- El reglamento como carpeta de archivo sobre la mesa: una pestaña por
+     sección y la hoja mecanografiada adentro. -->
+<div class="ayuda-escena" [class.scene-game]="!incrustado" [class.ayuda-escena--incrustada]="incrustado">
+  @if (!incrustado) {
+    <div class="lamp-overlay" aria-hidden="true"></div>
+  }
+
+  <div class="carpeta">
+    <!-- Tapa trasera: el cartón que asoma por arriba y por el costado -->
+    <div class="carpeta-atras" aria-hidden="true"></div>
+
+    <div class="carpeta-pestanias" role="tablist" aria-label="Secciones del reglamento">
+      @for (s of secciones; track s.id) {
+        <button
+          type="button"
+          role="tab"
+          class="pestania paper-grunge--v2"
+          [class.pestania--activa]="s.id === seccionActiva"
+          [attr.aria-selected]="s.id === seccionActiva"
+          [attr.aria-controls]="'panel-' + s.id"
+          (click)="cambiarSeccion(s.id)">
+          {{ s.pestania }}
+        </button>
+      }
+    </div>
+
+    <div class="carpeta-tapa paper-grunge">
+      <!-- La hoja mecanografiada que la carpeta contiene -->
+      <article
+        class="hoja paper-grunge--v3"
+        role="tabpanel"
+        [id]="'panel-' + seccion.id">
+        <header class="hoja-encabezado">
+          <h1 class="hoja-titulo">{{ seccion.titulo }}</h1>
+          <span class="hoja-referencia">Reglamento · {{ seccion.pestania }}</span>
+        </header>
+
+        @for (a of seccion.apartados; track a.subtitulo) {
+          <section class="apartado">
+            <h2 class="apartado-subtitulo">{{ a.subtitulo }}</h2>
+            @if (lineas(a.texto).length > 1) {
+              <ul class="apartado-lista">
+                @for (linea of lineas(a.texto); track linea) {
+                  <li>{{ linea }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="apartado-texto">{{ a.texto }}</p>
+            }
+          </section>
+        }
+      </article>
+    </div>
+  </div>
+
+  @if (!incrustado) {
+    <button type="button" class="btn-volver" (click)="volver()">Volver</button>
+  }
+</div>

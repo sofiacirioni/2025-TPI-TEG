@@ -6,7 +6,6 @@ import ar.edu.utn.frc.tup.piii.models.Jugador;
 import ar.edu.utn.frc.tup.piii.models.Sala;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +18,7 @@ public class MappersConfig {
 
     /**
      * The ModelMapper bean by default.
+     * 
      * @return the ModelMapper by default.
      */
     @Bean
@@ -39,18 +39,20 @@ public class MappersConfig {
     }
     /**
      * The ModelMapper bean to merge objects.
+     * 
      * @return the ModelMapper to use in updates.
      */
-//    @Bean("mergerMapper")
-//    public ModelMapper mergerMapper() {
-//        ModelMapper mapper =  new ModelMapper();
-//        mapper.getConfiguration()
-//                .setPropertyCondition(Conditions.isNotNull());
-//        return mapper;
-//    }
+    // @Bean("mergerMapper")
+    // public ModelMapper mergerMapper() {
+    // ModelMapper mapper = new ModelMapper();
+    // mapper.getConfiguration()
+    // .setPropertyCondition(Conditions.isNotNull());
+    // return mapper;
+    // }
 
     /**
      * The ObjectMapper bean.
+     * 
      * @return the ObjectMapper with JavaTimeModule included.
      */
     @Bean

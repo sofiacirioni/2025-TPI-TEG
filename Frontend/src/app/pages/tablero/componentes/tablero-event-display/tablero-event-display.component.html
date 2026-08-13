@@ -1,0 +1,240 @@
+@if (visible && currentEvent) {
+  @if (currentEvent.tipo === 'ATAQUE_INICIADO' || currentEvent.tipo === 'RESULTADO_DADOS' || currentEvent.tipo === 'CONQUISTA' || mostrandoConquista) {
+    <div class="ted-vignette"
+         [class.conquista-vignette]="mostrandoConquista"
+         [class.clickable]="currentEvent.tipo !== 'ATAQUE_INICIADO'"
+         (click)="onBackdropClick()"></div>
+  }
+
+  @if (currentEvent.tipo !== 'ATAQUE_INICIADO' && currentEvent.tipo !== 'RESULTADO_DADOS' && currentEvent.tipo !== 'CONQUISTA' && !mostrandoConquista) {
+    <div class="ted-notif-backdrop clickable" (click)="onBackdropClick()"></div>
+  }
+
+  <div class="ted-wrapper" [class.dismissing]="dismissing" [attr.aria-live]="'polite'">
+
+    <!-- ════════════════════════════════════════════════════════
+         COMBATE ACTIVO (ATAQUE_INICIADO) — rol-based
+         ════════════════════════════════════════════════════════ -->
+    @if (currentEvent.tipo === 'ATAQUE_INICIADO' && currentEvent.diceSelection) {
+      <div class="ted-combat-panel paper-grunge--v4" role="dialog" aria-modal="true" aria-labelledby="ted-combat-title">
+
+        <div class="ted-combat-header">
+          <img class="ted-attack-icon" src="assets/vectors/tablero/icons/attack-icon.svg" alt="" aria-hidden="true" />
+          <span id="ted-combat-title" class="ted-combat-title">
+            {{ rol === 'local' ? 'ELEGÍ TUS DADOS' : 'ATAQUE EN CURSO' }}
+          </span>
+          <img class="ted-attack-icon" src="assets/vectors/tablero/icons/attack-icon.svg" alt="" aria-hidden="true" />
+        </div>
+        <div class="ted-combat-divider"></div>
+
+        <div class="ted-battle-grid">
+          <span class="ted-battle-bg-icon" aria-hidden="true"></span>
+
+          <div class="ted-battle-col atk">
+            <span class="ted-country-lbl">Desde:</span>
+            <span class="ted-country-name">{{ currentEvent.paisOrigen | nombrePais }}</span>
+            <div class="ted-player-row">
+              <img class="ted-player-ficha" [src]="getFichaPath(currentEvent.colorJugadorKey)" alt="" aria-hidden="true" />
+              <span class="ted-player-name" [style.color]="getColorHex(currentEvent.colorJugadorKey)">{{ currentEvent.jugadorActivo }}</span>
+            </div>
+            @if (!puedeSeleccionarDados() && rol !== 'local') {
+              <div class="ted-dice-row">
+                @for (_ of range(currentEvent.diceSelection.cantDadosAtacante ?? 1); track $index) {
+                  <img class="ted-dice-png" [src]="getDadoImg(1, 'white')" alt="" [class.giro]="!atacanteLanzo" />
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ted-battle-center">
+            <span class="ted-arrow" aria-hidden="true">➜</span>
+          </div>
+
+          <div class="ted-battle-col def">
+            <span class="ted-country-lbl">Hacia:</span>
+            <span class="ted-country-name">{{ currentEvent.paisDestino | nombrePais }}</span>
+            <div class="ted-player-row">
+              <img class="ted-player-ficha" [src]="getFichaPath(currentEvent.colorDefensorKey)" alt="" aria-hidden="true" />
+              <span class="ted-player-name" [style.color]="getColorHex(currentEvent.colorDefensorKey)">{{ currentEvent.jugadorDefensor || '—' }}</span>
+            </div>
+            @if (!puedeSeleccionarDados() && rol !== 'local') {
+              <div class="ted-dice-row">
+                @for (_ of range(rol === 'defensor' ? dadosSeleccionados : currentEvent.diceSelection.maxDados); track $index) {
+                  <img class="ted-dice-png" [src]="getDadoImg(1, 'black')" alt="" [class.giro]="!defensorLanzo" />
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (puedeSeleccionarDados()) {
+          <div class="ted-dice-selector">
+            <span class="ted-dice-lbl">
+              {{ rol === 'defensor' ? 'DADOS DE DEFENSA' : 'DADOS A USAR' }}
+            </span>
+            <div class="ted-dice-btns" role="group" aria-label="Cantidad de dados">
+              @for (n of range(maxDados); track n) {
+                <button class="ted-dice-btn"
+                        [class.selected]="dadosSeleccionados === n"
+                        (click)="seleccionarDados(n)"
+                        [attr.aria-pressed]="dadosSeleccionados === n">
+                  {{ n }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="ted-timer"
+             [class.urgente]="timerValue <= 2"
+             [class.pausado]="(rol === 'defensor' && defensorLanzo) || (rol === 'atacante' && atacanteLanzo)">
+          <span class="ted-timer-val">{{ timerValue }}</span>
+          <span class="ted-timer-lbl">seg.</span>
+        </div>
+
+        @if (rol === 'espectador') {
+          <div class="ted-espectador-lbl">· COMBATE EN CURSO ·</div>
+        } @else if (rol === 'atacante' && atacanteLanzo) {
+          <div class="ted-espectador-lbl">· ESPERANDO DEFENSOR ·</div>
+        } @else if (rol === 'defensor' && defensorLanzo) {
+          <div class="ted-espectador-lbl">· ESPERANDO RESULTADO ·</div>
+        }
+
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         RESULTADO — slot-machine 3s, banderines L/R
+         ════════════════════════════════════════════════════════ -->
+    @if ((currentEvent.tipo === 'RESULTADO_DADOS' || currentEvent.tipo === 'CONQUISTA') && !mostrandoConquista) {
+      <div class="ted-result-panel paper-grunge--v5" [class.slot-shake]="slotMachineActive">
+
+        <div class="ted-combat-header">
+          <img class="ted-attack-icon" src="assets/vectors/tablero/icons/attack-icon.svg" alt="" aria-hidden="true" />
+          <span class="ted-combat-title">{{ slotMachineActive ? 'COMBATIENDO...' : (currentEvent.titulo || 'RESULTADO') }}</span>
+          <img class="ted-attack-icon" src="assets/vectors/tablero/icons/attack-icon.svg" alt="" aria-hidden="true" />
+        </div>
+        <div class="ted-combat-divider"></div>
+
+        <div class="ted-battle-grid">
+          <span class="ted-battle-bg-icon" aria-hidden="true"></span>
+
+          <div class="ted-battle-col atk">
+            <span class="ted-country-lbl">Desde:</span>
+            <span class="ted-country-name">{{ currentEvent.paisOrigen | nombrePais }}</span>
+            <div class="ted-player-row">
+              <img class="ted-player-ficha" [src]="getFichaPath(currentEvent.colorJugadorKey)" alt="" aria-hidden="true" />
+              <span class="ted-player-name" [style.color]="getColorHex(currentEvent.colorJugadorKey)">{{ currentEvent.jugadorActivo }}</span>
+            </div>
+            @if (slotMachineActive) {
+              <div class="ted-dice-row">
+                @for (v of slotDadosAtk; track $index) {
+                  <img class="ted-dice-png slot" [src]="getDadoImg(v, 'white')" alt="" />
+                }
+              </div>
+            } @else {
+              <div class="ted-dice-row">
+                @for (d of dadosAtaqueAnimados; track $index) {
+                  <img class="ted-dice-png"
+                       [src]="getDadoImg(d.valor, 'white')"
+                       [class.animado]="d.animado"
+                       [class.perdedor]="d.perdedor"
+                       alt="" />
+                }
+              </div>
+              @if ((currentEvent.perdidasAtacante ?? 0) > 0) {
+                <span class="ted-perdidas">-{{ currentEvent.perdidasAtacante }} ej.</span>
+              }
+            }
+          </div>
+
+          <div class="ted-battle-center">
+            <span class="ted-arrow" aria-hidden="true">➜</span>
+          </div>
+
+          <div class="ted-battle-col def">
+            <span class="ted-country-lbl">Hacia:</span>
+            <span class="ted-country-name">{{ currentEvent.paisDestino | nombrePais }}</span>
+            <div class="ted-player-row">
+              <img class="ted-player-ficha" [src]="getFichaPath(currentEvent.colorDefensorKey)" alt="" aria-hidden="true" />
+              <span class="ted-player-name" [style.color]="getColorHex(currentEvent.colorDefensorKey)">{{ currentEvent.jugadorDefensor || '—' }}</span>
+            </div>
+            @if (slotMachineActive) {
+              <div class="ted-dice-row">
+                @for (v of slotDadosDef; track $index) {
+                  <img class="ted-dice-png slot" [src]="getDadoImg(v, 'black')" alt="" />
+                }
+              </div>
+            } @else {
+              <div class="ted-dice-row">
+                @for (d of dadosDefensorAnimados; track $index) {
+                  <img class="ted-dice-png"
+                       [src]="getDadoImg(d.valor, 'black')"
+                       [class.animado]="d.animado"
+                       [class.perdedor]="d.perdedor"
+                       alt="" />
+                }
+              </div>
+              @if ((currentEvent.perdidasDefensor ?? 0) > 0) {
+                <span class="ted-perdidas">-{{ currentEvent.perdidasDefensor }} ej.</span>
+              }
+            }
+          </div>
+        </div>
+
+        @if (!slotMachineActive) {
+          <span class="ted-resultado-lbl">Resultado:</span>
+          <div class="ted-result-banner" [style.--banner-color]="ganadorColor">
+            <span class="ted-banderin banderin-l" aria-hidden="true"></span>
+            <span class="ted-result-text" [class.conquista]="currentEvent.conquista">{{ textoResultado }}</span>
+            <span class="ted-banderin banderin-r" aria-hidden="true"></span>
+          </div>
+        }
+
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         FASE CONQUISTA (post-resultado)
+         ════════════════════════════════════════════════════════ -->
+    @if (mostrandoConquista) {
+      <div class="ted-conquista-panel paper-grunge--v2">
+        <div class="ted-conquista-star">★</div>
+        <div class="ted-conquista-titulo">¡CONQUISTA!</div>
+        <div class="ted-conquista-info" [style.color]="getColorHex(currentEvent.colorJugadorKey)">
+          {{ currentEvent.jugadorActivo }}
+        </div>
+        <div class="ted-conquista-texto">
+          conquistó <strong>{{ currentEvent.paisDestino | nombrePais }}</strong>
+        </div>
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════════════════════
+         NOTIFICACIÓN SIMPLE
+         ════════════════════════════════════════════════════════ -->
+    @if (currentEvent.tipo !== 'ATAQUE_INICIADO'
+         && currentEvent.tipo !== 'RESULTADO_DADOS'
+         && currentEvent.tipo !== 'CONQUISTA') {
+      <div class="ted-notif paper-grunge--v6"
+           role="status"
+           [style.--player-color]="currentEvent.colorJugador ?? 'var(--player-rojo)'">
+
+        <div class="ted-notif-stripe"></div>
+
+        <div class="ted-notif-body">
+          <span class="ted-notif-icon">{{ getIconoEvento() }}</span>
+          <div class="ted-notif-text">
+            <span class="ted-notif-titulo">{{ currentEvent.titulo }}</span>
+            @if (currentEvent.descripcion) {
+              <span class="ted-notif-desc">{{ currentEvent.descripcion }}</span>
+            }
+          </div>
+          <button class="ted-notif-close" type="button" aria-label="Cerrar" (click)="cerrarManual(); $event.stopPropagation()">✕</button>
+        </div>
+
+      </div>
+    }
+
+  </div>
+}

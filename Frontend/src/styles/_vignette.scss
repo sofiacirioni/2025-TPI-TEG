@@ -1,0 +1,16 @@
+// ── VIÑETA GLOBAL
+// Agrega <div class="vignette-global"></div> como primer hijo de app.component.html
+
+.vignette-global {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 72% at 50% 48%,
+    transparent 10%,
+    rgba(4, 2, 1, 0.55) 62%,
+    rgba(4, 2, 1, 0.65) 80%,
+    #040201 100%
+  );
+  pointer-events: none;
+  z-index: 9999;
+}

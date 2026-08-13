@@ -1,0 +1,41 @@
+.intro-screen {
+  position: fixed;
+  inset: 0;
+  background: #080603;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.black-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+
+  &.black-overlay--active {
+    opacity: 1;
+  }
+}
+
+.terminal {
+  width: min(700px, 90vw);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--color-claro);
+  letter-spacing: 0.08em;
+  line-height: 1.9;
+}
+
+.line {
+  display: block;
+  white-space: pre;
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 1px;
+  transition: opacity 50ms;
+}

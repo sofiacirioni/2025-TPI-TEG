@@ -1,0 +1,108 @@
+// ── BOTONES TEG
+
+%btn-teg-base {
+  font-family: 'Special Elite', serif;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 14px 28px 10px;
+  background: transparent;
+  cursor: url('/assets/vectors/cursors/hand-pointer.svg') 60 36, pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-width: 1px;
+  border-style: solid;
+  text-decoration: none;
+
+  &:active { transform: scale(0.97); }
+
+  &:disabled,
+  &[disabled] {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+// Sobre fondo claro (#EFE8CE)
+.btn-teg-light {
+  @extend %btn-teg-base;
+  color: #432A1E;
+  border-color: rgba(67, 42, 30, 0.45);
+
+  &:hover {
+    background: rgba(67, 42, 30, 0.08);
+    border-color: rgba(67, 42, 30, 0.75);
+    color: #432A1E;
+  }
+}
+
+// Sobre fondo oscuro (mesa)
+.btn-teg-dark {
+  @extend %btn-teg-base;
+  color: rgba(239, 232, 206, 0.88);
+  border-color: rgba(239, 232, 206, 0.32);
+
+  &:hover {
+    background: rgba(239, 232, 206, 0.10);
+    border-color: rgba(239, 232, 206, 0.65);
+    color: rgba(239, 232, 206, 1);
+  }
+}
+
+// Botón primario de acción — fondo verde oscuro ($color-secondary)
+// Usar para acciones principales sobre fondo oscuro o claro
+// Hover: verde más oscuro (darken 8%)
+.btn-teg-primary {
+  @extend %btn-teg-base;
+  background-color: $color-secondary;
+  color: rgba(239, 232, 206, 0.92);
+  border-color: $color-secondary;
+
+  &:hover {
+    background-color: darken($color-secondary, 8%);
+    border-color: darken($color-secondary, 8%);
+    color: rgba(239, 232, 206, 1);
+  }
+
+  &:active {
+    transform: scale(0.97);
+    background-color: darken($color-secondary, 15%);
+  }
+
+  &:disabled,
+  &[disabled] {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+// Acción de peligro (atacar, eliminar, confirmar acción irreversible)
+.btn-teg-danger {
+  @extend %btn-teg-base;
+  color: #A01515;
+  border-color: rgba(160, 21, 21, 0.45);
+
+  &:hover {
+    background: rgba(160, 21, 21, 0.10);
+    border-color: rgba(160, 21, 21, 0.8);
+    color: #A01515;
+  }
+}
+
+// Volver — el mismo botón, en la misma esquina, en todas las pantallas.
+// Va fijo arriba a la izquierda: el jugador no tiene que buscar la salida de
+// cada pantalla en un lugar distinto. Es global (no de componente) justamente
+// para que no vuelva a divergir.
+.btn-volver {
+  @extend .btn-teg-dark;
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+  font-size: 12px;
+  padding: 11px 22px 8px;
+}

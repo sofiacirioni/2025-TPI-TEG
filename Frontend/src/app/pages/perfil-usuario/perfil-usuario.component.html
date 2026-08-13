@@ -1,0 +1,279 @@
+<!-- Legajo del comandante: la libreta de enrolamiento y la hoja de servicios,
+     apoyadas sobre la mesa del cuarto de operaciones. -->
+<div class="legajo-escena scene-game">
+  <div class="lamp-overlay" aria-hidden="true"></div>
+
+  <div class="legajo-mesa">
+
+    <!-- ── Libreta de enrolamiento ─────────────────────────────────── -->
+    <article class="libreta">
+
+      <!-- Página izquierda: los datos, escritos a mano sobre el formulario -->
+      <div class="libreta-hoja libreta-hoja--izq paper-grunge">
+        <header class="libreta-encabezado">
+          <span class="libreta-fuerza">EJERCITO DE OPERACIONES</span>
+        </header>
+
+        <dl class="legajo-campos">
+          <div class="legajo-campo">
+            <dt>Comandante</dt>
+            <dd class="manuscrito">{{ usuario?.usuario || '—' }}</dd>
+          </div>
+          <div class="legajo-campo">
+            <dt>Correo</dt>
+            <dd class="manuscrito manuscrito--chico">{{ usuario?.correo || '—' }}</dd>
+          </div>
+          <div class="legajo-campo">
+            <dt>Destino</dt>
+            <dd class="manuscrito manuscrito--chico">{{ destino }}</dd>
+          </div>
+          <div class="legajo-campo">
+            <dt>Alta</dt>
+            <dd class="manuscrito manuscrito--chico">{{ fechaAltaFormateada }}</dd>
+          </div>
+        </dl>
+
+        @if (aviso) {
+          <p class="legajo-aviso" role="status">{{ aviso }}</p>
+        }
+
+        <div class="legajo-tramites">
+          <button type="button" class="btn-teg-light" (click)="mostrarRectificar = true">
+            · RECTIFICAR CLAVE ·
+          </button>
+          <!-- Dice "cerrar sesión" y no "licenciarse": en jerga militar
+               licenciarse es darse de baja del servicio, y al lado de
+               "rectificar clave" se leía como borrar la cuenta. -->
+          <button type="button" class="btn-teg-light" (click)="cerrarSesion()">
+            · CERRAR SESIÓN ·
+          </button>
+        </div>
+
+        <!-- Las dos firmas del pie, como en la libreta real -->
+        <div class="legajo-firmas">
+          <p class="legajo-firma">Firma del titular</p>
+          <p class="legajo-firma">Firma jefe de unidad</p>
+        </div>
+      </div>
+
+      <!-- Página derecha: la fotografía sellada -->
+      <div class="libreta-hoja libreta-hoja--der paper-grunge--v2">
+        <span class="libreta-codigo">Codigo {{ codigoLegajo }}</span>
+
+        <div class="legajo-foto">
+          @if (usuario?.imagen) {
+            <img [src]="usuario?.imagen" alt="Fotografía de legajo" class="legajo-foto-img">
+          } @else {
+            <span class="legajo-foto-vacia">SIN<br>FOTOGRAFIA</span>
+          }
+          <app-stamp
+            class="legajo-sello"
+            type="teg-stamp"
+            [rotation]="8"
+            [opacity]="0.55"
+            [blend]="true"></app-stamp>
+        </div>
+
+        <button type="button" class="legajo-cambiar-foto" (click)="mostrarGaleria = true">
+          · Cambiar fotografía ·
+        </button>
+
+        <!-- Los dos recuadros del pie, donde la libreta real lleva el grupo
+             sanguíneo y la firma del oficial. -->
+        <div class="legajo-recuadros">
+          <div class="legajo-recuadro">
+            <span class="legajo-recuadro-etiqueta">Divisa</span>
+            <span class="legajo-recuadro-valor">
+              <i class="legajo-divisa" [style.background]="colorDestino" aria-hidden="true"></i>
+              {{ destino }}
+            </span>
+          </div>
+          <div class="legajo-recuadro legajo-recuadro--angosto">
+            <span class="legajo-recuadro-etiqueta">Situación</span>
+            <span class="legajo-recuadro-valor">En servicio</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ── Hoja de servicios ───────────────────────────────────────── -->
+    <section class="servicios paper-grunge--v3">
+      <header class="servicios-encabezado">
+        <h1 class="servicios-titulo">HOJA DE SERVICIOS</h1>
+        <span class="servicios-subtitulo">Acumulado del comandante</span>
+      </header>
+
+      @if (cargandoHistorial) {
+        <p class="servicios-aviso">Recuperando el legajo…</p>
+      } @else if (errorHistorial || !historial) {
+        <p class="servicios-aviso">No se pudo recuperar la hoja de servicios.</p>
+      } @else {
+
+        <!-- Condecoraciones: las medallas apoyadas sobre la hoja. Sin campañas
+             concluidas no hay medallero que mostrar, sólo tres ceros. -->
+        @if (sinCampanias) {
+          <p class="servicios-aviso servicios-aviso--menor">
+            Todavía sin condecoraciones: ninguna campaña llegó a su desenlace.
+          </p>
+        } @else {
+        <div class="medallero">
+          <div class="medalla medalla--oro">
+            <img src="/assets/images/tablero/medallas/gold-medal.png" alt="Victorias">
+            <span class="medalla-cuenta">×{{ historial.victorias }}</span>
+          </div>
+          <div class="medalla medalla--plata">
+            <img src="/assets/images/tablero/medallas/silver-medal.png" alt="Segundos puestos">
+            <span class="medalla-cuenta">×{{ historial.segundosPuestos }}</span>
+          </div>
+          <div class="medalla medalla--bronce">
+            <img src="/assets/images/tablero/medallas/bronze-medal.png" alt="Terceros puestos">
+            <span class="medalla-cuenta">×{{ historial.terceroPuestos }}</span>
+          </div>
+        </div>
+        }
+
+        <div class="cifras">
+          <div class="cifra cifra--destacada">
+            <b>{{ historial.campaniasLibradas }}</b>
+            <span>CAMPAÑAS</span>
+          </div>
+          <div class="cifra cifra--destacada">
+            <b>{{ historial.tasaVictoria }}%</b>
+            <span>VICTORIAS</span>
+          </div>
+          <div class="cifra">
+            <b>{{ historial.efectividad }}%</b>
+            <span>EFECTIVIDAD</span>
+          </div>
+          <div class="cifra">
+            <b>{{ historial.ratioBajas }}</b>
+            <span>RATIO BAJAS</span>
+          </div>
+        </div>
+
+        <dl class="detalle">
+          <div class="detalle-fila">
+            <dt>Ataques lanzados</dt>
+            <dd>{{ historial.ataquesLanzados }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Países conquistados</dt>
+            <dd>{{ historial.conquistas }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Defensas resistidas</dt>
+            <dd>{{ historial.defensasResistidas }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Comandantes abatidos</dt>
+            <dd>{{ historial.comandantesAbatidos }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Tropas infligidas / sufridas</dt>
+            <dd>{{ historial.tropasAbatidas }} / {{ historial.tropasPerdidas }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Canjes de tarjetas</dt>
+            <dd>{{ historial.canjesRealizados }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Tratados firmados</dt>
+            <dd>{{ historial.tratadosFirmados }}</dd>
+          </div>
+          <div class="detalle-fila">
+            <dt>Tratados rotos por usted</dt>
+            <dd>{{ historial.tratadosRotos }}</dd>
+          </div>
+        </dl>
+
+        <h2 class="registro-titulo">
+          REGISTRO DE CAMPAÑAS
+          <span class="registro-alcance">últimas {{ historial.campanias.length }}</span>
+        </h2>
+
+        @if (!historial.campanias.length) {
+          <p class="servicios-aviso servicios-aviso--menor">
+            Sin campañas registradas. El legajo se completa al terminar la primera partida.
+          </p>
+        } @else {
+          <ul class="registro">
+            @for (c of historial.campanias; track c.idPartida) {
+              <li class="registro-linea">
+                <button type="button" class="registro-boton" (click)="verParte(c)">
+                  <i class="registro-divisa" [style.background]="colorVarPara(c.color)" aria-hidden="true"></i>
+                  <span class="registro-fecha">{{ fechaCampania(c) }}</span>
+                  <span class="registro-resultado"
+                        [class.registro-resultado--victoria]="c.ganador"
+                        [class.registro-resultado--curso]="!c.terminada">
+                    {{ resultadoDe(c) }}
+                  </span>
+                  <span class="registro-detalle">
+                    {{ c.comandantes }} comandantes · {{ c.turnosJugados }} turnos
+                  </span>
+                  <span class="registro-parte">ver parte ▸</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        <p class="servicios-nota">
+          Efectividad = conquistas sobre ataques · Ratio de bajas = infligidas sobre sufridas ·
+          Las campañas en curso figuran en el registro pero no suman al acumulado
+        </p>
+      }
+    </section>
+  </div>
+
+  <button type="button" class="btn-volver" (click)="volver()">Volver</button>
+</div>
+
+<!-- ── Trámite: rectificación de clave ───────────────────────────────── -->
+@if (mostrarRectificar) {
+  <div class="tramite-overlay" (click)="cerrarRectificar()">
+    <form class="tramite paper-grunge--v4" (click)="$event.stopPropagation()" (ngSubmit)="rectificarClave()">
+      <button type="button" class="tramite-cerrar" (click)="cerrarRectificar()" aria-label="Cerrar">✕</button>
+      <h2 class="tramite-titulo">· RECTIFICACION DE CLAVE ·</h2>
+      <p class="tramite-instruccion">Presente la clave vigente antes de asignar una nueva.</p>
+
+      <label class="tramite-campo">
+        <span class="tramite-label">CLAVE VIGENTE</span>
+        <input type="password" name="actual" autocomplete="current-password"
+               [(ngModel)]="contraseniaActual" required>
+      </label>
+
+      <label class="tramite-campo">
+        <span class="tramite-label">CLAVE NUEVA</span>
+        <input type="password" name="nueva" autocomplete="new-password"
+               [(ngModel)]="nuevaContrasenia" required>
+      </label>
+
+      @if (errorClave) {
+        <p class="tramite-error">▸ {{ errorClave }}</p>
+      }
+
+      <button type="submit" class="btn-teg-primary">· ASENTAR ·</button>
+    </form>
+  </div>
+}
+
+<!-- ── Trámite: fotografía de legajo ─────────────────────────────────── -->
+@if (mostrarGaleria) {
+  <div class="tramite-overlay" (click)="mostrarGaleria = false">
+    <div class="tramite paper-grunge--v5" (click)="$event.stopPropagation()">
+      <button type="button" class="tramite-cerrar" (click)="mostrarGaleria = false" aria-label="Cerrar">✕</button>
+      <h2 class="tramite-titulo">· FOTOGRAFIA DE LEGAJO ·</h2>
+      <p class="tramite-instruccion">Seleccione la fotografía que se adjunta a la libreta.</p>
+
+      <div class="galeria">
+        @for (img of avatares; track img) {
+          <button type="button" class="galeria-opcion"
+                  [class.galeria-opcion--elegida]="usuario?.imagen === img"
+                  (click)="seleccionarImagen(img)">
+            <img [src]="img" alt="Fotografía disponible">
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

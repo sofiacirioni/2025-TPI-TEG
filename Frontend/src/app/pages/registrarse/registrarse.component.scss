@@ -1,0 +1,396 @@
+// registrarse v2
+// ── Host ───────────────────────────────────────────────────────────────────
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ── Fondo / Contenedor ─────────────────────────────────────────────────────
+.registro-container {
+  background-image: url('/assets/images/game-scene-table.webp');
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem 1rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+// ── Ficha de incorporación ──────────────────────────────────────────────────
+.ficha-incorporacion {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  background-color: var(--color-claro);
+  background-image: repeating-linear-gradient(
+    44deg,
+    rgba(88, 58, 24, 0.045) 0px, rgba(88, 58, 24, 0.045) 1px,
+    transparent 1px, transparent 9px
+  );
+  border-radius: 2px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    inset 0 0 40px rgba(50, 28, 8, 0.10),
+    inset 0 0 0 16px #EFE8CE,
+    inset 0 0 0 17px rgba(67, 42, 30, 0.2);
+  transform: rotate(0.3deg);
+  overflow: visible;
+}
+
+// ── Contenedor interno ─────────────────────────────────────────────────────
+.ficha-inner {
+  margin: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+// ── Encabezado ─────────────────────────────────────────────────────────────
+.ficha-header {
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  margin-bottom: 0.75rem;
+}
+
+.ficha-header-izq {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: rgba(67, 42, 30, 0.6);
+}
+
+.ficha-header-der {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: rgba(67, 42, 30, 0.6);
+}
+
+// ── Título ─────────────────────────────────────────────────────────────────
+.ficha-titulo {
+  text-align: center;
+  padding: 0.5rem 0 0;
+  margin-bottom: 2rem;
+}
+
+.ficha-titulo-principal {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.15em;
+  color: var(--color-sello);
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.ficha-titulo-subtitulo {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 13px;
+  color: rgba(67, 42, 30, 0.9);
+}
+
+// ── Títulos de sección ─────────────────────────────────────────────────────
+.ficha-seccion-title {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: rgba(67, 42, 30, 0.45);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  padding: 0 1rem 4px;
+  margin-bottom: 0.75rem;
+}
+
+// ── Sección I: Identidad ───────────────────────────────────────────────────
+.ficha-identidad {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+// Slot de avatar
+.avatar-slot {
+  width: 120px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  border: 1px solid rgba(160, 21, 21, 0.3);
+  border-radius: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(160, 21, 21, 0.04);
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+
+  // Imagen seleccionada como preview (hijo directo, no las de la galería)
+  > img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 1px;
+    display: block;
+  }
+}
+
+.avatar-placeholder {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    stroke: rgba(67, 42, 30, 0.25);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  span {
+    font-family: var(--font-heading);
+    font-size: 7px;
+    letter-spacing: 0.08em;
+    color: rgba(67, 42, 30, 0.4);
+    text-align: center;
+  }
+}
+
+// Galería desplegable
+.avatar-galeria {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: var(--color-claro);
+  border: 1px solid rgba(160, 21, 21, 0.3);
+  border-radius: 2px;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(4, 64px);
+  gap: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+
+  img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color var(--transition-fast);
+    display: block;
+
+    &:hover {
+      border-color: rgba(160, 21, 21, 0.5);
+    }
+
+    &.seleccionada {
+      border-color: var(--color-sello);
+    }
+  }
+}
+
+// Campos de identidad
+.identidad-campos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 210px;
+}
+
+// ── Sección II: Credenciales ───────────────────────────────────────────────
+.ficha-credenciales {
+  margin-bottom: 0.75rem;
+  padding-left: 1rem;
+  max-width: 250px;
+}
+
+// ── Campos genéricos ───────────────────────────────────────────────────────
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 1.5rem;
+}
+
+.field-label {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--color-oscuro);
+  text-transform: uppercase;
+}
+
+.field-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.2);
+  padding: 3px 26px 3px 2px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #1A4080;
+  outline: none;
+  width: 100%;
+  transition: border-color var(--transition-fast);
+
+  &:focus {
+    border-bottom-color: rgba(160, 21, 21, 0.9);
+  }
+
+  &::placeholder {
+    color: rgba(67, 42, 30, 0.35);
+    font-size: 12px;
+  }
+}
+
+.field-error {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--color-sello);
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+// ── Toggle de contraseña ───────────────────────────────────────────────────
+.toggle-password {
+  position: absolute;
+  right: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.75;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--color-oscuro);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+// ── Sello ──────────────────────────────────────────────────────────────────
+.ficha-sello-wrap {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  width: 130px;
+  height: 130px;
+  pointer-events: none;
+}
+
+// ── Línea de firma ─────────────────────────────────────────────────────────
+.ficha-firma {
+  border-top: 0.5px solid rgba(67, 42, 30, 0.2);
+  padding-top: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 0.5rem;
+}
+
+.firma-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.firma-linea {
+  width: 140px;
+  border-bottom: 1px solid rgba(67, 42, 30, 0.35);
+  height: 20px;
+}
+
+.firma-label {
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: rgba(67, 42, 30, 0.4);
+}
+
+.ficha-nro {
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: rgba(67, 42, 30, 0.18);
+  text-align: right;
+  line-height: 1.5;
+}
+
+// ── Acciones (fuera de la ficha) ───────────────────────────────────────────
+.registro-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.registro-login {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.registro-login-texto {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(239, 232, 206, 1);
+}
+
+.registro-login-link {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-mar);
+  text-decoration: none;
+  border-bottom: 2px solid rgba(184, 216, 213, 0.35);
+  transition: border-color var(--transition-fast), opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.8;
+    border-bottom-color: rgba(184, 216, 213, 0.65);
+  }
+}

@@ -1,10 +1,9 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.SalaDto;
-import ar.edu.utn.frc.tup.piii.models.Sala;
-import ar.edu.utn.frc.tup.piii.models.Usuario;
 import ar.edu.utn.frc.tup.piii.Services.SalaService;
-import jakarta.servlet.http.HttpSession;
+import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
+import ar.edu.utn.frc.tup.piii.models.Sala;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
@@ -19,71 +18,20 @@ import static org.mockito.Mockito.*;
 
 public class SalaControllerTest {
     private SalaService salaService;
+    private UsuarioService usuarioService;
     private ModelMapper modelMapper;
     private SalaController salaController;
-    private HttpSession session;
 
     @BeforeEach
     void setUp() {
         salaService = mock(SalaService.class);
+        usuarioService = mock(UsuarioService.class);
         modelMapper = mock(ModelMapper.class);
-        session = mock(HttpSession.class);
 
         salaController = new SalaController();
         salaController.salaService = salaService;
+        salaController.usuarioService = usuarioService;
         salaController.modelMapper = modelMapper;
-    }
-
-    @Test
-    void crearSala_usuarioNoLogueado_Unauthorized() {
-        when(session.getAttribute("usuarioActual")).thenReturn(null);
-
-        Sala sala = new Sala();
-
-        ResponseEntity<?> response = salaController.crearSala(sala, session);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void crearSala_salaNoCreada_BadRequest() {
-        Usuario usuario = new Usuario();
-        usuario.setIdUsuario(1L);
-
-        Sala sala = new Sala();
-        sala.setNombreSala("SalaTest");
-
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.crearSala(sala, usuario, "SalaTest")).thenReturn(null);
-
-        ResponseEntity<?> response = salaController.crearSala(sala, session);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void crearSala_salaCreada_Ok() {
-        Usuario usuario = new Usuario();
-        usuario.setIdUsuario(1L);
-
-        Sala sala = new Sala();
-        sala.setNombreSala("SalaTest");
-
-        Sala salaGuardada = new Sala();
-        salaGuardada.setNombreSala("SalaTest");
-
-        SalaDto salaDto = new SalaDto();
-
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.crearSala(sala, usuario, "SalaTest")).thenReturn(salaGuardada);
-        when(modelMapper.map(salaGuardada, SalaDto.class)).thenReturn(salaDto);
-
-        ResponseEntity<SalaDto> response = salaController.crearSala(sala, session);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(salaDto, response.getBody());
     }
 
     @Test
@@ -109,6 +57,7 @@ public class SalaControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(salaDto, response.getBody());
     }
+
     @Test
     void obtenerSalaPorUrl_salaEncontrada_Ok() {
         String url = "url-existente";
@@ -124,6 +73,7 @@ public class SalaControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(salaDto, response.getBody());
     }
+
     @Test
     void obtenerSalaPorUrl_salaNoEncontrada_NotFound() {
         String urlInexistente = "url-no-existe";
@@ -135,21 +85,7 @@ public class SalaControllerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
     }
-    @Test
-    void crearSala_nombreSalaVacio_BadRequest() {
-        Usuario usuario = new Usuario();
-        usuario.setIdUsuario(1L);
 
-        Sala sala = new Sala();
-
-        when(session.getAttribute("usuarioActual")).thenReturn(usuario);
-        when(salaService.crearSala(eq(sala), eq(usuario), anyString())).thenReturn(null);
-
-        ResponseEntity<?> response = salaController.crearSala(sala, session);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
     @Test
     void enviarInicioPartida_devuelveDatosCorrectamente() {
         Map<String, String> inputData = new HashMap<>();

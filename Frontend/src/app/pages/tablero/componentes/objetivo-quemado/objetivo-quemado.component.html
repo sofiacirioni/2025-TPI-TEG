@@ -1,0 +1,17 @@
+<div class="quemado-host" #panelHost>
+  <!-- El panel del objetivo en el tablero (sobre + modal abierto si lo hubiera)
+       se ve a través de este host vía mix-blend-mode. El SVG de filtro vive
+       fuera del DOM para que las dimensiones del filtro no afecten al layout. -->
+  <canvas class="quemado-canvas" #canvasBrasas aria-hidden="true"></canvas>
+
+  <div class="quemado-paper-bg" aria-hidden="true"></div>
+</div>
+
+<svg class="quemado-svg-defs" aria-hidden="true">
+  <defs>
+    <filter [attr.id]="filterId">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" />
+      <feDisplacementMap in="SourceGraphic" scale="8" />
+    </filter>
+  </defs>
+</svg>

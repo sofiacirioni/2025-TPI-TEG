@@ -1,12 +1,12 @@
 package ar.edu.utn.frc.tup.piii.Entities;
 
 import ar.edu.utn.frc.tup.piii.models.EstadoSala;
-import ar.edu.utn.frc.tup.piii.models.Sala;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -14,10 +14,11 @@ import java.util.List;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "salas")
-public class SalaEntity {
+public class SalaEntity extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idSala;
@@ -38,6 +39,5 @@ public class SalaEntity {
     private EstadoSala estado;
 
     private String url;
-
 
 }

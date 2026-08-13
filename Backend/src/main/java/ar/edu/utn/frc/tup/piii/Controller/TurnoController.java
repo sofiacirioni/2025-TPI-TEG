@@ -1,22 +1,19 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
 import ar.edu.utn.frc.tup.piii.Dtos.*;
+import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaisDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AgregarFichas;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.Ataque;
+import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueDefender;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.AtaqueResponseDto;
 import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.MoverFichas;
-import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
-import ar.edu.utn.frc.tup.piii.Entities.PartidaEntity;
-import ar.edu.utn.frc.tup.piii.Entities.TurnoEntity;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
 import ar.edu.utn.frc.tup.piii.models.*;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/turno")
@@ -53,9 +50,35 @@ public class TurnoController {
         return ResponseEntity.ok(turnoService.moverFichas(moverFichas));
     }
 
+    @GetMapping("/reagrupar/destinos")
+    public ResponseEntity<List<EstadoPaisDto>> getDestinosReagrupamiento(
+            @RequestParam Long idPaisOrigen,
+            @RequestParam Long idJugador,
+            @RequestParam Long idPartida) {
+        return ResponseEntity.ok(turnoService.getDestinosReagrupamiento(idPaisOrigen, idJugador, idPartida));
+    }
+
     @PutMapping("/ataque")
     public ResponseEntity<AtaqueResponseDto> atacar(@RequestBody Ataque ataque) {
         return ResponseEntity.ok(turnoService.ataque(ataque));
+    }
+
+    /**
+     * Paso 1 del flujo dual: atacante registra el ataque.
+     * Si el defensor es humano, devuelve 202 y el frontend espera la resolución por WS.
+     */
+    @PutMapping("/ataque/iniciar")
+    public ResponseEntity<AtaqueResponseDto> iniciarAtaque(@RequestBody Ataque ataque) {
+        AtaqueResponseDto respuesta = turnoService.iniciarAtaque(ataque);
+        return ResponseEntity.ok(respuesta);
+    }
+
+    /**
+     * Paso 2 del flujo dual: defensor confirma dados y dispara la resolución.
+     */
+    @PutMapping("/ataque/defender")
+    public ResponseEntity<AtaqueResponseDto> defenderAtaque(@RequestBody AtaqueDefender ataqueDefender) {
+        return ResponseEntity.ok(turnoService.resolverAtaque(ataqueDefender));
     }
 
     @PutMapping("/pasarTurno")
@@ -65,7 +88,8 @@ public class TurnoController {
     }
 
     @PostMapping("/validar-ataque")
-    public ResponseEntity<?> ValidarAtaque(@RequestBody Pais pais1, @RequestBody Pais pais2, @RequestBody Jugador jugador) {
+    public ResponseEntity<?> ValidarAtaque(@RequestBody Pais pais1, @RequestBody Pais pais2,
+            @RequestBody Jugador jugador) {
         try {
             turnoService.validarAtaque(pais1, pais2, jugador);
             return ResponseEntity.ok().build();
@@ -75,7 +99,8 @@ public class TurnoController {
     }
 
     @PostMapping("/validar-movimiento")
-    public ResponseEntity<?> ValidarMovimiento(@RequestBody Pais pais1, @RequestBody Pais pais2, @RequestBody Jugador jugador) {
+    public ResponseEntity<?> ValidarMovimiento(@RequestBody Pais pais1, @RequestBody Pais pais2,
+            @RequestBody Jugador jugador) {
         try {
             turnoService.validarMovimiento(pais1, pais2, jugador);
             return ResponseEntity.ok().build();
@@ -109,9 +134,9 @@ public class TurnoController {
         return ResponseEntity.ok(turnoService.verificarGanador(idJugador));
     }
 
-    @PutMapping ("/tarjeta/obtener")
+    @PutMapping("/tarjeta/obtener")
     public ResponseEntity<TarjetaDto> obtenerTarjeta(@RequestParam Long idJugador, @RequestParam Long idPartida) {
-        return ResponseEntity.ok( turnoService.entregarTarjetaSiCorresponde(idJugador, idPartida));
+        return ResponseEntity.ok(turnoService.entregarTarjetaSiCorresponde(idJugador, idPartida));
     }
 
     @PutMapping("/canje/realizar")

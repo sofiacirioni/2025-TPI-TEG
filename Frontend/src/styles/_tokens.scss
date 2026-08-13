@@ -1,0 +1,85 @@
+// ── FUENTES
+$font-heading : 'Special Elite', serif;
+$font-body    : 'Roboto Slab', serif;
+
+// ── ESCALA TIPOGRÁFICA (Major Third 1.250, base 16px)
+$text-caption : 0.64rem;
+$text-sm      : 0.80rem;
+$text-base    : 1rem;
+$text-lead    : 1.25rem;
+$text-h4      : 1rem;
+$text-h3      : 1.25rem;
+$text-h2      : 1.5625rem;
+$text-h1      : 1.953rem;
+$text-display : 2.441rem;
+
+// ── PALETA GENERAL
+$color-claro     : #EFE8CE;
+$color-medio     : #884028;
+$color-oscuro    : #432A1E;
+$color-secondary : #375E41;
+$color-mesa      : #1C0E05;
+$color-sello     : #A01515;
+$color-mar       : #B8D8D5;
+
+// ── JUGADORES
+$player-rojo    : #A01515;
+$player-azul    : #1A4080;
+$player-naranja : #BF6800;
+$player-purpura : #6B2490;
+$player-verde   : #1E7A50;
+$player-dorado  : #6B4C00;
+
+$player-colors: (
+  'rojo'    : $player-rojo,
+  'azul'    : $player-azul,
+  'naranja' : $player-naranja,
+  'purpura' : $player-purpura,
+  'verde'   : $player-verde,
+  'dorado'  : $player-dorado,
+);
+
+// ── ESPACIADO
+$space-1: 0.25rem; $space-2: 0.5rem;  $space-3: 0.75rem;
+$space-4: 1rem;    $space-6: 1.5rem;  $space-8: 2rem;
+$space-10: 2.5rem; $space-12: 3rem;
+
+// ── BORDES
+$radius-sm  : 2px;
+$radius-md  : 4px;
+$radius-lg  : 8px;
+$radius-pill: 999px;
+
+// ── Z-INDEX
+$z-map     : 1;
+$z-tokens  : 2;
+$z-ui      : 10;
+$z-modal   : 100;
+$z-vignette: 9999;
+
+// ── TRANSICIONES
+$transition-fast  : 0.2s ease;
+$transition-normal: 0.3s ease;
+$transition-slow  : 0.6s ease;
+$transition-camera: 2s cubic-bezier(0.18, 0.05, 0.08, 1.0);
+
+// ── VARIABLES CSS NATIVAS
+:root {
+  --font-heading    : #{$font-heading};
+  --font-body       : #{$font-body};
+  --color-claro     : #{$color-claro};
+  --color-medio     : #{$color-medio};
+  --color-oscuro    : #{$color-oscuro};
+  --color-secondary : #{$color-secondary};
+  --color-mesa      : #{$color-mesa};
+  --color-sello     : #{$color-sello};
+  --color-mar       : #{$color-mar};
+  --player-rojo     : #{$player-rojo};
+  --player-azul     : #{$player-azul};
+  --player-naranja  : #{$player-naranja};
+  --player-purpura  : #{$player-purpura};
+  --player-verde    : #{$player-verde};
+  --player-dorado   : #{$player-dorado};
+  --z-vignette      : #{$z-vignette};
+  --transition-camera: #{$transition-camera};
+}

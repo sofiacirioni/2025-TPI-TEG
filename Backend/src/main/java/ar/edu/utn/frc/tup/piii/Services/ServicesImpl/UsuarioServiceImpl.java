@@ -1,6 +1,5 @@
 package ar.edu.utn.frc.tup.piii.Services.ServicesImpl;
 
-import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
 import ar.edu.utn.frc.tup.piii.Entities.UsuarioEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.UsuarioRepository;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
@@ -8,6 +7,7 @@ import ar.edu.utn.frc.tup.piii.models.Usuario;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,30 +19,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioRepository usuarioRepository;
     @Autowired
     public ModelMapper modelMapper;
-
-    @Override
-    public Usuario obtenerUsuario(String correo, String contrasenia) {
-        Optional<UsuarioEntity> usuarioEntity = usuarioRepository.findByCorreoAndContrasenia(correo, contrasenia);
-
-        if (usuarioEntity.isEmpty()) {
-                throw new IllegalArgumentException("Correo o contraseña incorrectos.");
-            }
-        return modelMapper.map(usuarioEntity.get(), Usuario.class);
-    }
-
-    @Override
-    public Usuario guardarUsuario(Usuario usuario) {
-        Optional<UsuarioEntity> existente = usuarioRepository.findByCorreo(usuario.getCorreo());
-
-        if (existente.isPresent()) {
-            throw new IllegalArgumentException("Ya existe un usuario con ese correo.");
-        }
-
-        UsuarioEntity usuarioEntity = modelMapper.map(usuario, UsuarioEntity.class);
-        UsuarioEntity usuarioGuardado = usuarioRepository.save(usuarioEntity);
-
-        return modelMapper.map(usuarioGuardado, Usuario.class);
-    }
+    @Autowired
+    public PasswordEncoder passwordEncoder;
 
     @Override
     public Usuario actualizarUsuario(String correo, String contraseniaActual, String nuevaContrasenia, String imagen) {
@@ -55,14 +33,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         UsuarioEntity usuarioEntity = usuarioEntityOpcional.get();
 
-        if (!usuarioEntity.getContrasenia().equals(contraseniaActual)) {
+        if (!passwordEncoder.matches(contraseniaActual, usuarioEntity.getContrasenia())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña actual es incorrecta");
         }
         if (contraseniaActual.equals(nuevaContrasenia)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nueva contraseña no puede ser igual a la actual");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La nueva contraseña no puede ser igual a la actual");
         }
 
-        usuarioEntity.setContrasenia(nuevaContrasenia);
+        usuarioEntity.setContrasenia(passwordEncoder.encode(nuevaContrasenia));
         usuarioEntity.setImagen(imagen);
 
         UsuarioEntity usuarioActualizado = usuarioRepository.save(usuarioEntity);
@@ -84,8 +63,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public Usuario obtenerByIdUsuario(Long id)
-    {
+    public Usuario obtenerByIdUsuario(Long id) {
 
         return usuarioRepository.findByIdUsuario(id)
                 .map(usuario -> modelMapper.map(usuario, Usuario.class))
@@ -93,11 +71,17 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public Usuario obtenerByCorreo(String correo) {
+        return usuarioRepository.findByCorreo(correo)
+                .map(u -> modelMapper.map(u, Usuario.class))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+    }
+
+    @Override
     public Usuario actualizarImagen(String correo, String imagen) {
         UsuarioEntity u = usuarioRepository
                 .findByCorreo(correo)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Usuario no encontrado con correo: " + correo));
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con correo: " + correo));
 
         u.setImagen(imagen);
 
@@ -106,6 +90,3 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
 }
-
-
-

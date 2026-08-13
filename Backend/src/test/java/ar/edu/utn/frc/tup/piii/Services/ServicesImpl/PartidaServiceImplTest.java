@@ -65,12 +65,11 @@ public class PartidaServiceImplTest {
     void setUp() {
         creadorEntity = new UsuarioEntity();
         creadorEntity.setIdUsuario(1L);
-        creadorEntity.setNombre("Creador");
+        creadorEntity.setUsuario("Creador");
 
         usuarioEntity = new UsuarioEntity();
         usuarioEntity.setIdUsuario(2L);
-        usuarioEntity.setNombre("Usuario Test");
-        usuarioEntity.setApellido("Apellido Test");
+        usuarioEntity.setUsuario("Usuario Test");
         usuarioEntity.setCorreo("test@example.com");
         usuarioEntity.setContrasenia("Password1@");
         usuarioEntity.setImagen("avatar.png");
@@ -190,8 +189,11 @@ public class PartidaServiceImplTest {
     void unirseAPartida_deberiaCrearNuevoJugadorYActualizarPartida() {
         UsuarioEntity nuevoUsuario = new UsuarioEntity();
         nuevoUsuario.setIdUsuario(999L);
-        nuevoUsuario.setNombre("Nuevo Usuario");
+        nuevoUsuario.setUsuario("Nuevo Usuario");
 
+        // El fixture compartido queda EN_JUEGO, estado en el que unirseAPartida
+        // rechaza por diseño. Para ejercitar el alta hay que partir de otro estado.
+        partidaEntity.setEstadoPartida(EstadoPartida.PAUSADA);
         salaEntity.setJugadores(new ArrayList<>());
 
         when(partidaRepository.findById(anyLong())).thenReturn(Optional.of(partidaEntity));
@@ -218,6 +220,9 @@ public class PartidaServiceImplTest {
         jugadorExistente.setUsuario(usuarioEntity);
         salaEntity.getJugadores().add(jugadorExistente);
 
+        // Sin esto la partida sigue EN_JUEGO y se corta antes, con otro mensaje.
+        partidaEntity.setEstadoPartida(EstadoPartida.PAUSADA);
+
         when(partidaRepository.findById(anyLong())).thenReturn(Optional.of(partidaEntity));
         when(usuarioRepository.findById(anyLong())).thenReturn(Optional.of(usuarioEntity));
 
@@ -226,6 +231,20 @@ public class PartidaServiceImplTest {
         });
 
         assertEquals("El usuario ya está en la partida", exception.getMessage());
+    }
+
+    @Test
+    void unirseAPartida_partidaEnCurso_deberiaLanzarExcepcion() {
+        partidaEntity.setEstadoPartida(EstadoPartida.EN_JUEGO);
+
+        when(partidaRepository.findById(anyLong())).thenReturn(Optional.of(partidaEntity));
+        when(usuarioRepository.findById(anyLong())).thenReturn(Optional.of(usuarioEntity));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            partidaService.unirseAPartida(999L, 1L);
+        });
+
+        assertEquals("No se puede unir a una partida en curso.", exception.getMessage());
     }
 
     @Test
@@ -344,7 +363,7 @@ public class PartidaServiceImplTest {
         TurnoEntity turnoEntity = new TurnoEntity();
         turnoEntity.setIdTurno(1L);
         turnoEntity.setNroTurno(1);
-        turnoEntity.setFase(FaseTurno.ATACAR);
+        turnoEntity.setFase(FaseTurno.ATAQUE);
         turnoEntity.setJugador(jugadorEntity);
 
         TarjetaEntity tarjetaEntity = new TarjetaEntity();

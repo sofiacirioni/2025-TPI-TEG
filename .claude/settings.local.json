@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PLAYWRIGHT_PATH=\"/c/Users/sofia/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright\")",
+      "Bash(node -e \":*)",
+      "Bash(cd \"/c/Users/sofia/Mis Archivos/proyectos-progra/TEG/2025-TPI-TEG/Backend\")",
+      "Bash(export JAVA_HOME=\"/c/Users/sofia/.sdkman/candidates/java/current\")",
+      "Bash(./mvnw -q -o compile)",
+      "Bash(tail -100 /tmp/backend.log 2>&1)",
+      "Bash(node \"C:/Users/sofia/AppData/Local/Temp/claude/C--Users-sofia-Mis-Archivos-proyectos-progra-TEG-2025-TPI-TEG/54becb92-1fb3-4015-80e0-b048107801c7/scratchpad/screenshot-fin-partida.js\")"
+    ]
+  }
+}

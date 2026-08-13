@@ -1,0 +1,144 @@
+<div class="sala-container">
+
+  <!-- Telegrama -->
+  <div class="telegrama-wrap"
+       appSlideIn
+       [slideFrom]="'bottom'"
+       [slideDistance]="40"
+       [delay]="0"
+       [slideDuration]="600">
+
+    <div class="tele-paper">
+      <div class="tele-contenido">
+
+        <!-- Header -->
+        <div class="tele-header">
+          <div class="tele-header-left">
+            <div class="tele-titulo">Táctica y Estrategia de Guerra</div>
+            <div class="tele-subtitulo">Sala de Operaciones · Comando Supremo</div>
+          </div>
+          <div class="tele-header-right">
+            <div>TEL. N° 0047</div>
+            <div>{{ fechaHeader }}</div>
+          </div>
+          <app-stamp
+            type="clasificado"
+            [rotation]="-6"
+            [opacity]="0.65"
+            [blend]="true"
+            class="tele-sello">
+          </app-stamp>
+        </div>
+
+        <!-- Metadatos -->
+        <div class="tele-meta">
+          <div class="meta-col">
+            <div class="meta-fila">
+              <span class="meta-k">PARA:</span>
+              <span class="meta-v">{{ nombreUsuario }}</span>
+            </div>
+            <div class="meta-fila">
+              <span class="meta-k">FECHA:</span>
+              <span class="meta-v">{{ fechaFormateada }}</span>
+            </div>
+          </div>
+          <div class="meta-col">
+            <div class="meta-fila">
+              <span class="meta-k">DE:</span>
+              <span class="meta-v">ESTADO MAYOR GENERAL</span>
+            </div>
+            <div class="meta-fila">
+              <span class="meta-k">REF.:</span>
+              <span class="meta-v">OPERACION-SALA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instrucción -->
+        <p class="tele-instruccion">
+          SE LE ORDENA ATENDER UNA DE LAS SIGUIENTES ACCIONES Y CONFIRMAR.
+        </p>
+
+        <!-- Opciones -->
+        <div class="tele-opciones">
+
+          <!-- A: Crear sala -->
+          <div class="tele-opcion" [class.activa]="opcionActual === 'crear'" (click)="seleccionar('crear')">
+            <div class="tele-radio"></div>
+            <span class="tele-cod">A.</span>
+            <span class="tele-opcion-txt">Establecer nueva sala de operaciones</span>
+          </div>
+          <div class="tele-campo-nombre" [class.visible]="opcionActual === 'crear'">
+            <label class="campo-lbl">Nombre de la sala</label>
+            <input
+              class="campo-inp"
+              type="text"
+              [(ngModel)]="nombreSala"
+              placeholder="SALA-1"
+              maxlength="40"
+            >
+          </div>
+
+          <!-- B: Unirse a sala -->
+          <div class="tele-opcion" [class.activa]="opcionActual === 'unirse'" (click)="seleccionar('unirse')">
+            <div class="tele-radio"></div>
+            <span class="tele-cod">B.</span>
+            <span class="tele-opcion-txt">Incorporarse a sala existente</span>
+          </div>
+          <div class="tele-campo-codigo" [class.visible]="opcionActual === 'unirse'">
+            <label class="campo-lbl">Código de operación</label>
+            <div class="codigo-boxes">
+              @for (char of codigoChars; track $index) {
+                <input
+                  class="codigo-box"
+                  type="text"
+                  maxlength="1"
+                  [value]="char"
+                  (input)="onCodigoInput($index, $event)"
+                  (keydown)="onCodigoKeydown($index, $event)"
+                  (paste)="onCodigoPaste($event)"
+                  autocomplete="off"
+                >
+              }
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="tele-footer">
+          <div class="tele-footer-left">
+            <div class="footer-lbl">Responsable:</div>
+            <div class="footer-nombre">{{ nombreUsuario }}</div>
+          </div>
+          <div class="tele-footer-right">
+            <div>Por orden del Estado Mayor</div>
+            <div>Transmitido via TELEX</div>
+            <div>Cifrado nivel 3</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones fuera del telegrama -->
+  <div class="sala-actions"
+       appSlideIn
+       [slideFrom]="'bottom'"
+       [slideDistance]="24"
+       [delay]="150"
+       [slideDuration]="500">
+
+    <button
+      class="btn-teg-primary"
+      [disabled]="opcionActual === 'unirse' && codigoSala.length < 6"
+      (click)="confirmar()">
+      {{ textoBoton }}
+    </button>
+
+    <a class="btn-volver" routerLink="/principal">Volver</a>
+
+  </div>
+
+</div>

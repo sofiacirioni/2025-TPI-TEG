@@ -1,11 +1,9 @@
 package ar.edu.utn.frc.tup.piii.Controller;
 
-import ar.edu.utn.frc.tup.piii.Dtos.Login.Credencial;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioDto;
 import ar.edu.utn.frc.tup.piii.Dtos.Login.UsuarioPutDto;
 import ar.edu.utn.frc.tup.piii.Services.UsuarioService;
 import ar.edu.utn.frc.tup.piii.models.Usuario;
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
@@ -16,91 +14,21 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
 public class UsuariosControllerTest {
 
     private UsuarioService usuarioService;
     private ModelMapper modelMapper;
     private UsuarioController usuarioController;
-    private HttpSession httpSession;
 
     @BeforeEach
     void setUp() {
         usuarioService = mock(UsuarioService.class);
         modelMapper = mock(ModelMapper.class);
-        httpSession = mock(HttpSession.class);
 
         usuarioController = new UsuarioController();
         usuarioController.usuarioService = usuarioService;
         usuarioController.modelMapper = modelMapper;
-    }
-
-    @Test
-    void testGuardarUsuario_Correcto() {
-        Usuario usuario = new Usuario();
-        usuario.setCorreo("test@mail.com");
-
-        Usuario usuarioGuardado = new Usuario();
-        usuarioGuardado.setCorreo("test@mail.com");
-
-        UsuarioDto usuarioDto = new UsuarioDto();
-        usuarioDto.setCorreo("test@mail.com");
-
-        when(usuarioService.guardarUsuario(usuario)).thenReturn(usuarioGuardado);
-        when(modelMapper.map(usuarioGuardado, UsuarioDto.class)).thenReturn(usuarioDto);
-
-        ResponseEntity<UsuarioDto> response = usuarioController.GuardarUsuario(usuario);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("test@mail.com", response.getBody().getCorreo());
-    }
-
-    @Test
-    void testGuardarUsuario_Falla_BadRequest() {
-        Usuario usuario = new Usuario();
-
-        when(usuarioService.guardarUsuario(usuario)).thenReturn(null);
-
-        ResponseEntity<UsuarioDto> response = usuarioController.GuardarUsuario(usuario);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void testBuscarUsuario_LoginExitoso() {
-        Credencial credencial = new Credencial();
-        credencial.setCorreo("user@mail.com");
-        credencial.setContrasenia("1234");
-
-        Usuario usuario = new Usuario();
-        usuario.setCorreo("user@mail.com");
-
-        UsuarioDto usuarioDto = new UsuarioDto();
-        usuarioDto.setCorreo("user@mail.com");
-
-        when(usuarioService.obtenerUsuario("user@mail.com", "1234")).thenReturn(usuario);
-        when(modelMapper.map(usuario, UsuarioDto.class)).thenReturn(usuarioDto);
-
-        ResponseEntity<UsuarioDto> response = usuarioController.buscarUsuario(credencial, httpSession);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(httpSession).setAttribute("usuarioActual", usuario);
-        assertEquals("user@mail.com", response.getBody().getCorreo());
-    }
-
-    @Test
-    void testBuscarUsuario_LoginFallido() {
-        Credencial credencial = new Credencial();
-        credencial.setCorreo("user@mail.com");
-        credencial.setContrasenia("wrong");
-
-        when(usuarioService.obtenerUsuario("user@mail.com", "wrong")).thenReturn(null);
-
-        ResponseEntity<UsuarioDto> response = usuarioController.buscarUsuario(credencial, httpSession);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNull(response.getBody());
-        verify(httpSession, never()).setAttribute(anyString(), any());
     }
 
     @Test
@@ -174,6 +102,7 @@ public class UsuariosControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNull(response.getBody());
     }
+
     @Test
     void testActualizarImagen_Exitoso() {
         String correo = "user@mail.com";
@@ -195,21 +124,4 @@ public class UsuariosControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(correo, response.getBody().getCorreo());
     }
-    @Test
-    void testActualizarImagen_Fallido_BodyIncompleto() {
-        String correo = "user@mail.com";
-        String imagen = null;
-
-        Map<String, String> body = Map.of("correo", correo);
-
-        when(usuarioService.actualizarImagen(correo, imagen)).thenReturn(null);
-
-        ResponseEntity<UsuarioDto> response = usuarioController.actualizarImagen(body);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-
 }
-

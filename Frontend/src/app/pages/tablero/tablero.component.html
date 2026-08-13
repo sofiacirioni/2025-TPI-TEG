@@ -1,0 +1,720 @@
+@if (showRevelacion && jugadorUsuario?.objetivo) {
+  <app-objetivo-revelacion
+    [objetivo]="jugadorUsuario!.objetivo"
+    [jugadores]="partida?.jugadores ?? []"
+    [progresoObjetivo]="progresoObjetivo"
+    (cerrandoStart)="onRevelacionCerrandoStart()"
+    (confirmado)="onRevelacionConfirmada()">
+  </app-objetivo-revelacion>
+}
+
+@if (partida) {
+<div class="tablero-container">
+
+  <!-- Viñeta global -->
+  <div class="tablero-vignette"></div>
+
+  <!-- Luz de lámpara -->
+  <div class="tablero-luz"></div>
+
+  <!-- ══ BARRA SUPERIOR DE ESTADO ═════════════════════════════════ -->
+  <div class="info-barra">
+    <!-- Fase -->
+    <div class="info-item">
+      <span class="info-lbl">Fase</span>
+      <span class="info-val">{{ faseActual | faseDisplay }}</span>
+      <div class="fase-dots">
+        <div class="fdot" [class.active]="faseActual === 'INCORPORACION'"></div>
+        <div class="fdot" [class.active]="faseActual === 'ATAQUE'"></div>
+        <div class="fdot" [class.active]="faseActual === 'REAGRUPACION'"></div>
+      </div>
+    </div>
+    <div class="vsep"></div>
+    <!-- Turno -->
+    <div class="info-item">
+      <span class="info-lbl">Turno</span>
+      <span class="info-val">{{ jugadorActualTurno?.nombre ?? '—' }}</span>
+      <span class="info-sub">N° {{ numeroTurno }}</span>
+    </div>
+    <div class="vsep"></div>
+    <!-- Ejércitos disponibles -->
+    <div class="info-item">
+      <span class="info-lbl">Ejércitos disponibles</span>
+      <span class="info-val-big">{{ ejercitosDisponibles }}</span>
+    </div>
+    <div class="vsep"></div>
+    <!-- Timer -->
+    <div class="info-item">
+      <span class="info-lbl">Tiempo restante</span>
+      <span class="info-val info-timer" [class.timer-urgente]="tiempoRestante <= 30">
+        {{ timerDisplay }}
+      </span>
+      @if (showInactividad) {
+        <span class="info-inactividad" [class.inactividad-critica]="inactividadRestante <= 10">
+          Inactividad: {{ inactividadRestante }}s
+        </span>
+      }
+    </div>
+    @if (esMiTurno) {
+      <div class="vsep"></div>
+      <button class="btn-avanzar" (click)="avanzarFaseTurno()">· AVANZAR FASE ·</button>
+    }
+  </div>
+
+  <!-- ══ COLUMNA IZQUIERDA ═════════════════════════════════════════
+       Layout flex column única: sobre/objetivo arriba, luego panel con
+       historial + tarjetas + chat abajo. El sobre y el modal del objetivo
+       son hermanos en el wrapper; el modal crece según contenido y empuja
+       al panel hacia abajo (las secciones internas tienen scroll propio si
+       se quedan sin espacio). El sobre se oculta visualmente cuando el
+       modal está abierto, así uno reemplaza al otro sin saltos de layout. -->
+  <div class="columna-izquierda">
+
+  <div class="sobre-wrapper">
+    @if (mostrarAnimacionQuemado) {
+      <app-objetivo-quemado
+        [activar]="true"
+        (animacionCompleta)="alCompletarseAnimacionQuemado()" />
+    }
+    <div class="sobre-objetivo"
+         [class.invisible]="!sobreObjetivoVisible || objetivoVisible"
+         (click)="objetivoVisible = !objetivoVisible">
+      <div class="sobre-paper">
+        <div class="sobre-solapa"></div>
+        <img class="sobre-lacre-mini"
+             src="assets/images/tablero/teg-wax-seal.png"
+             alt="Sello TEG" />
+        <img class="sobre-stamp"
+             src="assets/vectors/top-secret-stamp.svg"
+             alt="" aria-hidden="true" />
+        <div class="sobre-label">MISIÓN URGENTE</div>
+      </div>
+    </div>
+
+    @if (objetivoVisible) {
+      <div class="objetivo-modal paper-grunge--v5" (click)="objetivoVisible = false">
+        <div class="objetivo-titulo">ORDEN SECRETA</div>
+
+        <div class="objetivo-cuerpo">
+          @if (progresoObjetivo) {
+            <p class="objetivo-desc">{{ progresoObjetivo.descripcion }}</p>
+            <div class="objetivo-divider"></div>
+            <ul class="objetivo-items">
+              @for (item of progresoObjetivo.items; track item.descripcion) {
+                <li class="objetivo-item" [class.completado]="item.completado">
+                  <span class="obj-check">{{ item.completado ? '■' : '□' }}</span>
+                  <span class="obj-texto">
+                    {{ item.descripcion }}
+                    @if (item.valorObjetivo > 0) {
+                      <span class="obj-cuenta">{{ item.valorActual }}/{{ item.valorObjetivo }}</span>
+                    } @else {
+                      <!-- objetivo de eliminación: mostrar países restantes del enemigo -->
+                      <span class="obj-cuenta">{{ item.valorActual }} restantes</span>
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+            @if (progresoObjetivo.objetivoConvertido) {
+              <p class="objetivo-convertido">⚑ Objetivo original convertido</p>
+            }
+          } @else {
+            <div class="objetivo-texto">{{ objetivoTexto || 'Cargando...' }}</div>
+          }
+        </div>
+      </div>
+    }
+  </div><!-- .sobre-wrapper -->
+
+  <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════════ -->
+  <div class="panel-izquierdo">
+
+    <!-- Historial de operaciones -->
+    <div class="historial-panel">
+      <div class="historial-titulo">REGISTRO DE OPERACIONES</div>
+      <div class="historial-lista">
+        @for (item of historial; track $index) {
+          <div class="hist-item"
+               [class.hist-ataque]="item.tipo === 'ataque'"
+               [class.hist-ok]="item.tipo === 'ok'"
+               [class.hist-pacto]="item.tipo === 'pacto'">
+            {{ item.texto }}
+          </div>
+        }
+        @if (historial.length === 0) {
+          <div class="hist-item" style="opacity:0.35">Sin eventos registrados.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Tarjetas obtenidas — chips mini, click abre el modal de detalle -->
+    <div class="tarjetas-panel">
+      <button type="button" class="tarjetas-titulo tarjetas-titulo-btn"
+              (click)="abrirModalCanje()"
+              [disabled]="cartasJugador.length === 0"
+              [attr.aria-label]="combinacionesPosibles.length > 0
+                ? 'Abrir detalle de tarjetas — hay canjes posibles'
+                : 'Abrir detalle de tarjetas'">
+        <span class="tarjetas-titulo-text">TARJETAS</span>
+        <span class="tarjetas-canje-light"
+              [class.encendida]="combinacionesPosibles.length > 0"
+              [attr.title]="combinacionesPosibles.length > 0
+                ? 'Tenés ' + combinacionesPosibles.length + ' combinación(es) de canje posible'
+                : 'Sin combinaciones de canje posibles'"
+              aria-hidden="true"></span>
+      </button>
+      <div class="tarjetas-contenido">
+        @for (t of cartasJugador; track t.idEstadoTarjeta) {
+          <button type="button"
+                  class="tarjeta-mini"
+                  [class.canjeada]="t.canjeada"
+                  [title]="(t.tarjeta?.pais?.nombre | nombrePais) ?? ''"
+                  (click)="abrirModalCanje()">
+            <span class="tarjeta-mini-symbol"
+                  [attr.data-simbolo]="getSimboloKey(t.tarjeta?.simbolo)">
+              @if (getSimboloKey(t.tarjeta?.simbolo) === 'comodin') {
+                <span class="tarjeta-mini-symbol-img tarjeta-mini-symbol-img--canion"></span>
+                <span class="tarjeta-mini-symbol-img tarjeta-mini-symbol-img--galeon"></span>
+                <span class="tarjeta-mini-symbol-img tarjeta-mini-symbol-img--globo"></span>
+              } @else {
+                <span class="tarjeta-mini-symbol-img"
+                      [class.tarjeta-mini-symbol-img--canion]="getSimboloKey(t.tarjeta?.simbolo) === 'canion'"
+                      [class.tarjeta-mini-symbol-img--galeon]="getSimboloKey(t.tarjeta?.simbolo) === 'galeon'"
+                      [class.tarjeta-mini-symbol-img--globo]="getSimboloKey(t.tarjeta?.simbolo) === 'globo'">
+                </span>
+              }
+            </span>
+            <span class="tarjeta-mini-pais">· {{ (t.tarjeta?.pais?.nombre | nombrePais) | uppercase }} ·</span>
+          </button>
+        }
+        @if (cartasJugador.length === 0) {
+          <div class="tarjetas-empty">Sin tarjetas.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Conversaciones — estilo bloc de notas de campo -->
+    <div class="chat-panel">
+      <!-- Espiral superior -->
+      <div class="chat-spiral" aria-hidden="true">
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+        <div class="chat-spiral-hole"></div>
+      </div>
+      <!-- Barra de título -->
+      <div class="chat-title-bar">CONVERSACIONES</div>
+      <!-- Área de mensajes sobre papel rayado con margen rojo -->
+      <div #chatMensajesRef class="chat-mensajes" (scroll)="onChatMensajesScroll()">
+        @for (msg of chatMensajes; track $index) {
+          <div class="chat-msg">
+            <span class="chat-time">{{ formatearHora(msg.timestamp) }}</span>
+            <div class="chat-msg-header">
+              <span class="chat-sender" [style.color]="msg.colorVar">{{ msg.actor }}</span>
+            </div>
+            <div class="chat-text" [class.own]="msg.esPropio">{{ msg.texto }}</div>
+          </div>
+        }
+        @if (chatMensajes.length === 0) {
+          <div class="chat-empty">Sin mensajes.</div>
+        }
+      </div>
+      <!-- Input -->
+      <div class="chat-input-row">
+        <input class="chat-input" type="text"
+               placeholder="escribir..."
+               aria-label="Escribir mensaje en el chat"
+               [maxlength]="chatMaxLen"
+               [disabled]="enCooldown"
+               [(ngModel)]="chatInput"
+               (keyup.enter)="enviarChat()" />
+        <button class="chat-send" (click)="enviarChat()"
+                [disabled]="enCooldown"
+                aria-label="Enviar mensaje">▶</button>
+      </div>
+      @if (enCooldown) {
+        <div class="chat-cooldown" aria-live="polite">
+          Esperá {{ cooldownRestanteSeg }}s para enviar otro mensaje.
+        </div>
+      }
+    </div>
+
+  </div><!-- .panel-izquierdo -->
+
+  </div><!-- .columna-izquierda -->
+
+  <!-- ══ NOTIFICACIONES DE JUEGO (sobre el mapa) ══════════════════ -->
+  <app-tablero-event-display></app-tablero-event-display>
+
+  <!-- ══ ZONA CENTRAL: MAPA ════════════════════════════════════════ -->
+  <div class="mapa-zona"
+       (wheel)="onWheel($event)"
+       (mousedown)="onMouseDownMapa($event)"
+       (mousemove)="onMouseMoveMapa($event)"
+       (mouseup)="onMouseUpMapa()"
+       (mouseleave)="onMouseUpMapa()">
+
+    <div class="mapa-svg-wrap"
+    
+         [style.transform]="mapTransform"
+         [style.cursor]="isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default')">
+      <app-mapa-svg
+        [paises]="partida.estadoPaises ?? []"
+        [jugadores]="partida.jugadores ?? []"
+        [modoContinente]="modoContinente"
+        (paisClickeado)="paisClickeado($event)">
+      </app-mapa-svg>
+    </div>
+
+    <!-- ── Modal de país ──────────────────────────────────── -->
+    @if (paisModalSeleccionado) {
+      <div class="modal-pais"
+           [style.left.px]="modalX"
+           [style.top.px]="modalY"
+           [style.background-color]="getColorSolidoPaisModal()">
+
+        <button class="modal-close-x" (click)="cerrarModalPais()" aria-label="Cerrar">✕</button>
+
+        <!-- Papel interior: la strip del nombre va ADENTRO del papel -->
+        <div class="modal-papel paper-grunge--v3">
+
+          <!-- Tira del nombre con chinchetas: full-width, recortada por overflow:hidden del papel -->
+          <div class="modal-nombre-strip">
+            <div class="chincheta chincheta-izq"></div>
+            <div class="modal-nom">{{ paisModalSeleccionado.pais.nombre | nombrePais }}</div>
+            <div class="chincheta chincheta-der"></div>
+          </div>
+
+          <!-- Cuerpo del modal con padding -->
+          <div class="modal-cuerpo">
+            <div class="modal-cont">— {{ paisModalSeleccionado.pais.continente?.nombre | nombrePais }} —</div>
+            <div class="modal-owner">
+              <div class="owner-dot" [style.background]="getColorSolidoPaisModal()"></div>
+              <span class="owner-nom">{{ getNombreJugadorPais(paisModalSeleccionado.idJugador) }}</span>
+            </div>
+            <div class="modal-row">
+              <span class="modal-lbl">Tropas</span>
+              <span class="modal-val">{{ paisModalSeleccionado.cantidadTropas }}</span>
+            </div>
+
+            @if (estaJugandoModal) {
+              <!-- INCORPORAR -->
+              @if (puedoDefenderDesdeModal) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Tropas a colocar (disp: {{ ejercitosDisponibles }})</label>
+                  <input class="modal-input" type="number" min="1" [max]="ejercitosDisponibles"
+                         [(ngModel)]="inputTropasModal" />
+                  <button class="btn-teg-primary btn-modal-accion"
+                          [disabled]="inputTropasModal < 1 || inputTropasModal > ejercitosDisponibles"
+                          (click)="defenderDesdeModal()">
+                    · COLOCAR ·
+                  </button>
+                </div>
+              }
+
+              <!-- ATACAR -->
+              @if (puedoAtacarDesdeModal && paisesEnemigos.length > 0) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Atacar hacia</label>
+                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal"
+                          [disabled]="tropasInsuficientesParaAtacar">
+                    <option [value]="-1" disabled>Seleccioná país</option>
+                    @for (p of paisesEnemigos; track p.pais.idPais) {
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
+                    }
+                  </select>
+                  <button class="btn-teg-danger btn-modal-accion"
+                          [disabled]="tropasInsuficientesParaAtacar"
+                          [attr.title]="tropasInsuficientesParaAtacar
+                            ? 'Necesitás al menos 2 ejércitos para atacar (uno queda defendiendo).'
+                            : null"
+                          (click)="atacarDesdeModal()">
+                    · ATACAR ·
+                  </button>
+                  @if (tropasInsuficientesParaAtacar) {
+                    <p class="modal-aviso">
+                      Hace falta más de 1 ejército para iniciar un ataque.
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- REAGRUPAR -->
+              @if (puedoReagruparDesdeModal && paisesAliados.length > 0) {
+                <div class="modal-accion-group">
+                  <label class="modal-input-lbl">Reagrupar hacia</label>
+                  <select class="modal-select" [(ngModel)]="idPaisDestinoModal">
+                    <option [value]="-1" disabled>Seleccioná país</option>
+                    @for (p of paisesAliados; track p.pais.idPais) {
+                      <option [value]="p.pais.idPais">{{ p.pais.nombre | nombrePais }}</option>
+                    }
+                  </select>
+                  <label class="modal-input-lbl">Tropas (máx: {{ paisModalSeleccionado.cantidadTropas - 1 }})</label>
+                  <input class="modal-input" type="number" min="1"
+                         [max]="paisModalSeleccionado.cantidadTropas - 1"
+                         [(ngModel)]="inputTropasModal" />
+                  <button class="btn-teg-primary btn-modal-accion" (click)="reagruparDesdeModal()">
+                    · REAGRUPAR ·
+                  </button>
+                </div>
+              }
+            }
+
+          </div>
+        </div>
+      </div>
+    }
+
+
+  </div>
+
+  <!-- ── Controles de zoom — borde inferior derecho del mapa ── -->
+  <!-- Menú de operaciones: lo que no es jugar. -->
+  <div class="operaciones">
+    <button type="button"
+            class="btn-teg-dark operaciones-boton"
+            [class.operaciones-boton--abierto]="menuOperacionesAbierto"
+            (click)="alternarMenuOperaciones()"
+            aria-label="Menú de operaciones">
+      · OPERACIONES ·
+    </button>
+
+    @if (menuOperacionesAbierto) {
+      <div class="operaciones-menu paper-grunge--v4">
+        <button type="button" class="operaciones-item" (click)="abrirReglamento()">
+          Consultar reglamento
+        </button>
+        <button type="button" class="operaciones-item operaciones-item--riesgo"
+                (click)="pedirConfirmacionRetiro()">
+          Retirarse de la campaña
+        </button>
+      </div>
+    }
+  </div>
+
+  <div class="mapa-controles">
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomIn()" title="Acercar">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="btn-teg-dark ctrl-btn" (click)="resetZoom()" title="Restablecer vista">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 8C2 4.686 4.686 2 8 2c1.8 0 3.42.756 4.586 1.97"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M14 8C14 11.314 11.314 14 8 14c-1.8 0-3.42-.756-4.586-1.97"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M12 2l1 2-2 .5" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 14l-1-2 2-.5" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="btn-teg-dark ctrl-btn" (click)="zoomOut()" title="Alejar">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="btn-teg-dark ctrl-btn"
+            [class.ctrl-btn--activo]="modoContinente"
+            (click)="toggleContinentes()"
+            title="Ver continentes">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <ellipse cx="8" cy="8" rx="2.6" ry="6.2" stroke="currentColor" stroke-width="1" fill="none"/>
+        <path d="M1.8 8h12.4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        <path d="M2.6 4.6h10.8" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
+        <path d="M2.6 11.4h10.8" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── Leyenda de continentes (visible solo en modo overlay) ── -->
+  @if (modoContinente) {
+    <div class="leyenda-continentes" aria-label="Referencia de continentes">
+      @for (c of leyendaContinentes; track c.nombre) {
+        <div class="leyenda-item">
+          <span class="leyenda-color" [style.background]="c.color"></span>
+          {{ c.nombre }}
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══ RESULTADO DE ATAQUE (overlay global) ══════════════════════ -->
+  @if (showAtaqueResultado && ataqueResultado) {
+    <div class="ataque-overlay" (click)="cerrarResultadoAtaque()">
+      <div class="ataque-modal paper-grunge--v6" (click)="$event.stopPropagation()">
+        <div class="ataque-titulo">RESULTADO DEL ATAQUE</div>
+        <div class="ataque-info">
+          <span class="ataque-desde">{{ paisOrigenNombreModal }}</span>
+          <span class="ataque-flecha">→</span>
+          <span class="ataque-hacia">{{ paisDestinoNombreModal }}</span>
+        </div>
+        <div class="ataque-resultado"
+             [class.exito]="ataqueResultado.ataqueExitoso"
+             [class.conquista]="ataqueResultado.conquista"
+             [class.fallo]="!ataqueResultado.ataqueExitoso">
+          @if (ataqueResultado.conquista) { ¡CONQUISTA! }
+          @else if (ataqueResultado.ataqueExitoso) { ATAQUE EXITOSO }
+          @else { REPELIDO }
+        </div>
+        <div class="dados-fila">
+          <div class="dados-grupo">
+            <span class="dados-lbl">Atacante</span>
+            <div class="dados-vals">
+              @for (d of ataqueResultado.dadosAtaque; track $index) {
+                <span class="dado">{{ getEmojiDado(d) }}</span>
+              }
+            </div>
+          </div>
+          <div class="dados-grupo">
+            <span class="dados-lbl">Defensor</span>
+            <div class="dados-vals">
+              @for (d of ataqueResultado.dadosDefensor; track $index) {
+                <span class="dado">{{ getEmojiDado(d) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <button class="btn-modal btn-colocar" (click)="cerrarResultadoAtaque()">· ACEPTAR ·</button>
+      </div>
+    </div>
+  }
+
+  <!-- ══ RELOJ (top-right) ════════════════════════════════════════ -->
+  <div class="reloj-container" aria-label="Reloj de pared">
+    <!-- Reloj vintage con agujas animadas via DOM (contentDocument) -->
+    <object #relojObj class="reloj-face"
+      type="image/svg+xml"
+      data="/assets/vectors/tablero/vintage-clock.svg"
+      aria-hidden="true"
+      (load)="onRelojLoaded()">
+    </object>
+  </div>
+
+  <!-- ══ PANEL DERECHO: JUGADORES ════════════════════════════════ -->
+  <div class="panel-derecho">
+    <div class="panel-jugadores">
+      @for (jugador of partida.jugadores ?? []; track jugador.idJugador) {
+        <div class="ficha-jugador" [class.activo]="jugadorActualTurno?.idJugador === jugador.idJugador">
+          <div class="ficha-avatar-wrapper">
+            <div class="ficha-avatar-circle"
+                 [style.background-color]="getColorSolido(jugador.color)">
+              <!-- Los bots ya tienen su propia fotografía de legajo, así que
+                   dejaron de ser la excepción que iba sin retrato. -->
+              @if (jugador.url) {
+                <img class="ficha-avatar-img"
+                     [src]="jugador.url"
+                     [alt]="jugador.nombre"
+                     (error)="$event.target.style.display='none'" />
+              }
+            </div>
+            <img class="ficha-turn-frame"
+                 src="assets/images/tablero/player-turn-indicator-frame.png"
+                 alt=""
+                 aria-hidden="true" />
+          </div>
+          <div class="ficha-info">
+            <div class="ficha-nombre">
+              {{ jugador.nombre }}
+              @if (esEsBot(jugador)) { <span class="ficha-bot">BOT</span> }
+            </div>
+            <img class="ficha-insignia" [src]="getInsigniaUrl(jugador.color)" [alt]="jugador.color" />
+            <div class="ficha-stats">
+              <span class="ficha-stat-item" title="Países controlados">
+                <svg class="ficha-stat-icon" viewBox="0 0 149.16 166.63" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M0,5.53v106.87c0,1.8.88,3.49,2.36,4.53l69.64,48.7c1.91,1.34,4.47,1.33,6.37-.03l68.47-48.69c1.46-1.04,2.32-2.71,2.32-4.5V5.53c0-3.05-2.47-5.53-5.53-5.53H5.53C2.47,0,0,2.47,0,5.53ZM9.03,6h16.8v120.02l-18.54-12.97c-.81-.57-1.29-1.49-1.29-2.48V9.03c0-1.67,1.36-3.03,3.03-3.03ZM73.41,159.3l-41.58-29.08V6h85.5v124.53l-40.42,28.75c-1.04.74-2.44.75-3.49.01ZM141.89,113.07l-18.56,13.2V6h16.8c1.67,0,3.03,1.36,3.03,3.03v101.57c0,.98-.47,1.9-1.27,2.47Z"/>
+                </svg>
+                <span class="ficha-stat-val">{{ countriasDeJugador(jugador.idJugador) }}</span>
+              </span>
+              <span class="ficha-stat-item" title="Ejércitos disponibles">
+                <svg class="ficha-stat-icon" viewBox="0 0 179.78 174.05" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M179.7,121.9l-6.33-36.2-4.56-23.23c-1.37-7-3.89-13.91-7.71-21.13-7.47-14.14-19.06-25.14-34.47-32.7C113.24,2.07,99.13-.78,84.69.18c-13.06.87-25.31,4.32-36.43,10.27-12.07,6.45-21.65,15.9-28.49,28.08-5.2,9.26-8.64,18.78-10.23,28.29l-2.99,17.93L.08,122.17c-.29,1.67.2,3.32,1.37,4.63,1.28,1.44,3.24,2.27,5.06,2.16,2.37-.13,4.13-.69,5.86-1.86,1.63-.65,3.12-.98,4.42-.98h.01l10.09.02c.18,4.3,1.14,8.22,2.92,11.96l4.96,10.45c.94,1.98,4.18,2.03,5.54,1.95,1.34-.07,1.78.15,2.29,1.1,2.75,5.16,6.18,11.14,10.75,16.47,1.1,1.28,3.22,1.64,4.36.73,1.46-1.16,2.8-1.31,4.62-.54,9.11,3.85,18.26,5.78,27.41,5.78s18.86-2.05,28.21-6.15c1.46-.64,2.57-.53,3.93.42,1.13.78,2.41,1.08,3.59.84,1.14-.23,2.11-.93,2.79-2.02l9.78-15.48c.57-.91,1.48-1.29,2.76-1.16,2.67.27,4.78-.87,5.63-3.04l1.92-4.93c3.18-6.11,4.67-11.25,4.79-16.57l11.63.18c1.13.02,2.27.67,3.37,1.29.77.44,1.57.89,2.36,1.13,2.59.91,4.9.64,6.7-.76,1.54-1.2,2.9-3.49,2.48-5.9ZM33.56,130.32l1.66,5.57c-.3-.23-.51-.57-.68-1.06l-1.94-5.75c.36.12.72.46.96,1.24ZM25.48,107.96l2.42,11.09h-7.63s5.22-11.09,5.22-11.09ZM141.18,129.21l-3.98-.96c1.86-5.73,3.2-10.85,4.21-16.06l3.02-15.64c1.92,1.14,3.22,2.45,4.32,3.73l-5.16,21.41-2.4,7.52ZM131.6,141.52c.1-.16.62-.51.87-.61l10.42.02-1.65,3.89-6.18.09-10.95,18.25-3.44-2.27,10.93-19.37ZM64.36,157.97c-1.04-1.82-2.08-3.62-3.12-5.42-2.92-5.04-5.94-10.26-8.66-15.65-3.34-6.61-5.7-13.76-7.21-21.85l-4.07-21.71,7.3-1.97c5.43-1.46,10.92-1.59,17.02-1.59h53.23c6.8,0,13.15,1.14,19.38,3.48.21.08.57.6.56.8l-4.48,22.94c-1.44,7.37-3.73,14.24-6.98,20.97l-8.67,15.75-3.23,5.76c-.17.31-.2.73-.22,1.17-.02.44-.06,1.05-.29,1.15-16.63,7.03-33.37,7.08-49.76.16.36-1.64-.19-2.92-.79-3.98ZM48.41,140.98l11.28,19.5c.08.14-.17.69-.37.84l-2.69,1.96-3.53-5.2-6.73-11.7c-.36-.63-1.27-1.5-2.04-1.52l-5.36-.14-1.48-3.8,10.91.05ZM35.7,96.21l2.8,14.32c1.24,6.32,2.65,11.98,4.44,17.77l-4.04,1.01-3.18-9.86-4.42-19.42,4.4-3.82ZM42.03,136.21l-1.12-2.71,3.69-.81,1.47,3.51h-4.05ZM139.31,133.53l-.86,2.58h-4.36s1.46-3.38,1.46-3.38l3.76.8ZM172.47,121.76c-1.98-.47-3.3-1.77-4.55-3.15-2.08-3.02-3.76-6.4-5.38-9.66-2.29-4.6-4.65-9.36-8.17-13.1-5.17-5.49-12.09-9.34-20.02-11.13-5.46-1.23-10.2-1.78-15.37-1.78h-.03l-59.85.03c-7.32,0-14.66,1.55-21.83,4.61-7.93,3.38-14.23,9.47-18.23,17.6l-5.57,11.33c-1.12,2.27-3.17,4.05-6.12,5.29l8.43-48.23,2.51-12.67c3.29-13.69,10.5-25.83,20.85-35.13,10.47-9.41,23.2-15.44,36.81-17.44,4.37-.64,8.76-.97,13.14-.97,5,0,9.99.42,14.93,1.26,28.83,4.91,52.06,27.21,57.8,55.5l10.63,57.62ZM147.41,129.18l-2.35,6.57c-.06.13-.36.3-.69.43l2.17-6.38c.05-.15.33-.53.41-.64.03-.01.08-.02.13-.02.1,0,.22.02.33.04ZM159.6,118.96l-7.41.08,2.33-10.78,5.08,10.71Z"/>
+                  <path d="M124.47,69.33H55.25c-2.06.02-3.28,1.57-3.38,3.03-.06.82.25,1.65.84,2.28.6.64,1.42,1,2.32,1h69.79c.76-.01,1.43-.33,1.94-.94.69-.82.93-1.97.8-2.67-.23-1.34-1.37-2.69-3.09-2.69Z"/>
+                </svg>
+                <span class="ficha-stat-val">{{ jugador.ejercito }}</span>
+              </span>
+              <span class="ficha-stat-item" title="Tarjetas en mano">
+                <svg class="ficha-stat-icon" viewBox="0 0 160.75 160.66" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M159.09,22.97c-1.69-2.6-4.52-4.48-7.76-5.17l-51.31-10.88c-1.76-2.23-4.82-3.42-7.55-2.83l-2.92.62L68.37.22c-5.46-1.15-10.88,2.29-12.44,7.72L9.43,17.8C3.89,18.97-1.21,23.95.25,30.86l25.77,121.23c.62,2.9,2.19,5.25,4.56,6.79,1.8,1.17,3.96,1.78,6.17,1.78.83,0,1.66-.09,2.49-.26l41.13-8.74,41.14,8.74c.83.18,1.66.26,2.49.26,2.2,0,4.36-.61,6.17-1.78,2.37-1.54,3.95-3.88,4.56-6.79l25.77-121.23c.6-2.82.11-5.55-1.41-7.89ZM37.19,153.88c-2.1-.41-3.58-1.43-4.5-3.12L6.9,29.31c.17-2.25,1.34-3.87,3.4-4.72l44.04-9.34-24.33,114.41c-1.3,6.16,2.47,11.81,8.78,13.16l25.2,5.36-26.8,5.71ZM153.86,29.31l-25.8,121.45c-.92,1.69-2.4,2.71-4.5,3.12l-83.09-17.69c-2.21-.47-3.69-2.37-3.83-4.88L61.84,12.74l.53-2.48c.09-.41.25-.8.5-1.17.99-1.53,3.1-2.44,4.81-2.06l82.78,17.56c2.06.85,3.23,2.47,3.41,4.72Z"/>
+                </svg>
+                <span class="ficha-stat-val">{{ jugador.cantidadTarjetas ?? 0 }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Botón de pactos: dentro del panel derecho, alineado con el borde inferior del mapa ── -->
+    <div class="boton-pactos-wrap">
+      <app-boton-pactos
+        [esMiTurno]="esMiTurno"
+        [cantidadPactosActivos]="cantidadPactosLocales"
+        (abrir)="abrirPactosOverlay()" />
+    </div>
+  </div>
+
+</div><!-- .tablero-container -->
+
+<!-- ══ MODAL DE DETALLE DE TARJETAS (overlay global) ════════════════ -->
+@if (showCanjeModal) {
+  <div class="tarjetas-modal-overlay"
+       role="dialog"
+       aria-modal="true"
+       aria-label="Detalle de tarjetas en mano"
+       (click)="cerrarModalCanje()">
+    <div class="tarjetas-modal-content" (click)="$event.stopPropagation()">
+
+      <button class="btn-tarjetas-cerrar" (click)="cerrarModalCanje()" aria-label="Cerrar">✕</button>
+
+      <div class="tarjetas-modal-titulo">TARJETAS EN MANO</div>
+      @if (canjeHabilitado && puedeCanjear) {
+        <div class="tarjetas-modal-subtitulo">· Tenés una combinación válida para canjear ·</div>
+      }
+      @if (!canjeHabilitado) {
+        <div class="tarjetas-modal-info">El canje solo está disponible durante tu turno, en la fase de Incorporar.</div>
+      }
+
+      <!-- Grilla de tarjetas en detalle -->
+      <div class="tarjetas-modal-grid">
+        @for (t of cartasJugador; track t.idEstadoTarjeta; let i = $index) {
+          <button type="button"
+                  class="tarjeta-detalle"
+                  [class.tarjeta-detalle--impar]="i % 2 === 0"
+                  [class.tarjeta-detalle--par]="i % 2 === 1"
+                  [class.tarjeta-detalle--seleccionable]="canjeHabilitado && !t.canjeada"
+                  [class.tarjeta-detalle--seleccionada]="estaSeleccionada(t)"
+                  [class.tarjeta-detalle--canjeada]="t.canjeada"
+                  [disabled]="!canjeHabilitado || t.canjeada"
+                  (click)="toggleTarjetaCanje(t)">
+
+            <div class="tarjeta-detalle-symbol-wrap">
+              @if (getSimboloKey(t.tarjeta?.simbolo) === 'comodin') {
+                <span class="tarjeta-detalle-symbol-img tarjeta-detalle-symbol-img--canion"></span>
+                <span class="tarjeta-detalle-symbol-img tarjeta-detalle-symbol-img--galeon"></span>
+                <span class="tarjeta-detalle-symbol-img tarjeta-detalle-symbol-img--globo"></span>
+              } @else {
+                <span class="tarjeta-detalle-symbol-img"
+                      [class.tarjeta-detalle-symbol-img--canion]="getSimboloKey(t.tarjeta?.simbolo) === 'canion'"
+                      [class.tarjeta-detalle-symbol-img--galeon]="getSimboloKey(t.tarjeta?.simbolo) === 'galeon'"
+                      [class.tarjeta-detalle-symbol-img--globo]="getSimboloKey(t.tarjeta?.simbolo) === 'globo'">
+                </span>
+              }
+            </div>
+
+            <div class="tarjeta-detalle-divider"></div>
+
+            <div class="tarjeta-detalle-pais">· {{ (t.tarjeta?.pais?.nombre | nombrePais) | uppercase }} ·</div>
+          </button>
+        }
+        @if (cartasJugador.length === 0) {
+          <div class="tarjetas-modal-empty">No tenés tarjetas en este momento.</div>
+        }
+      </div>
+
+      <!-- Indicador de combinaciones posibles (siempre visible cuando hay 3+ cartas) -->
+      @if (cartasJugador.length >= 3) {
+        @if (combinacionesPosibles.length > 0) {
+          <div class="tarjetas-modal-combos">
+            · {{ combinacionesPosibles.length }}
+            {{ combinacionesPosibles.length === 1 ? 'combinación posible' : 'combinaciones posibles' }} ·
+          </div>
+        } @else {
+          <div class="tarjetas-modal-combos sin-combos">· Sin combinaciones posibles ·</div>
+        }
+      }
+
+      <!-- Botón canjear: solo cuando hay combinación válida seleccionada -->
+      @if (canjeHabilitado && combinacionValida) {
+        <button class="btn-teg-dark btn-tarjetas-canjear" (click)="confirmarCanje()">
+          · CANJEAR ·
+        </button>
+      }
+
+    </div>
+  </div>
+}
+
+} @else {
+  <!-- Loading state -->
+  <div class="tablero-loading">
+    <div class="loading-texto">Cargando partida...</div>
+  </div>
+}
+
+<!-- ══ FIN DE PARTIDA: overlay con ganador + clasificación ════════════ -->
+@if (mostrarFinPartida && datosFinPartida) {
+  <app-fin-partida-overlay
+    [datos]="datosFinPartida"
+    (verEstadisticas)="irAEstadisticas()" />
+}
+
+<!-- ══ PACTOS: overlay principal con lista + wizard ════════════════════ -->
+@if (showPactosOverlay && partida && jugadorUsuario) {
+  <app-pactos-overlay
+    [partida]="partida"
+    [jugadorLocal]="jugadorUsuario"
+    [esMiTurno]="esMiTurno"
+    [pactosActivos]="pactosActivos"
+    (cerrar)="cerrarPactosOverlay()"
+    (pactoCambiado)="onPactoCambiado()" />
+}
+
+<!-- ══ PACTO: overlay de respuesta a propuesta entrante ══════════════ -->
+@if (propuestaPendiente && jugadorUsuario) {
+  <app-respuesta-pacto-overlay
+    [pacto]="propuestaPendiente"
+    [jugadorLocalId]="jugadorUsuario.idJugador"
+    [jugadores]="partida?.jugadores ?? []"
+    [resultado]="resultadoPropuesta"
+    (respondido)="onRespuestaPacto()" />
+}
+
+<!-- ── Reglamento consultado desde la mesa ──────────────────────────────
+     Reutiliza la misma carpeta de archivo de la pantalla de ayuda, en modo
+     incrustado: no duplica el contenido de las reglas. -->
+@if (reglamentoAbierto) {
+  <div class="reglamento-overlay" (click)="reglamentoAbierto = false">
+    <div class="reglamento-caja" (click)="$event.stopPropagation()">
+      <app-ayuda [incrustado]="true"></app-ayuda>
+      <button type="button" class="btn-teg-dark reglamento-cerrar"
+              (click)="reglamentoAbierto = false">
+        · CERRAR ·
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ── Confirmación de retiro ──────────────────────────────────────────
+     Retirarse cierra la campaña sin desenlace, así que se pregunta antes. -->
+@if (confirmandoRetiro) {
+  <div class="retiro-overlay" (click)="confirmandoRetiro = false">
+    <div class="retiro-parte paper-grunge--v6" (click)="$event.stopPropagation()">
+      <h2 class="retiro-titulo">· ORDEN DE RETIRO ·</h2>
+      <p class="retiro-texto">
+        Al retirarse abandona la campaña y no podrá volver a ella. La partida
+        se cierra sin vencedor y no sumará a su hoja de servicios.
+      </p>
+      <div class="retiro-acciones">
+        <!-- Sobre papel claro va la variante clara (texto oscuro). -->
+        <button type="button" class="btn-teg-light" (click)="confirmandoRetiro = false">
+          · SEGUIR EN EL FRENTE ·
+        </button>
+        <button type="button" class="btn-teg-danger" (click)="confirmarRetiro()">
+          · RETIRARSE ·
+        </button>
+      </div>
+    </div>
+  </div>
+}
