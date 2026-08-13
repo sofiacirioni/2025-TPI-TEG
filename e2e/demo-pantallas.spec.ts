@@ -127,7 +127,78 @@ test.describe('Recorrido de demostración', () => {
     await page.locator('.chat-panel').scrollIntoViewIfNeeded().catch(() => {});
     await mirar(page, 4);
 
-    // ── 8. Parte de campaña — la pizarra ──────────────────────────────
+    // ── 8. Fin de partida — el diario de guerra ───────────────────────
+    // El diario se dispara con el evento WebSocket FIN_PARTIDA y vive sólo
+    // en memoria del componente: no hay URL que lo abra ni forma de forzarlo
+    // sin terminar la partida, que puede llevar media hora contra los bots.
+    //
+    // Para la demo se arma el desenlace con los jugadores REALES de la
+    // partida en curso —nombres, colores y avatares de verdad— y se declara
+    // vencedor al humano. Se inyecta con la API de depuración de Angular,
+    // que existe sólo en modo desarrollo; por eso esto es un recorrido de
+    // demostración y no un test.
+    const diarioMostrado = await page.evaluate(() => {
+      type Jugador = {
+        idJugador: number; nombre: string; color: string; url?: string;
+        ejercito?: number; objetivo?: { descripcion?: string };
+      };
+      type Tablero = {
+        partida?: { jugadores?: Jugador[] };
+        jugadorUsuario?: Jugador;
+        datosFinPartida?: unknown;
+        mostrarFinPartida?: boolean;
+        partidaFinalizada?: boolean;
+      };
+      const ng = (window as unknown as {
+        ng?: { getComponent(el: Element): Tablero; applyChanges(c: unknown): void };
+      }).ng;
+      const host = document.querySelector('app-tablero');
+      if (!ng || !host) return false;
+
+      const tablero = ng.getComponent(host);
+      const jugadores = tablero.partida?.jugadores ?? [];
+      if (!jugadores.length) return false;
+
+      const ganador = tablero.jugadorUsuario ?? jugadores[0];
+      const clasificacion = jugadores.map((j, i) => ({
+        id: j.idJugador,
+        nombre: j.nombre,
+        color: j.color,
+        avatarUrl: j.url,
+        // El vencedor llega a los 30 países del objetivo común; el resto
+        // queda repartido de mayor a menor.
+        cantidadPaises: j.idJugador === ganador.idJugador ? 30 : Math.max(1, 11 - i * 3),
+        cantidadEjercitos: j.ejercito ?? 0,
+        eliminado: j.idJugador !== ganador.idJugador && i >= 2,
+      }));
+
+      tablero.datosFinPartida = {
+        ganador,
+        objetivoCumplido: {
+          descripcion: ganador.objetivo?.descripcion ?? 'Ocupar 30 países',
+          items: [],
+          completado: true,
+          objetivoConvertido: false,
+        },
+        clasificacion,
+        momentoFin: new Date().toISOString(),
+      };
+      // partidaFinalizada evita que un evento del backend vuelva a dispararlo.
+      tablero.partidaFinalizada = true;
+      tablero.mostrarFinPartida = true;
+      ng.applyChanges(tablero);
+      return true;
+    });
+
+    if (diarioMostrado) {
+      await expect(page.locator('app-fin-partida-overlay')).toBeVisible({ timeout: 10_000 });
+      // Las medallas caen sobre el diario con una animación de GSAP.
+      await mirar(page, 12);
+    } else {
+      console.warn('No se pudo inyectar el fin de partida: ¿el frontend corre en modo producción?');
+    }
+
+    // ── 9. Parte de campaña — la pizarra ──────────────────────────────
     // Funciona con cualquier partida: si no terminó, se rotula como
     // "campaña sin resolver". El id no está en la URL del tablero (que
     // lleva el uuid de la sala), así que se lee del componente Angular.
@@ -142,7 +213,7 @@ test.describe('Recorrido de demostración', () => {
     await expect(page.locator('.pizarra-titulo')).toBeVisible({ timeout: 20_000 });
     await mirar(page, 6);
 
-    // ── 9. Cierre: de vuelta al cuartel ───────────────────────────────
+    // ── 10. Cierre: de vuelta al cuartel ──────────────────────────────
     await page.locator('.btn-volver').click();
     await page.waitForURL('**/principal');
     await mirar(page, 3);
