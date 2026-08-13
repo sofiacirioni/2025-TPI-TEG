@@ -195,9 +195,7 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                     // El portador eliminó al enemigo → gana
                     partidaEntity.setGanador(jugador);
                     partidaEntity.setEstadoPartida(EstadoPartida.TERMINADA);
-                    for (JugadorEntity j : partidaEntity.getJugadores()) {
-                        j.setPerdio(true);
-                    }
+                    marcarDerrotados(partidaEntity, jugador);
                     partidaRepository.save(partidaEntity);
 
                     return VerificacionObjetivoDto.builder()
@@ -242,11 +240,7 @@ public class ObjetivoServiceImpl implements ObjetivoService {
 
                     partidaEntity.setGanador(jugador);
                     partidaEntity.setEstadoPartida(EstadoPartida.TERMINADA);
-
-                    for(JugadorEntity j : partidaEntity.getJugadores()) {
-                        j.setPerdio(true);
-                    }
-
+                    marcarDerrotados(partidaEntity, jugador);
                     partidaRepository.save(partidaEntity);
 
                     return VerificacionObjetivoDto.builder()
@@ -260,11 +254,7 @@ public class ObjetivoServiceImpl implements ObjetivoService {
 
             partidaEntity.setGanador(jugador);
             partidaEntity.setEstadoPartida(EstadoPartida.TERMINADA);
-
-            for(JugadorEntity j : partidaEntity.getJugadores()) {
-                j.setPerdio(true);
-            }
-
+            marcarDerrotados(partidaEntity, jugador);
             partidaRepository.save(partidaEntity);
 
             return VerificacionObjetivoDto.builder()
@@ -437,5 +427,25 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                 .clasificacion(clasificacion)
                 .momentoFin(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Cierra la partida marcando como derrotados a todos menos al vencedor.
+     *
+     * <p>El vencedor tiene que quedar afuera: marcarlo también lo hacía figurar
+     * tachado en la pizarra de estadísticas, que lee este mismo campo.
+     *
+     * <p>Ojo con la diferencia: {@code perdio} significa "no ganó esta campaña",
+     * mientras que estar <em>eliminado</em> es haber perdido el último país. Por
+     * eso las vistas comprueban {@code perdio && paises == 0}.
+     */
+    private void marcarDerrotados(PartidaEntity partida, JugadorEntity ganador) {
+        for (JugadorEntity j : partida.getJugadores()) {
+            boolean esElVencedor = j == ganador
+                    || (j.getIdJugador() != null && j.getIdJugador().equals(ganador.getIdJugador()));
+            if (!esElVencedor) {
+                j.setPerdio(true);
+            }
+        }
     }
 }

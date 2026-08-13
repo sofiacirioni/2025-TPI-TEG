@@ -411,6 +411,43 @@ public class PartidaServiceImplTest {
     }
 
     @Test
+    void cargarPartida_deberiaDevolverLosJugadoresEnOrdenDeJuego() {
+        // Postgres devuelve las filas en el orden físico de la tabla y las reubica
+        // con cada UPDATE, así que la lista puede llegar en cualquier orden: el
+        // panel de la mesa se rebarajaba entre turno y turno.
+        TurnoEntity turnoDeJugador2 = new TurnoEntity();
+        turnoDeJugador2.setIdTurno(1L);
+        turnoDeJugador2.setNroTurno(1);
+        turnoDeJugador2.setFase(FaseTurno.ATAQUE);
+        turnoDeJugador2.setJugador(jugador2Entity);
+
+        TurnoEntity turnoDeJugador1 = new TurnoEntity();
+        turnoDeJugador1.setIdTurno(2L);
+        turnoDeJugador1.setNroTurno(2);
+        turnoDeJugador1.setFase(FaseTurno.ATAQUE);
+        turnoDeJugador1.setJugador(jugadorEntity);
+
+        partidaEntity.setTurnos(List.of(turnoDeJugador2, turnoDeJugador1));
+        partidaEntity.setJugadores(List.of(jugadorEntity, jugador2Entity));
+
+        when(partidaRepository.findById(1L)).thenReturn(Optional.of(partidaEntity));
+        when(modelMapper.map(any(JugadorEntity.class), eq(JugadorDto.class))).thenAnswer(invocation -> {
+            JugadorEntity entity = invocation.getArgument(0);
+            JugadorDto dto = new JugadorDto();
+            dto.setIdJugador(entity.getIdJugador());
+            dto.setNombre(entity.getNombre());
+            return dto;
+        });
+
+        PartidaDto resultado = partidaService.cargarPartida(1L);
+
+        // Jugador 2 arranca la ronda, así que encabeza el panel aunque su fila
+        // venga segunda desde la base.
+        assertEquals(List.of(2L, 1L),
+                resultado.getJugadores().stream().map(JugadorDto::getIdJugador).toList());
+    }
+
+    @Test
     void cargarPartida_partidaNoEncontrada_deberiaLanzarExcepcionConStatusNotFound() {
         when(partidaRepository.findById(anyLong())).thenReturn(Optional.empty());
 

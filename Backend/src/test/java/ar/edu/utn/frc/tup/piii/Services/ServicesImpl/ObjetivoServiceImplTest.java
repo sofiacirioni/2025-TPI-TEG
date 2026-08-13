@@ -122,6 +122,42 @@ class ObjetivoServiceImplTest {
         assertTrue(resultado.isGano());
     }
 
+    @Test
+    void verificarObjetivos_alGanar_noMarcaAlVencedorComoDerrotado() {
+        // El cierre de partida marcaba `perdio` para todos, vencedor incluido, y
+        // la pizarra de estadísticas lo mostraba tachado junto a los eliminados.
+        Long idGanador = 1L;
+        JugadorEntity ganador = new JugadorEntity();
+        ganador.setIdJugador(idGanador);
+        ganador.setColor(Color.AZUL);
+        ganador.setObjetivo(new ObjetivoEntity());
+        ganador.getObjetivo().setColorEnemigo(Color.ROJO);
+
+        JugadorEntity enemigo = new JugadorEntity();
+        enemigo.setIdJugador(2L);
+        enemigo.setColor(Color.ROJO);
+        enemigo.setPerdio(true);
+
+        JugadorEntity tercero = new JugadorEntity();
+        tercero.setIdJugador(3L);
+        tercero.setColor(Color.VERDE);
+
+        PartidaEntity partida = new PartidaEntity();
+        partida.setJugadores(List.of(ganador, enemigo, tercero));
+        ganador.setPartida(partida);
+
+        Mockito.when(jugadorRepository.findById(idGanador)).thenReturn(Optional.of(ganador));
+        Mockito.when(estadoPaisRepository.findEstadoPaisEntitiesByJugador_IdJugador(idGanador))
+                .thenReturn(List.of());
+        Mockito.when(objetivoRepository.findById(Mockito.any())).thenReturn(Optional.of(ganador.getObjetivo()));
+        Mockito.when(partidaRepository.findById(Mockito.any())).thenReturn(Optional.of(partida));
+
+        assertTrue(objetivoService.verificarObjetivos(idGanador).isGano());
+
+        assertFalse(ganador.isPerdio(), "el vencedor no puede figurar como derrotado");
+        assertTrue(tercero.isPerdio(), "los demás comandantes sí quedan derrotados");
+    }
+
 
     @Test
     void obtenerObjetivoGral_noEncontrado_lanzaException() {

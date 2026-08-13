@@ -5,6 +5,11 @@
 
   <div class="legajo-mesa">
 
+    <!-- Columna izquierda: la libreta y, apoyadas sobre la mesa debajo, las
+         condecoraciones. Van acá y no en la hoja de servicios para que la hoja
+         entre en pantalla sin scroll. -->
+    <div class="legajo-columna">
+
     <!-- ── Libreta de enrolamiento ─────────────────────────────────── -->
     <article class="libreta">
 
@@ -96,6 +101,30 @@
       </div>
     </article>
 
+      <!-- ── Condecoraciones ──────────────────────────────────────────
+           Las medallas quedan sobre la madera, no sobre papel: el conteo va
+           en claro para que se lea contra la mesa. -->
+      @if (historial && !sinCampanias) {
+        <div class="condecoraciones">
+          <span class="condecoraciones-rotulo">CONDECORACIONES</span>
+          <div class="medallero">
+            <div class="medalla medalla--oro">
+              <img src="/assets/images/tablero/medallas/gold-medal.png" alt="Victorias">
+              <span class="medalla-cuenta">×{{ historial.victorias }}</span>
+            </div>
+            <div class="medalla medalla--plata">
+              <img src="/assets/images/tablero/medallas/silver-medal.png" alt="Segundos puestos">
+              <span class="medalla-cuenta">×{{ historial.segundosPuestos }}</span>
+            </div>
+            <div class="medalla medalla--bronce">
+              <img src="/assets/images/tablero/medallas/bronze-medal.png" alt="Terceros puestos">
+              <span class="medalla-cuenta">×{{ historial.terceroPuestos }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
     <!-- ── Hoja de servicios ───────────────────────────────────────── -->
     <section class="servicios paper-grunge--v3">
       <header class="servicios-encabezado">
@@ -109,27 +138,12 @@
         <p class="servicios-aviso">No se pudo recuperar la hoja de servicios.</p>
       } @else {
 
-        <!-- Condecoraciones: las medallas apoyadas sobre la hoja. Sin campañas
-             concluidas no hay medallero que mostrar, sólo tres ceros. -->
+        <!-- El medallero vive debajo de la libreta; acá sólo se avisa cuando
+             todavía no hay nada que condecorar. -->
         @if (sinCampanias) {
           <p class="servicios-aviso servicios-aviso--menor">
             Todavía sin condecoraciones: ninguna campaña llegó a su desenlace.
           </p>
-        } @else {
-        <div class="medallero">
-          <div class="medalla medalla--oro">
-            <img src="/assets/images/tablero/medallas/gold-medal.png" alt="Victorias">
-            <span class="medalla-cuenta">×{{ historial.victorias }}</span>
-          </div>
-          <div class="medalla medalla--plata">
-            <img src="/assets/images/tablero/medallas/silver-medal.png" alt="Segundos puestos">
-            <span class="medalla-cuenta">×{{ historial.segundosPuestos }}</span>
-          </div>
-          <div class="medalla medalla--bronce">
-            <img src="/assets/images/tablero/medallas/bronze-medal.png" alt="Terceros puestos">
-            <span class="medalla-cuenta">×{{ historial.terceroPuestos }}</span>
-          </div>
-        </div>
         }
 
         <div class="cifras">

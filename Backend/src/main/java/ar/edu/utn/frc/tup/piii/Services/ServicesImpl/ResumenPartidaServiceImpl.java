@@ -93,7 +93,11 @@ public class ResumenPartidaServiceImpl implements ResumenPartidaService {
                 .paises(paises)
                 .ejercitos(j.getEjercito() != null ? j.getEjercito() : 0)
                 .porcentajeMapa(redondear((double) paises * 100 / PAISES_DEL_MAPA))
-                .eliminado(j.isPerdio())
+                // Eliminado = perdió su último país. Un derrotado que todavía
+                // conservaba territorio cuando se definió la campaña figura
+                // "EN PIE", no tachado — el mismo criterio que el diario de
+                // fin de partida.
+                .eliminado(j.isPerdio() && paises == 0)
                 .eliminadoPor(j.getEliminadoPorColor() != null ? j.getEliminadoPorColor().name() : null)
                 .ganador(esGanador)
                 .ataquesLanzados(ataques)
