@@ -37,6 +37,15 @@ $linea: rgba(67, 42, 30, 0.42);
   margin: 0 auto;
 }
 
+// La libreta y su medallero: una pila vertical sobre la mesa.
+.legajo-columna {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-8;
+}
+
 // ── Libreta de enrolamiento ────────────────────────────────────────────
 // Dos hojas enfrentadas con el lomo en el medio. Apoyada sobre la mesa, no
 // centrada con escuadra: de ahí la rotación mínima.
@@ -338,14 +347,30 @@ $linea: rgba(67, 42, 30, 0.42);
 }
 
 // ── Medallero ──────────────────────────────────────────────────────────
-// Las condecoraciones, apoyadas sobre la hoja. El oro adelante y más grande:
-// las posiciones tienen que leerse de un vistazo.
+// Las condecoraciones, apoyadas sobre la madera debajo de la libreta. El oro
+// adelante y más grande: las posiciones tienen que leerse de un vistazo.
+.condecoraciones {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+}
+
+// Sobre la mesa no hay papel que dé contraste: el rótulo va en claro, con
+// sombra, como los letreros del tablero.
+.condecoraciones-rotulo {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: rgba(239, 232, 206, 0.62);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
+}
+
 .medallero {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: $space-4;
-  margin: $space-4 0 $space-2;
 }
 
 .medalla {
@@ -364,7 +389,8 @@ $linea: rgba(67, 42, 30, 0.42);
   font-family: var(--font-heading);
   font-size: 1.05rem;
   letter-spacing: 0.06em;
-  color: $color-oscuro;
+  color: $color-claro;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
 }
 
 // El oro adelante y notoriamente más grande: la jerarquía de los puestos
@@ -703,9 +729,15 @@ $linea: rgba(67, 42, 30, 0.42);
     gap: $space-6;
   }
 
+  .legajo-columna {
+    flex-basis: 100%;
+    gap: $space-6;
+  }
+
   .libreta {
     flex-wrap: wrap;
     transform: none;
+    width: 100%;
   }
 
   .libreta-hoja {

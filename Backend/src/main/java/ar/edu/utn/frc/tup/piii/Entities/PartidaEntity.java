@@ -25,6 +25,7 @@ public class PartidaEntity extends AuditableEntity {
     private LocalDate fechaInicio;
 
     @OneToMany(mappedBy = "partida")
+    @OrderBy("nroTurno ASC")
     private List<TurnoEntity> turnos;
 
     // Todo: Pensar como gestionar los turnos, debe haber un orden y de quien es el turno actual
@@ -39,7 +40,16 @@ public class PartidaEntity extends AuditableEntity {
     @OneToMany(mappedBy = "partida")
     private List<EstadoTarjetaEntity> mazo;
 
+    /**
+     * Sin {@code @OrderBy} esta lista sale en el orden físico de la tabla, y
+     * Postgres reubica cada fila que se actualiza: como los jugadores cambian
+     * de ejército y de contadores en cada turno, el panel de la mesa parecía
+     * barajarse solo. El orden también decide quién juega primero, porque
+     * {@code establecerOrdenJugadores} recorre esta lista para repartir los
+     * números de turno.
+     */
     @OneToMany(mappedBy = "partida", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("idJugador ASC")
     private List<JugadorEntity> jugadores;
 
     @Enumerated(EnumType.STRING)
