@@ -15,6 +15,11 @@ public interface PactoService {
 
     PactoDto romperVoluntariamente(Long pactoId, Long jugadorId);
 
+    /**
+     * Los pactos que la mesa tiene que ver: propuestas sin responder, tratados
+     * vigentes y los rotos que siguen en período de gracia. No sirve para decidir
+     * si un ataque es legal — para eso está {@link #ataqueViolaPactoActivo}.
+     */
     List<PactoDto> listarActivos(Long partidaId);
 
     /** True si el ataque del jugador atacante al país atacado violaría algún pacto activo. */

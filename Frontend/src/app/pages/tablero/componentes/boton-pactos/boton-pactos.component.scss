@@ -45,28 +45,15 @@
   filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.5));
 }
 
-.boton-pactos:hover:not(.deshabilitado) .boton-pactos__pluma {
+.boton-pactos:hover .boton-pactos__pluma {
   // translateY ANTES de rotate → desplazamiento puro vertical en el frame de
   // pantalla (no rotado), luego la pluma gira en su nueva posición. Cubic
   // ease-out-back hace overshoot, así el peak queda más arriba aún que -20px.
   transform: translateY(-20px) rotate(-25deg);
 }
 
-.boton-pactos:hover:not(.deshabilitado) .boton-pactos__hojas {
+.boton-pactos:hover .boton-pactos__hojas {
   transform: translateY(-2px) scale(1.02);
-}
-
-.boton-pactos.deshabilitado {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.boton-pactos.deshabilitado:hover .boton-pactos__pluma {
-  transform: translateY(0) rotate(0deg);
-}
-
-.boton-pactos.deshabilitado:hover .boton-pactos__hojas {
-  transform: none;
 }
 
 .boton-pactos__badge {

@@ -13,43 +13,60 @@
     @if (vista === 'lista') {
       <!-- ═══ SECCIÓN 1: Pactos activos ═══ -->
       <section class="pactos-seccion">
-        <h3 class="pactos-seccion-tit">TRATADOS VIGENTES</h3>
+        <h3 class="pactos-seccion-tit">TRATADOS Y PROPUESTAS</h3>
 
         @if (pactosActivos.length === 0) {
-          <p class="pactos-vacio">No hay tratados vigentes en este momento.</p>
+          <p class="pactos-vacio">No hay tratados ni propuestas en este momento.</p>
         } @else {
           <div class="pactos-lista">
             @for (p of pactosActivos; track p.id) {
-              <article class="pacto-card">
-                <div class="pacto-card__jugadores">
-                  <div class="pacto-jug">
-                    <div class="pacto-avatar" [style.background-color]="colorVar(p.colorJugadorA)"></div>
-                    <span class="pacto-nombre" [style.color]="colorVar(p.colorJugadorA)">
-                      {{ p.nombreJugadorA }}
-                    </span>
+              <article class="pacto-card" [class.pacto-card--pendiente]="estaPendiente(p)">
+                <img class="pacto-sello" [src]="simboloTipo(p.tipo)" alt="" aria-hidden="true">
+
+                <div class="pacto-partes">
+                  <div class="pacto-avatar" [style.border-color]="colorVar(p.colorJugadorA)"
+                       [title]="p.nombreJugadorA">
+                    @if (avatarDe(p.idJugadorA); as foto) {
+                      <img [src]="foto" alt="" aria-hidden="true">
+                    } @else {
+                      <span class="pacto-avatar-vacio"
+                            [style.background-color]="colorVar(p.colorJugadorA)"></span>
+                    }
                   </div>
-                  <span class="pacto-sep">·</span>
-                  <div class="pacto-jug">
-                    <div class="pacto-avatar" [style.background-color]="colorVar(p.colorJugadorB)"></div>
-                    <span class="pacto-nombre" [style.color]="colorVar(p.colorJugadorB)">
-                      {{ p.nombreJugadorB }}
-                    </span>
+                  <div class="pacto-avatar" [style.border-color]="colorVar(p.colorJugadorB)"
+                       [title]="p.nombreJugadorB">
+                    @if (avatarDe(p.idJugadorB); as foto) {
+                      <img [src]="foto" alt="" aria-hidden="true">
+                    } @else {
+                      <span class="pacto-avatar-vacio"
+                            [style.background-color]="colorVar(p.colorJugadorB)"></span>
+                    }
                   </div>
                 </div>
 
                 <div class="pacto-card__info">
                   <div class="pacto-tipo">{{ tituloTipoPacto(p.tipo) }}</div>
+                  <div class="pacto-partes-nombres">
+                    <span [style.color]="colorVar(p.colorJugadorA)">{{ p.nombreJugadorA }}</span>
+                    <span class="pacto-sep">⟷</span>
+                    <span [style.color]="colorVar(p.colorJugadorB)">{{ p.nombreJugadorB }}</span>
+                  </div>
                   <div class="pacto-desc">{{ descripcionPacto(p) }}</div>
-                  @if (p.estado === 'ROTO_VOLUNTARIO') {
-                    <span class="pacto-badge-ruptura"
-                          title="El pacto fue roto pero aún se respeta hasta que termine el período de gracia.">
-                      EN RUPTURA
-                    </span>
-                  }
                 </div>
 
                 <div class="pacto-card__acciones">
-                  @if (esParteDelPacto(p) && p.estado === 'ACTIVO') {
+                  @if (estaPendiente(p)) {
+                    <span class="pacto-badge pacto-badge--espera"
+                          [title]="'La propuesta se resuelve cuando ' + esperandoA(p) + ' juegue su turno.'">
+                      SIN RESPUESTA
+                    </span>
+                    <span class="pacto-espera-detalle">aguarda {{ esperandoA(p) }}</span>
+                  } @else if (p.estado === 'ROTO_VOLUNTARIO') {
+                    <span class="pacto-badge pacto-badge--ruptura"
+                          title="El pacto fue roto pero aún se respeta hasta que termine el período de gracia.">
+                      EN RUPTURA
+                    </span>
+                  } @else if (esParteDelPacto(p)) {
                     <button class="btn-teg-danger pacto-btn-romper"
                             [disabled]="enviando"
                             (click)="romperPacto(p)">
@@ -149,7 +166,13 @@
                       [class.deshabilitado]="yaHayPactoActivoCon(j)"
                       [disabled]="yaHayPactoActivoCon(j)"
                       (click)="seleccionarReceptor(j)">
-                <div class="receptor-avatar" [style.background-color]="colorVar(j.color)"></div>
+                <div class="receptor-avatar" [style.border-color]="colorVar(j.color)">
+                  @if (j.url) {
+                    <img [src]="j.url" alt="" aria-hidden="true">
+                  } @else {
+                    <span class="pacto-avatar-vacio" [style.background-color]="colorVar(j.color)"></span>
+                  }
+                </div>
                 <div class="receptor-info">
                   <div class="receptor-nombre" [style.color]="colorVar(j.color)">
                     {{ j.nombre }}

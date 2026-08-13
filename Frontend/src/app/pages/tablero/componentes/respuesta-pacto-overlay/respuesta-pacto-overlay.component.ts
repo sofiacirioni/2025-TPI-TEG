@@ -15,13 +15,6 @@ const SIMBOLOS_PACTO: Record<TipoPacto, string> = {
   PACTO_ZONA_INTERNACIONAL: 'assets/images/tablero/continental-pact-symbol.png',
 };
 
-const AVATARES = [
-  'assets/images/avatars/AgosCh.png', 'assets/images/avatars/CandeArguello.png',
-  'assets/images/avatars/CandeBlanco.png', 'assets/images/avatars/LaraHeredia.png',
-  'assets/images/avatars/MeliAbril.png', 'assets/images/avatars/SofiCirioni.png',
-  'assets/images/avatars/Maxi.png',
-];
-
 @Component({
   selector: 'app-respuesta-pacto-overlay',
   standalone: true,
@@ -72,21 +65,24 @@ export class RespuestaPactoOverlayComponent implements OnChanges, OnDestroy {
     return SIMBOLOS_PACTO[this.pacto.tipo];
   }
 
-  /** Avatar del jugador A si es humano, o `null` si es bot (renderiza color en su lugar). */
+  /**
+   * Fotografía de legajo del jugador, o `null` si no tiene y hay que caer al
+   * círculo de color.
+   *
+   * <p>Antes esto elegía una foto de una lista fija según `idJugador % 7`, así
+   * que mostraba la cara de cualquiera; y a los bots los excluía a propósito,
+   * por lo que su avatar nunca aparecía. El backend ya manda la url correcta
+   * de cada jugador, bots incluidos.
+   */
   avatarJugadorA(): string | null {
-    return this.esBot(this.pacto.idJugadorA) ? null : this.avatarFor(this.pacto.idJugadorA);
+    return this.avatarFor(this.pacto.idJugadorA);
   }
   avatarJugadorB(): string | null {
-    return this.esBot(this.pacto.idJugadorB) ? null : this.avatarFor(this.pacto.idJugadorB);
+    return this.avatarFor(this.pacto.idJugadorB);
   }
 
-  private esBot(idJugador: number): boolean {
-    const j = this.jugadores.find(x => x.idJugador === idJugador);
-    return (j?.tipoJugador ?? '').toUpperCase() === 'BOT';
-  }
-
-  private avatarFor(idJugador: number): string {
-    return AVATARES[idJugador % AVATARES.length];
+  private avatarFor(idJugador: number): string | null {
+    return this.jugadores.find(x => x.idJugador === idJugador)?.url ?? null;
   }
 
   get esReceptor(): boolean {

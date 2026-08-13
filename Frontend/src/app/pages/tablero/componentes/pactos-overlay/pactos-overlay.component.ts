@@ -83,6 +83,30 @@ export class PactosOverlayComponent implements OnInit, OnChanges {
     }
   }
 
+  /** Sello del tipo de tratado — el mismo que se elige en el paso 1 del wizard. */
+  simboloTipo(t: TipoPacto): string {
+    const map: Record<TipoPacto, string> = {
+      PACTO_PAISES: 'assets/images/tablero/countries-pact-symbol.png',
+      PACTO_MUNDIAL: 'assets/images/tablero/global-pact-symbol.png',
+      PACTO_ZONA_INTERNACIONAL: 'assets/images/tablero/continental-pact-symbol.png',
+    };
+    return map[t];
+  }
+
+  /** Una propuesta que todavía nadie respondió. */
+  estaPendiente(p: PactoDto): boolean {
+    return p.estado === 'PROPUESTO';
+  }
+
+  /**
+   * De quién se espera la respuesta. El receptor es siempre el jugador B: si un
+   * bot es el receptor, contesta cuando le llega su turno, así que el proponente
+   * necesita ver a quién le está esperando.
+   */
+  esperandoA(p: PactoDto): string {
+    return p.nombreJugadorB;
+  }
+
   tituloTipoPacto(t: TipoPacto): string {
     switch (t) {
       case 'PACTO_PAISES': return 'PACTO ENTRE PAÍSES';
@@ -283,6 +307,14 @@ export class PactosOverlayComponent implements OnInit, OnChanges {
     if (err.error?.message) return err.error.message;
     if (err.message) return err.message;
     return null;
+  }
+
+  /**
+   * Fotografía de legajo de un jugador de la partida. Las tarjetas de pacto
+   * sólo traen id, nombre y color, así que la foto se busca en la partida.
+   */
+  avatarDe(idJugador: number): string | undefined {
+    return this.partida?.jugadores?.find(j => j.idJugador === idJugador)?.url;
   }
 
   colorVar(colorKey: string): string {

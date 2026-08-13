@@ -7,12 +7,16 @@ import ar.edu.utn.frc.tup.piii.Dtos.EstadoPaises.EstadoPaisFicha;
 import ar.edu.utn.frc.tup.piii.Entities.EstadoPaisEntity;
 import ar.edu.utn.frc.tup.piii.Entities.EstadoTarjetaEntity;
 import ar.edu.utn.frc.tup.piii.Entities.JugadorEntity;
+import ar.edu.utn.frc.tup.piii.Entities.PactoEntity;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoPaisRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.EstadoTarjetaRepository;
 import ar.edu.utn.frc.tup.piii.Repositories.JugadorRepository;
+import ar.edu.utn.frc.tup.piii.Repositories.PactoRepository;
 import ar.edu.utn.frc.tup.piii.Services.BotService;
 import ar.edu.utn.frc.tup.piii.Services.EstadoPaisService;
+import ar.edu.utn.frc.tup.piii.Services.PactoService;
 import ar.edu.utn.frc.tup.piii.Services.TurnoService;
+import ar.edu.utn.frc.tup.piii.models.EstadoPacto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +44,9 @@ public class BotServiceImpl implements BotService {
     private final JugadorRepository jugadorRepository;
     private final EstadoPaisRepository estadoPaisRepository;
     private final EstadoTarjetaRepository estadoTarjetaRepository;
+    private final PactoRepository pactoRepository;
     private final EstadoPaisService estadoPaisService;
+    private final PactoService pactoService;
 
     /** @Lazy rompe la dependencia circular con TurnoServiceImpl */
     @Lazy
@@ -70,6 +76,12 @@ public class BotServiceImpl implements BotService {
     private static final int TROPAS_MINIMAS_EN_ORIGEN = 3;
 
     /**
+     * Diferencia de países a partir de la cual el bot desconfía del proponente
+     * y le rechaza el pacto. Por debajo de eso firma sin hacer preguntas.
+     */
+    private static final int VENTAJA_QUE_INCOMODA = 3;
+
+    /**
      * Ejecuta el turno completo del bot de forma asíncrona:
      *   1. Fase INCORPORACION: distribuye ejércitos aleatoriamente.
      *   2. Avanza a ATAQUE (cooldown).
@@ -85,6 +97,10 @@ public class BotServiceImpl implements BotService {
             JugadorEntity bot = jugadorRepository.findByIdJugador(idJugador)
                     .orElseThrow(() -> new IllegalArgumentException("Bot no encontrado: " + idJugador));
             partidaId = bot.getPartida().getIdPartida();
+
+            // --- DIPLOMACIA ---
+            // Antes de jugar, contesta las propuestas que le hayan quedado pendientes.
+            responderPactosPendientes(idJugador, partidaId);
 
             // --- INCORPORACION ---
             realizarIncorporacion(idJugador);
@@ -122,6 +138,53 @@ public class BotServiceImpl implements BotService {
                         // Fase ya avanzada o partida terminada
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Contesta las propuestas de pacto que tenga pendientes, una por vez.
+     *
+     * <p>Sin esto las propuestas al bot quedaban en PROPUESTO para siempre: el
+     * humano proponía y no pasaba nada nunca, ni aceptación ni rechazo.
+     *
+     * <p>El criterio es a propósito de una sola línea, como el resto del bot:
+     * firma con cualquiera, salvo con quien ya le saca {@value #VENTAJA_QUE_INCOMODA}
+     * países de ventaja. Un bot no le regala inmunidad al que va ganando.
+     */
+    private void responderPactosPendientes(Long idJugador, Long partidaId) throws InterruptedException {
+        List<PactoEntity> pendientes;
+        try {
+            pendientes = pactoRepository.findByPartida_IdPartidaAndEstado(partidaId, EstadoPacto.PROPUESTO)
+                    .stream()
+                    .filter(p -> p.getJugadorB() != null
+                            && idJugador.equals(p.getJugadorB().getIdJugador()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Bot {}: no se pudieron leer los pactos pendientes: {}", idJugador, e.getMessage());
+            return;
+        }
+
+        int misPaises = estadoPaisRepository.findByJugador_IdJugador(idJugador).size();
+
+        for (PactoEntity pacto : pendientes) {
+            Thread.sleep(pausaEntreAccionesMs);
+            try {
+                int paisesDelProponente = pacto.getJugadorA() == null ? 0
+                        : estadoPaisRepository
+                                .findByJugador_IdJugador(pacto.getJugadorA().getIdJugador()).size();
+
+                if (paisesDelProponente > misPaises + VENTAJA_QUE_INCOMODA) {
+                    pactoService.rechazar(pacto.getId(), idJugador);
+                    log.info("Bot {} rechazó el pacto {}", idJugador, pacto.getId());
+                } else {
+                    pactoService.aceptar(pacto.getId(), idJugador);
+                    log.info("Bot {} aceptó el pacto {}", idJugador, pacto.getId());
+                }
+            } catch (Exception e) {
+                // Una propuesta ya resuelta o inválida no puede frenar el turno.
+                log.warn("Bot {}: no pudo responder el pacto {}: {}",
+                        idJugador, pacto.getId(), e.getMessage());
             }
         }
     }
