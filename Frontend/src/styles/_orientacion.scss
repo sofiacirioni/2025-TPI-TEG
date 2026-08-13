@@ -1,0 +1,93 @@
+// ── AVISO DE ORIENTACIÓN
+// El tablero es un mapa apaisado con paneles a los costados: en vertical no
+// entra, y no hay reacomodo que lo salve. Así que en vez de degradar el juego
+// se pide girar el aparato.
+//
+// El aviso está en app.component.html, al lado de la viñeta, y se controla
+// enteramente por CSS: nada de listeners de `resize` ni de la Screen
+// Orientation API, que además de no poder *forzar* el giro fuera de pantalla
+// completa no está soportada en Safari de iOS.
+//
+// La condición son las dos cosas a la vez:
+//   orientation: portrait → la pantalla está más alta que ancha
+//   pointer: coarse       → se apunta con el dedo, no con un mouse
+//
+// El segundo test es el que evita el falso positivo: una ventana de escritorio
+// angosta y alta también es "portrait", pero ahí girar el aparato no significa
+// nada. Con `pointer: coarse` el aviso queda reservado a teléfonos y tablets.
+.aviso-orientacion {
+  display: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .aviso-orientacion {
+    position: fixed;
+    inset: 0;
+    // Por encima de todo, viñeta incluida: es un bloqueo, no una capa más.
+    z-index: $z-frente + 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $space-6;
+    padding: $space-8;
+    text-align: center;
+
+    background-color: #14100c;
+    background-image: radial-gradient(
+      ellipse 70% 50% at 50% 42%,
+      rgba(255, 200, 78, 0.10) 0%,
+      rgba(220, 148, 38, 0.04) 40%,
+      transparent 70%
+    );
+  }
+
+  // El teléfono dibujado en vertical, girando hacia la horizontal. La animación
+  // muestra el gesto que se pide; con `prefers-reduced-motion` se queda quieto
+  // ya girado, que es la posición correcta.
+  .aviso-orientacion__icono {
+    width: 84px;
+    height: 84px;
+    color: rgba(239, 232, 206, 0.85);
+    animation: girar-aparato 3s ease-in-out infinite;
+  }
+
+  .aviso-orientacion__titulo {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    letter-spacing: 0.22em;
+    color: $color-claro;
+  }
+
+  .aviso-orientacion__texto {
+    margin: 0;
+    max-width: 28ch;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: rgba(239, 232, 206, 0.68);
+  }
+
+  // Sello al pie, como el resto de los documentos del juego.
+  .aviso-orientacion__firma {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 0.66rem;
+    letter-spacing: 0.28em;
+    color: rgba(239, 232, 206, 0.35);
+  }
+}
+
+@keyframes girar-aparato {
+  0%, 20%   { transform: rotate(0deg); }
+  45%, 80%  { transform: rotate(-90deg); }
+  100%      { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-orientacion__icono {
+    animation: none;
+    transform: rotate(-90deg);
+  }
+}

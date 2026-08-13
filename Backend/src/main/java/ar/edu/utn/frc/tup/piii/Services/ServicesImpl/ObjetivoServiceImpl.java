@@ -412,7 +412,10 @@ public class ObjetivoServiceImpl implements ObjetivoService {
                             .id(j.getIdJugador())
                             .nombre(j.getNombre())
                             .color(j.getColor() != null ? j.getColor().name() : null)
-                            .avatarUrl(j.getUsuario() != null ? j.getUsuario().getImagen() : null)
+                            // avatarUrl() y no usuario.getImagen(): las filas BOT se
+                            // graban con el id_usuario de quien creó la partida, así
+                            // que por ahí salía la foto del humano en el diario.
+                            .avatarUrl(j.avatarUrl())
                             .cantidadPaises(paises)
                             .cantidadEjercitos(j.getEjercito() != null ? j.getEjercito() : 0)
                             .eliminado(j.isPerdio() && paises == 0)

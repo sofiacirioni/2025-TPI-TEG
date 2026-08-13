@@ -102,7 +102,9 @@
   position: fixed;
   top: 1.5rem;
   left: 1.5rem;
-  z-index: 10;
+  // Por encima de la viñeta: está apoyado justo en la esquina, que es donde el
+  // velo llega casi al negro, y por debajo se leía apagado.
+  z-index: $z-frente;
   font-size: 12px;
   padding: 11px 22px 8px;
 }

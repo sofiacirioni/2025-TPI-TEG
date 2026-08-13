@@ -157,18 +157,14 @@ export class FinPartidaOverlayComponent implements AfterViewInit, OnDestroy {
     return COLOR_VAR_MAP[color?.toUpperCase()] ?? 'var(--player-rojo)';
   }
 
+  /**
+   * El backend manda la foto de cada comandante, bots incluidos. El respaldo es
+   * genérico a propósito: antes se elegía una cara de una lista fija según
+   * `idJugador % 7`, así que el diario ilustraba a un bot con la foto de
+   * cualquier integrante del equipo.
+   */
   avatarPara(j: JugadorResultado): string {
-    return j.avatarUrl || this.avatarFallback(j.id);
-  }
-
-  private avatarFallback(idJugador: number): string {
-    const avatares = [
-      'assets/images/avatars/AgosCh.png', 'assets/images/avatars/CandeArguello.png',
-      'assets/images/avatars/CandeBlanco.png', 'assets/images/avatars/LaraHeredia.png',
-      'assets/images/avatars/MeliAbril.png', 'assets/images/avatars/SofiCirioni.png',
-      'assets/images/avatars/Maxi.png',
-    ];
-    return avatares[Math.abs(idJugador) % avatares.length];
+    return j.avatarUrl || 'assets/images/avatars/bot-avatar.png';
   }
 
   /** Frase editorial breve por jugador — heurística simple en base a los datos disponibles. */
