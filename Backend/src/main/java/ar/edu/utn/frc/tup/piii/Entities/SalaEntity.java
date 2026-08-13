@@ -30,7 +30,9 @@ public class SalaEntity extends AuditableEntity {
     @JoinColumn(name = "idUsuario")
     private UsuarioEntity creador;
 
+    /** Orden explícito: ver la nota en {@link PartidaEntity#getJugadores()}. */
     @OneToMany(mappedBy = "sala", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("idJugador ASC")
     @JsonManagedReference
     @ToString.Exclude
     private List<JugadorEntity> jugadores;

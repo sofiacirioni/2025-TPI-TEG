@@ -256,8 +256,24 @@ public class PartidaServiceImpl implements PartidaService {
                                                 et -> et.getJugador().getIdJugador(),
                                                 Collectors.counting()));
 
+                // El panel de la mesa lista a los comandantes en el orden en que juegan,
+                // que es el que fijó el primer turno de cada uno. Ordenar acá también
+                // arregla las partidas que ya venían con un orden de turnos arbitrario.
+                java.util.Map<Long, Integer> ordenDeJuego = partidaEntity.getTurnos().stream()
+                                .filter(t -> t.getJugador() != null)
+                                .collect(Collectors.toMap(
+                                                t -> t.getJugador().getIdJugador(),
+                                                TurnoEntity::getNroTurno,
+                                                Integer::min));
+
+                java.util.Comparator<JugadorEntity> porOrdenDeJuego = java.util.Comparator
+                                .<JugadorEntity, Integer>comparing(
+                                                j -> ordenDeJuego.getOrDefault(j.getIdJugador(), Integer.MAX_VALUE))
+                                .thenComparing(JugadorEntity::getIdJugador);
+
                 partida.setJugadores(
                                 partidaEntity.getJugadores().stream()
+                                                .sorted(porOrdenDeJuego)
                                                 .map(j -> {
                                                         JugadorDto dto = modelMapper.map(j, JugadorDto.class);
                                                         dto.setUrl(j.avatarUrl());
